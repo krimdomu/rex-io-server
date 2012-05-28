@@ -11,7 +11,27 @@ use Mojo::JSON;
 
 use Data::Dumper;
 
+sub put {
+   my ($self) = @_;
+   my $ref = $self->req->json;
 
+   my $new_res = $self->cmdb->add_server($ref);
+
+   $self->render_json($new_res, status => 201);
+}
+
+sub delete {
+   my ($self) = @_;
+
+   my $data = $self->cmdb->delete_server($self->stash("name"));
+
+   if($data->{ok} == Mojo::JSON->false) {
+      $self->render_json($data, status => 404);
+   }
+   else {
+      $self->render_json($data);
+   }
+}
 
 sub get {
    my ($self) = @_;

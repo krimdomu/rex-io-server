@@ -12,6 +12,8 @@ sub startup {
   # Router
   my $r = $self->routes;
 
+  $r->put('/server')->to('server#put');
+  $r->delete('/server/:name')->to('server#delete');
   $r->get('/server/:name')->to('server#get');
 
 }

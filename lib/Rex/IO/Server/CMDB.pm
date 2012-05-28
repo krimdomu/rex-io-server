@@ -24,6 +24,34 @@ sub new {
    return $self;
 }
 
+sub add_server {
+   my ($self, $data) = @_;
+
+   my $tx = $self->_ua->put("$cmdb_url/server",
+                              { "Content-Type" => "application/json" },
+                              $self->_json->encode($data)
+   );
+
+   if($tx->success) {
+      return $self->get_server($data->{name});
+   }
+   else {
+      return {ok => Mojo::JSON->false};
+   }
+}
+
+sub delete_server {
+   my ($self, $name) = @_;
+   my $tx = $self->_ua->delete("$cmdb_url/server/$name");
+
+   if($tx->success) {
+      return {ok => Mojo::JSON->true};
+   }
+   else {
+      return {ok => Mojo::JSON->false};
+   }
+}
+
 sub get_server {
    my ($self, $name) = @_;
    my $tx = $self->_ua->get("$cmdb_url/server/$name");
