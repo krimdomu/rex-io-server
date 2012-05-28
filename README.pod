@@ -1,0 +1,18 @@
+=pod
+
+=head2 Rex::IO::Server
+
+This is the Server Component of Rex.
+
+This is a work in progress project.
+
+=head2 Requirements
+
+=over 4
+
+=item Mojolicious
+
+=item Rex::IO::CMDB
+
+=back
+

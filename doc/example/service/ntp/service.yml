@@ -1,0 +1,10 @@
+service:
+   name: ntp
+   description: konfiguriert den ntp dienst
+
+'/etc/ntp.conf':
+   variables:
+      server:
+         type: string
+         default: pool.ntp.org
+

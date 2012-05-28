@@ -1,0 +1,8 @@
+# Rexfile
+use Rex::IO::Client;
+
+task "do", sub {
+   file "/etc/ntp.conf",
+      content => template("templates/etc/ntp.conf.tpl", cmdb_get("service://ntp/etc/ntp.conf"));
+};
+
