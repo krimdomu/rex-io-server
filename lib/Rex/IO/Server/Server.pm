@@ -98,5 +98,20 @@ sub unlink {
    $self->render_json($ret);
 }
 
+sub service_put {
+   my $self = shift;
+
+   my $data = $self->cmdb->configure_service_of_server($self->stash("name"), $self->stash("service"), $self->req->json);
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
 
 1;

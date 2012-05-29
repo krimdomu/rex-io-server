@@ -167,6 +167,21 @@ sub remove_service_from_server {
    }
 }
 
+sub configure_service_of_server {
+   my ($self, $server, $service, $data) = @_;
+
+   my $tx = $self->_ua->put("$cmdb_url/server/$server/service/$service", { "Content-Type" => "application/json" }, $self->_json->encode($data));
+
+   if($tx->success) {
+      return $self->_json->decode($tx->res->body);
+   }
+
+   else {
+      my ($error, $code) = $tx->error;
+      return $code;
+   }
+}
+
 sub _ua {
    my ($self) = @_;
    return Mojo::UserAgent->new;
