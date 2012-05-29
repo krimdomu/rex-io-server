@@ -28,7 +28,7 @@ sub new {
 sub add_server {
    my ($self, $data) = @_;
 
-   my $tx = $self->_ua->put("$cmdb_url/server",
+   my $tx = $self->_ua->post("$cmdb_url/server",
                               { "Content-Type" => "application/json" },
                               $self->_json->encode($data)
    );
@@ -69,7 +69,7 @@ sub get_server {
 sub add_service {
    my ($self, $data) = @_;
 
-   my $tx = $self->_ua->put("$cmdb_url/service",
+   my $tx = $self->_ua->post("$cmdb_url/service",
                               { "Content-Type" => "application/json" },
                               $self->_json->encode($data)
    );
