@@ -11,6 +11,7 @@ use warnings;
 
 use Mojo::UserAgent;
 use Mojo::JSON;
+use Data::Dumper;
 
 my $cmdb_url = "http://localhost:4000";
 
@@ -136,6 +137,35 @@ sub get_service_list {
    }
 }
 
+sub add_service_to_server {
+   my ($self, $server, $data) = @_;
+
+   my $tx = $self->_ua->build_tx(LINK => "$cmdb_url/server/$server" => { "Content-Type" => "application/json" } => $self->_json->encode($data) );
+   $self->_ua->start($tx);
+
+   if(my $res = $tx->success) {
+      return $self->_json->decode($tx->res->body);
+   }
+   else {
+      my ($error, $code) = $tx->error;
+      return $code;
+   }
+}
+
+sub remove_service_from_server {
+   my ($self, $server, $data) = @_;
+
+   my $tx = $self->_ua->build_tx(UNLINK => "$cmdb_url/server/$server" => { "Content-Type" => "application/json" } => $self->_json->encode($data) );
+   $self->_ua->start($tx);
+
+   if(my $res = $tx->success) {
+      return $self->_json->decode($tx->res->body);
+   }
+   else {
+      my ($error, $code) = $tx->error;
+      return $code;
+   }
+}
 
 sub _ua {
    my ($self) = @_;

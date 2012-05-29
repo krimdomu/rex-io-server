@@ -24,6 +24,10 @@ sub startup {
   $r->route('/server')->via("LIST")->to("server#list");
   $r->route('/service')->via("LIST")->to("service#list");
 
+  $r->route('/server/:name')->via("LINK")->to("server#link");
+  $r->route('/server/:name')->via("UNLINK")->to("server#unlink");
+
+
 }
 
 1;

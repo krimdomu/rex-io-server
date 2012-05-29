@@ -66,4 +66,37 @@ sub list {
    $self->render_json($ret);
 }
 
+sub link {
+   my  $self = shift;
+   
+   my $data = $self->cmdb->add_service_to_server($self->stash("name"), $self->req->json);
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
+
+sub unlink {
+   my  $self = shift;
+   
+   my $data = $self->cmdb->remove_service_from_server($self->stash("name"), $self->req->json);
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
+
+
 1;
