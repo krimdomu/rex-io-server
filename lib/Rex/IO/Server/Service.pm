@@ -11,7 +11,7 @@ use Mojo::JSON;
 
 use Data::Dumper;
 
-sub put {
+sub post {
    my ($self) = @_;
    my $ref = $self->req->json;
 

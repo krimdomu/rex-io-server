@@ -12,13 +12,17 @@ sub startup {
   # Router
   my $r = $self->routes;
 
-  $r->put('/service')->to('service#put');
   $r->delete('/service/:name')->to('service#delete');
-  $r->get('/service/:name')->to('service#get');
-
-  $r->put('/server')->to('server#put');
   $r->delete('/server/:name')->to('server#delete');
+
+  $r->post('/server')->to('server#post');
+  $r->post('/service')->to('service#post');
+
+  $r->get('/service/:name')->to('service#get');
   $r->get('/server/:name')->to('server#get');
+
+  $r->route('/server')->via("LIST")->to("server#list");
+  $r->route('/service')->via("LIST")->to("service#list");
 
 }
 

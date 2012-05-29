@@ -106,6 +106,20 @@ sub get_service {
    }
 }
 
+sub get_server_list {
+   my ($self) = @_;
+
+   my $tx = $self->_ua->build_tx(LIST => "$cmdb_url/server");
+   $self->_ua->start($tx);
+
+   if(my $res = $tx->success) {
+      return $self->_json->decode($tx->res->body);
+   }
+   else {
+      my ($error, $code) = $tx->error;
+      return $code;
+   }
+}
 
 sub _ua {
    my ($self) = @_;

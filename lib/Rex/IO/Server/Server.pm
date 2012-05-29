@@ -11,7 +11,7 @@ use Mojo::JSON;
 
 use Data::Dumper;
 
-sub put {
+sub post {
    my ($self) = @_;
    my $ref = $self->req->json;
 
@@ -38,6 +38,22 @@ sub get {
    my $server = $self->stash("name");
 
    my $data = $self->cmdb->get_server($server);
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
+
+sub list {
+   my ($self) = @_;
+
+   my $data = $self->cmdb->get_server_list();
 
    if(! ref($data) ) {
       $self->render_json({ok => Mojo::JSON->false}, status => $data);
