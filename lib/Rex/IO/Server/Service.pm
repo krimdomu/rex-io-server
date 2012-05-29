@@ -50,4 +50,20 @@ sub get {
    $self->render_json($ret);
 }
 
+sub list {
+   my ($self) = @_;
+
+   my $data = $self->cmdb->get_service_list();
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
+
 1;
