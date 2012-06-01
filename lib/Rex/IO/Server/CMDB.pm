@@ -13,7 +13,6 @@ use Mojo::UserAgent;
 use Mojo::JSON;
 use Data::Dumper;
 
-my $cmdb_url = "http://localhost:4000";
 
 sub new {
    my $that = shift;
@@ -28,6 +27,7 @@ sub new {
 sub add_server {
    my ($self, $data) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->post("$cmdb_url/server",
                               { "Content-Type" => "application/json" },
                               $self->_json->encode($data)
@@ -43,6 +43,8 @@ sub add_server {
 
 sub delete_server {
    my ($self, $name) = @_;
+
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->delete("$cmdb_url/server/$name");
 
    if($tx->success) {
@@ -55,6 +57,8 @@ sub delete_server {
 
 sub get_server {
    my ($self, $name) = @_;
+
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->get("$cmdb_url/server/$name");
 
    if(my $res = $tx->success) {
@@ -69,6 +73,7 @@ sub get_server {
 sub add_service {
    my ($self, $data) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->post("$cmdb_url/service",
                               { "Content-Type" => "application/json" },
                               $self->_json->encode($data)
@@ -84,6 +89,8 @@ sub add_service {
 
 sub delete_service {
    my ($self, $name) = @_;
+
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->delete("$cmdb_url/service/$name");
 
    if($tx->success) {
@@ -96,6 +103,8 @@ sub delete_service {
 
 sub get_service {
    my ($self, $name) = @_;
+
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->get("$cmdb_url/service/$name");
 
    if(my $res = $tx->success) {
@@ -110,6 +119,7 @@ sub get_service {
 sub get_server_list {
    my ($self) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->build_tx(LIST => "$cmdb_url/server");
    $self->_ua->start($tx);
 
@@ -125,6 +135,7 @@ sub get_server_list {
 sub get_service_list {
    my ($self) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->build_tx(LIST => "$cmdb_url/service");
    $self->_ua->start($tx);
 
@@ -140,6 +151,7 @@ sub get_service_list {
 sub add_service_to_server {
    my ($self, $server, $data) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->build_tx(LINK => "$cmdb_url/server/$server" => { "Content-Type" => "application/json" } => $self->_json->encode($data) );
    $self->_ua->start($tx);
 
@@ -155,6 +167,7 @@ sub add_service_to_server {
 sub remove_service_from_server {
    my ($self, $server, $data) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->build_tx(UNLINK => "$cmdb_url/server/$server" => { "Content-Type" => "application/json" } => $self->_json->encode($data) );
    $self->_ua->start($tx);
 
@@ -170,6 +183,7 @@ sub remove_service_from_server {
 sub configure_service_of_server {
    my ($self, $server, $service, $data) = @_;
 
+   my $cmdb_url = $self->_cmdb;
    my $tx = $self->_ua->put("$cmdb_url/server/$server/service/$service", { "Content-Type" => "application/json" }, $self->_json->encode($data));
 
    if($tx->success) {
@@ -190,6 +204,11 @@ sub _ua {
 sub _json {
    my ($self) = @_;
    return Mojo::JSON->new;
+}
+
+sub _cmdb {
+   my ($self) = @_;
+   return $self->{config}->{cmdb};
 }
 
 1;

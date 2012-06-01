@@ -19,7 +19,7 @@ sub register {
    $app->helper(
       cmdb => sub {
          my $self = shift;
-         return Rex::IO::Server::CMDB->new;
+         return Rex::IO::Server::CMDB->new(config => $app->{defaults}->{config});
       }
    );
 }
