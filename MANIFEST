@@ -1,0 +1,11 @@
+lib/Rex/IO/Server.pm
+lib/Rex/IO/Server/CMDB.pm
+lib/Rex/IO/Server/Example.pm
+lib/Rex/IO/Server/FusionInventory.pm
+lib/Rex/IO/Server/Mojolicious/Plugin/CMDB.pm
+lib/Rex/IO/Server/Server.pm
+lib/Rex/IO/Server/Service.pm
+Makefile.PL
+MANIFEST			This list of files
+script/rex_ioserver
+t/basic.t
