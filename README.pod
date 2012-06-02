@@ -39,7 +39,7 @@ You can also define an other Listen Port (default is 3000)
 
 Right now there is no Webinterface. You can test if everything is correct with the following command:
 
- curl -X LIST http://localhost:3000/servero
+ curl -X LIST http://localhost:3000/server
 
 If you get an answer like this it works:
 
