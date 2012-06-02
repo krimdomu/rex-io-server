@@ -114,4 +114,21 @@ sub service_put {
    $self->render_json($ret);
 }
 
+sub section_put {
+   my $self = shift;
+
+   my $data = $self->cmdb->add_section_to_server($self->stash("name"), $self->stash("section"), $self->req->json);
+
+   if(! ref($data) ) {
+      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+   }
+
+   my $ret = {
+      ok => Mojo::JSON->true,
+      data => $data,
+   };
+   $self->render_json($ret);
+}
+
+
 1;

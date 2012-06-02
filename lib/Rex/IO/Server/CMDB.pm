@@ -196,6 +196,32 @@ sub configure_service_of_server {
    }
 }
 
+sub add_section_to_server {
+   my ($self, $server, $section, $data) = @_;
+
+   my $server_data = $self->get_server($server);
+
+   # check if server already exists
+   if(! ref($server_data)) {
+      # if not, add a new server
+      my $ret = $self->add_server({name => $server});
+      if(exists $ret->{ok} && $ret->{ok} == Mojo::JSON->false) {
+         return 500;
+      }
+   }
+
+   my $cmdb_url = $self->_cmdb;
+   my $tx = $self->_ua->put("$cmdb_url/server/$server/$section", { "Content-Type" => "application/json" }, $self->_json->encode($data));
+
+   if($tx->success) {
+      return $self->_json->decode($tx->res->body);
+   }
+   else {
+      my ($error, $code) = $tx->error;
+      return $code;
+   }
+}
+
 sub _ua {
    my ($self) = @_;
    return Mojo::UserAgent->new;

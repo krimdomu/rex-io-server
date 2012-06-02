@@ -40,6 +40,10 @@ sub startup {
 
 
    $r->put("/server/:name/service/:service")->to("server#service_put");
+
+   $r->put("/server/:name/:section")->to("server#section_put");
+
+   $r->post("/fusioninventory")->to("fusion_inventory#post");
 }
 
 1;
