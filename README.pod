@@ -31,11 +31,11 @@ Now edit the file I<server.conf>. And set the url to Rex::IO::CMDB.
 
 And start the server:
 
- script/rex_ioserver daemon
+ bin/rex_ioserver daemon
 
 You can also define an other Listen Port (default is 3000)
 
- script/rex_ioserver daemon -l 'http://:4000'
+ bin/rex_ioserver daemon -l 'http://:4000'
 
 Right now there is no Webinterface. You can test if everything is correct with the following command:
 
