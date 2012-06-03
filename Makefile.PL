@@ -24,7 +24,7 @@ WriteMakefile1(
    NAME => 'Rex::IO::Server',
    VERSION_FROM => 'lib/Rex/IO/Server.pm',
    PREREQ_PM => \%deps,
-   EXE_FILES => ['script/rex_ioserver'],
+   EXE_FILES => ['bin/rex_ioserver'],
    LICENSE => 'Apache License 2.0'
 );
 
