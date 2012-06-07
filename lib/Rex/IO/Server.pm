@@ -30,6 +30,7 @@ After installing create the file I</etc/rex/io/server.conf>. And set the url to 
 
  {
     cmdb => "http://rex-cmdb:3000",
+    git  => "git://url/to/your/git/repository.git",
  }
 
 And start the server:
@@ -99,6 +100,9 @@ sub startup {
    $r->put("/server/:name/:section")->to("server#section_put");
 
    $r->post("/fusioninventory")->to("fusion_inventory#post");
+
+   $r->route("/repository/update")->via("UPDATE")->to("repository#update");
+   $r->get("/repository/:service")->to("repository#get_service");
 }
 
 1;
