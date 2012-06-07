@@ -57,7 +57,7 @@ If you get an answer like this it works:
 package Rex::IO::Server;
 use Mojo::Base 'Mojolicious';
 
-our $VERSION = "0.0.1";
+our $VERSION = "0.0.2";
 
 # This method will run once at server start
 sub startup {
