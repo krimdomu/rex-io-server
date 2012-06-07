@@ -31,6 +31,8 @@ After installing create the file I</etc/rex/io/server.conf>. And set the url to 
  {
     cmdb => "http://rex-cmdb:3000",
     git  => "git://url/to/your/git/repository.git",
+    checkout_path => "/var/lib/rex.io/services",
+    branch => "master",
  }
 
 And start the server:
