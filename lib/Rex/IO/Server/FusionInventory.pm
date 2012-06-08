@@ -19,10 +19,12 @@ sub post {
    my $data = uncompress($self->req->body);
    my $ref = XMLin($data);
 
+print STDERR Dumper($ref);
+
    if($ref->{QUERY} eq "PROLOG") {
       $self->render_data(
          compress(
-            '<?xml version="1.0" encoding="UTF-8"?><XML><PROLOG_FREQ>60</PROLOG_FREQ><RESPONSE>SEND</RESPONSE></XML>'
+            '<?xml version="1.0" encoding="UTF-8"?><REPLY><PROLOG_FREQ>60</PROLOG_FREQ><RESPONSE>SEND</RESPONSE></REPLY>'
          )
       );
    }
@@ -39,7 +41,7 @@ sub post {
       if(! ref($data) ) {
          $self->render_data(
             compress(
-               '<?xml version="1.0" encoding="UTF-8"?><XML><RESPONSE>ACCOUNT_NOT_UPDATED</RESPONSE></XML>'
+               '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_NOT_UPDATED</REPLY>'
             ),
             status => 500
          );
@@ -47,7 +49,7 @@ sub post {
       else {
          $self->render_data(
             compress(
-               '<?xml version="1.0" encoding="UTF-8"?><XML><RESPONSE>ACCOUNT_UPDATE</RESPONSE></XML>'
+               '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_UPDATE</REPLY>'
             )
          );
       }
