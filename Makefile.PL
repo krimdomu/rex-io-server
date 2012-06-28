@@ -6,6 +6,7 @@ my %deps = (
                   'Mojolicious' => '2.98',
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
+                  'CHI' => 0,
                   'Rex::IO::CMDB' => 0,
 );
 
