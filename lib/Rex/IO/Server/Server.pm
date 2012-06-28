@@ -37,7 +37,12 @@ sub get {
    my ($self) = @_;
    my $server = $self->stash("name");
 
-   my $data = $self->cmdb->get_server($server);
+   my $data = $self->chi->get($server);
+
+   if(!$data) {
+      $data = $self->cmdb->get_server($server);
+      $self->chi->set($server, $data);
+   }
 
    if(! ref($data) ) {
       $self->render_json({ok => Mojo::JSON->false}, status => $data);
@@ -53,7 +58,12 @@ sub get {
 sub list {
    my ($self) = @_;
 
-   my $data = $self->cmdb->get_server_list();
+   my $data = $self->chi->get("server_list");
+
+   if(!$data) {
+      $data = $self->cmdb->get_server_list();
+      $self->chi->set("server_list", $data);
+   }
 
    if(! ref($data) ) {
       $self->render_json({ok => Mojo::JSON->false}, status => $data);

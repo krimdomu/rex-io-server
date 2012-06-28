@@ -19,8 +19,6 @@ sub post {
    my $data = uncompress($self->req->body);
    my $ref = XMLin($data);
 
-print STDERR Dumper($ref);
-
    if($ref->{QUERY} eq "PROLOG") {
       $self->render_data(
          compress(
@@ -36,7 +34,11 @@ print STDERR Dumper($ref);
       # delete the envs
       delete $ref->{CONTENT}->{ENVS};
 
+      $ref->{CONTENT} = _normalize_hash($ref->{CONTENT});
+
       my $data = $self->cmdb->add_section_to_server($server, "inventory", $ref->{CONTENT});
+      $self->chi->remove($server);
+      $self->chi->remove("server_list");
 
       if(! ref($data) ) {
          $self->render_data(
@@ -56,5 +58,56 @@ print STDERR Dumper($ref);
    }
 }
 
+sub _normalize_hash {
+   my ($h) = @_;
+
+   for my $key (keys %{$h}) {
+      if(ref($h->{$key}) eq "ARRAY") {
+         $h->{$key} = _normalize_array($h->{$key});
+      }
+      elsif(ref($h->{$key}) eq "HASH") {
+         my @tmp = %{ $h->{$key} };
+         if(scalar(@tmp) == 0) {
+            $h->{$key} = "";
+         }
+         else {
+            $h->{$key} = _normalize_hash($h->{$key});
+         }
+      }
+      else {
+         $h->{$key} = _normalize_scalar($h->{$key});
+      }
+   }
+
+   return $h;
+}
+
+sub _normalize_scalar {
+   my ($s) = @_;
+
+   if($s) {
+      return $s;
+   }
+
+   return "";
+}
+
+sub _normalize_array {
+   my ($a) = @_;
+
+   for (@{$a}) {
+      if(ref($_) eq "ARRAY") {
+         $_ = _normalize_array($_);
+      }
+      elsif(ref($_) eq "HASH") {
+         $_ = _normalize_hash($_);
+      }
+      else {
+         $_ = _normalize_scalar($_);
+      }
+   }
+
+   return $a;
+}
 
 1;

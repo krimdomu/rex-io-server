@@ -77,6 +77,7 @@ sub startup {
    $self->plugin('Config', file => $cfg);
 
    $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CMDB");
+   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CHI");
 
    # Router
    my $r = $self->routes;
