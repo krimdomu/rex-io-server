@@ -29,10 +29,16 @@ With cpanminus:
 After installing create the file I</etc/rex/io/server.conf>. And set the url to Rex::IO::CMDB.
 
  {
-    cmdb => "http://rex-cmdb:3000",
     git  => "git://url/to/your/git/repository.git",
     checkout_path => "/var/lib/rex.io/services",
     branch => "master",
+     
+    plugins => [
+      "Cmdb",
+      "FusionInventory",
+    ],
+      
+    cmdb => "http://rex-cmdb:3000", # only needed with Cmdb Plugin
  }
 
 And start the server:
