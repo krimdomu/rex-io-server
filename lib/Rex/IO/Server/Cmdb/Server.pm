@@ -4,7 +4,7 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::IO::Server::Server;
+package Rex::IO::Server::Cmdb::Server;
    
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
