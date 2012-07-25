@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Mojolicious::Plugin;
-use Rex::IO::Server::CMDB;
+use Rex::IO::Server::Helper::CMDB;
 use base 'Mojolicious::Plugin';
 
 sub register {
@@ -19,7 +19,7 @@ sub register {
    $app->helper(
       cmdb => sub {
          my $self = shift;
-         return Rex::IO::Server::CMDB->new(config => $app->{defaults}->{config});
+         return Rex::IO::Server::Helper::CMDB->new(config => $app->{defaults}->{config});
       }
    );
 }

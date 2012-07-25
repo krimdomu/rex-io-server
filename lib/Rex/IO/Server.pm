@@ -56,8 +56,9 @@ If you get an answer like this it works:
 
 package Rex::IO::Server;
 use Mojo::Base 'Mojolicious';
+use Data::Dumper;
 
-our $VERSION = "0.0.2";
+our $VERSION = "0.0.3";
 
 # This method will run once at server start
 sub startup {
@@ -79,33 +80,20 @@ sub startup {
    $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CMDB");
    $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CHI");
 
+
    # Router
    my $r = $self->routes;
 
-   $r->delete('/service/:name')->to('service#delete');
-   $r->delete('/server/:name')->to('server#delete');
-
-   $r->post('/server')->to('server#post');
-   $r->post('/service')->to('service#post');
-
-   $r->get('/service/:name')->to('service#get');
-   $r->get('/server/:name')->to('server#get');
-
-   $r->route('/server')->via("LIST")->to("server#list");
-   $r->route('/service')->via("LIST")->to("service#list");
-
-   $r->route('/server/:name')->via("LINK")->to("server#link");
-   $r->route('/server/:name')->via("UNLINK")->to("server#unlink");
-
-
-   $r->put("/server/:name/service/:service")->to("server#service_put");
-
-   $r->put("/server/:name/:section")->to("server#section_put");
-
-   $r->post("/fusioninventory")->to("fusion_inventory#post");
-
    $r->route("/repository/update")->via("UPDATE")->to("repository#update");
    $r->get("/repository/:service")->to("repository#get_service");
+
+   # load server plugins
+   for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {
+      my $s = "Rex::IO::Server::$plug";
+      eval "require $s";
+      $s->__register__($self);
+   }
+
 }
 
 1;

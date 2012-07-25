@@ -110,4 +110,11 @@ sub _normalize_array {
    return $a;
 }
 
+sub __register__ {
+   my ($self, $app) = @_;
+   my $r = $app->routes;
+
+   $r->post("/fusioninventory")->to("fusion_inventory#post");
+}
+
 1;
