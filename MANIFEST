@@ -1,11 +1,14 @@
 bin/rex_ioserver
 lib/Rex/IO/Server.pm
-lib/Rex/IO/Server/CMDB.pm
+lib/Rex/IO/Server/Cmdb.pm
+lib/Rex/IO/Server/Cmdb/Server.pm
+lib/Rex/IO/Server/Cmdb/Service.pm
 lib/Rex/IO/Server/Example.pm
 lib/Rex/IO/Server/FusionInventory.pm
+lib/Rex/IO/Server/Helper/CMDB.pm
+lib/Rex/IO/Server/Mojolicious/Plugin/CHI.pm
 lib/Rex/IO/Server/Mojolicious/Plugin/CMDB.pm
-lib/Rex/IO/Server/Server.pm
-lib/Rex/IO/Server/Service.pm
+lib/Rex/IO/Server/Repository.pm
 Makefile.PL
 MANIFEST			This list of files
 t/basic.t

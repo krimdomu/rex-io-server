@@ -20,3 +20,5 @@ MANIFEST\..*
 .*\.yml$
 .*\.conf$
 .*\.log$
+.*\.tar\..*
+.*\.tar
