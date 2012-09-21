@@ -83,15 +83,12 @@ sub startup {
    }
    $self->plugin('Config', file => $cfg);
 
-   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CMDB");
-   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CHI");
+#   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CMDB");
+#   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::CHI");
 
 
    # Router
    my $r = $self->routes;
-
-   $r->route("/repository/update")->via("UPDATE")->to("repository#update");
-   $r->get("/repository/:service")->to("repository#get_service");
 
    # load server plugins
    for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {

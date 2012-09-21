@@ -52,4 +52,13 @@ sub get_service {
    chdir($cwd);
 }
 
+sub __register__ {
+   my ($self, $app) = @_;
+   my $r = $app->routes;
+
+
+   $r->route("/repository/update")->via("UPDATE")->to("repository#update");
+   $r->get("/repository/:service")->to("repository#get_service");
+}
+
 1;
