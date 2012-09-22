@@ -62,9 +62,18 @@ If you get an answer like this it works:
 
 package Rex::IO::Server;
 use Mojo::Base 'Mojolicious';
+use Mojo::UserAgent;
+use Mojo::IOLoop;
 use Data::Dumper;
 
-our $VERSION = "0.0.3";
+use DBIx::ORMapper;
+use DBIx::ORMapper::Connection::Server::MySQL;
+use DBIx::ORMapper::DM;
+
+use Rex::IO::Server::Model::Hardware;
+use Rex::IO::Server::Model::HardwareState;
+
+our $VERSION = "0.0.4";
 
 # This method will run once at server start
 sub startup {
@@ -90,12 +99,30 @@ sub startup {
    # Router
    my $r = $self->routes;
 
+   # message broker routes
+   $r->websocket("/messagebroker")->to("message_broker#broker");
+   $r->get("/messagebroker/clients")->to("message_broker#clients");
+   $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
+
    # load server plugins
    for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {
       my $s = "Rex::IO::Server::$plug";
       eval "require $s";
       $s->__register__($self);
    }
+
+   # do database connection
+   DBIx::ORMapper::setup(default => "MySQL://localhost/rexio_server?username=rexio&password=rexio");
+
+   eval {
+      my $db = DBIx::ORMapper::get_connection("default");
+      $db->connect;
+
+      Rex::IO::Server::Model::Hardware->set_data_source($db);
+      Rex::IO::Server::Model::HardwareState->set_data_source($db);
+   } or do {
+      die("Can't connect to database!\n$@");
+   };
 
 }
 
