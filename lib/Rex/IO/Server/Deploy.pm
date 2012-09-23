@@ -7,6 +7,8 @@
 package Rex::IO::Server::Deploy;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Rex::IO::Server::Helper::DHCP::ISC;
+
 sub wait {
    my ($self) = @_;
 }
@@ -16,10 +18,15 @@ sub boot {
 
    my $client = $self->tx->remote_address;
 
-   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->ip eq $client );
+   my $dhcp = Rex::IO::Server::Helper::DHCP::ISC->new;
+
+   my $mac = $dhcp->get_mac_from_ip($client);
+
+   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
 
    if(my $system = $hw->next) {
       # system known, do the registered boot
+      warn "System is known !!!\n";
    }
    else {
       # system unknown, boot service os
