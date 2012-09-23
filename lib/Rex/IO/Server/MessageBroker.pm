@@ -22,7 +22,7 @@ sub broker {
 
    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
 
-   $self->send("Welcome to the real world.");
+   $self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
 
    $self->on(finish => sub {
       warn "client disconnected\n";
@@ -40,15 +40,11 @@ sub broker {
 
       my $json = Mojo::JSON->decode($message);
 
-      if($json->{type} eq "broadcast") {
-         for (keys %$clients) {
-            map { $_->{tx}->send($json->{message}); } @{ $clients->{$_} };
-         }
-      }
-
-      elsif($json->{type} eq "hello") {
-         map { $_->{info} = $json->{info} } @{ $clients->{$self->tx->remote_address} };
-      }
+#      if(exists $json->{type} && $json->{type} eq "broadcast") {
+#         for (keys %$clients) {
+#            map { $_->{tx}->send($json); } @{ $clients->{$_} };
+#         }
+#      }
 
    });
 }
@@ -64,7 +60,12 @@ sub message_to_server {
    my $json = $self->req->json;
    my ($to) = ($self->req->url =~ m/^.*\/(.*?)$/);
 
-   map { $_->{tx}->send(Mojo::JSON->encode($json->{message})) } @{ $clients->{$to} };
+   map {
+         #warn "Sending message to client...\n";
+         #warn Mojo::JSON->encode($json) . "\n";
+
+         $_->{tx}->send(Mojo::JSON->encode($json))
+      } @{ $clients->{$to} };
 
    $self->render_json({ok => Mojo::JSON->true});
 }
