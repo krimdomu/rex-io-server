@@ -40,6 +40,39 @@ sub broker {
 
       my $json = Mojo::JSON->decode($message);
 
+      if(exists $json->{type} && $json->{type} eq "hello") {
+
+         map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
+
+         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->ip eq $self->tx->remote_address );
+
+         if(! $hw->next) {
+            my ($eth_dev) = grep { $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
+
+            eval {
+               my $new_hw = Rex::IO::Server::Model::Hardware->new(
+                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
+                  ip   => $self->tx->remote_address,
+                  mac  => $eth_dev->{MACADDR},
+               );
+
+               $new_hw->save;
+            } or do {
+               warn "Error saving new system in db.\n$@\n";
+            };
+         }
+      }
+
+      elsif(exists $json->{type} && $json->{type} eq "return") {
+         warn "Some thing returns...\n";
+         warn Dumper($json);
+      }
+
+      else {
+         warn "Got unknown message type.\n";
+         warn "    $message\n";
+      }
+
 #      if(exists $json->{type} && $json->{type} eq "broadcast") {
 #         for (keys %$clients) {
 #            map { $_->{tx}->send($json); } @{ $clients->{$_} };

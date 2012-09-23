@@ -14,12 +14,23 @@ sub wait {
 sub boot {
    my ($self) = @_;
 
-   my $boot_commands = "#!ipxe\n\n";
-   $boot_commands .= "kernel http://192.168.7.1/linux ramdisk_size=100000 apm=power-off dist=rex_io_bmd image_url=http://192.168.7.1/rex_io_bmd.img REXIO_BOOTSTRAP_FILE=http://192.168.7.1/debian6.yml REXIO_SERVER=ws://192.168.1.4:3000/messagebroker\n";
-   $boot_commands .= "initrd http://192.168.7.1/minirt.gz\n";
-   $boot_commands .= "boot";
+   my $client = $self->tx->remote_address;
 
-   $self->render_text($boot_commands);
+   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->ip eq $client );
+
+   if(my $system = $hw->next) {
+      # system known, do the registered boot
+   }
+   else {
+      # system unknown, boot service os
+      my $boot_commands = "#!ipxe\n\n";
+      $boot_commands .= "kernel http://192.168.7.1/linux ramdisk_size=200000 apm=power-off dist=rex_io_bmd image_url=http://192.168.7.1/rex_io_bmd.img REXIO_BOOTSTRAP_FILE=http://192.168.7.1/debian6.yml REXIO_SERVER=ws://192.168.1.4:3000/messagebroker\n";
+      $boot_commands .= "initrd http://192.168.7.1/minirt.gz\n";
+      $boot_commands .= "boot";
+
+      return $self->render_text($boot_commands);
+   }
+
 }
 
 sub __register__ {
