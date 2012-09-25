@@ -44,8 +44,12 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->get('/deploy/wait/:name')->to('deploy#wait');
-   $r->get('/deploy/boot')->to('deploy#boot');
+   $r->get("/deploy/wait/:name")->to("deploy#wait");
+   $r->get("/deploy/boot")->to("deploy#boot");
+
+   $r->post("/deploy/os/:name")->to("deploy-os#register");
+   $r->delete("/deploy/os/:name")->to("deploy-os#delete");
+   $r->route("/deploy/os")->via("LIST")->to("deploy-os#list");
 }
 
 1;
