@@ -26,7 +26,41 @@ sub boot {
 
    if(my $system = $hw->next) {
       # system known, do the registered boot
-      warn "System is known !!!\n";
+      warn "HW is known, returning ubuntu\n";
+
+      my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
+      my $boot_os = $boot_os_r->next;
+
+      if($system->state_id == 1) {
+
+         my $append = $boot_os->append;
+         my $hostname = $boot_os->name;
+         my $eth = "eth0";
+
+         $append =~ s/\%hostname/$hostname/g;
+         $append =~ s/\%eth/$eth/g;
+
+         my $boot_commands = "#!ipxe\n"
+                           . "kernel " . $boot_os->kernel . " " . $boot_os->append .  "\n"
+                           . "initrd " . $boot_os->initrd . "\n"
+                           . "boot";
+
+         $system->state_id = 2;
+         $system->update;
+
+         return $self->render_text($boot_commands);
+      }
+      elsif($system->state_id == 2) {
+
+         $system->state_id = 3;
+         $system->update;
+
+         return $self->render_text($boot_os->template);
+      }
+      else {
+         warn "boot from local hard disk...\n";
+
+      }
    }
    else {
       # system unknown, boot service os
