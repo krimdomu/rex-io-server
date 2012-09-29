@@ -26,44 +26,70 @@ sub boot {
 
    if(my $system = $hw->next) {
       # system known, do the registered boot
-      warn "HW is known, returning ubuntu\n";
+      warn "HW is known, returning registered os template\n";
 
-      my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
-      my $boot_os = $boot_os_r->next;
+      my $boot_os_r = $system->os_template;
+      if(my $boot_os = $boot_os_r->next) {
 
-      if($system->state_id == 1) {
+         if($system->state_id == 1) { # first boot after service os / after registration
+                                      # return os template to deploy os
 
-         my $append = $boot_os->append;
-         my $hostname = $boot_os->name;
-         my $eth = "eth0";
+            if($boot_os->ipxe) {
+               # if there are ipxe commands, use them
+               return $self->render_text($system->ipxe);
+            }
 
-         $append =~ s/\%hostname/$hostname/g;
-         $append =~ s/\%eth/$eth/g;
+            my $append = $boot_os->append;
+            my $hostname = $boot_os->name;
+            my $eth = "eth0";
 
-         my $boot_commands = "#!ipxe\n"
-                           . "kernel " . $boot_os->kernel . " " . $boot_os->append .  "\n"
-                           . "initrd " . $boot_os->initrd . "\n"
-                           . "boot";
+            $append =~ s/\%hostname/$hostname/g;
+            $append =~ s/\%eth/$eth/g;
 
-         $system->state_id = 2;
-         $system->update;
+            my $boot_commands = "#!ipxe\n"
+                              . "kernel " . $boot_os->kernel . " " . $boot_os->append .  "\n"
+                              . "initrd " . $boot_os->initrd . "\n"
+                              . "boot";
 
-         return $self->render_text($boot_commands);
+            $system->state_id = 2;
+            $system->update;
+
+            return $self->render_text($boot_commands);
+         }
+         elsif($system->state_id == 2) { # request of kickstart/preseed/... file
+
+            $system->state_id = 3;
+            $system->update;
+
+            return $self->render_text($boot_os->template);
+         }
+         elsif($system->state_id == 3) { # hook after installation, must be called from within the template
+
+            $system->state_id = 4;
+            $system->os_template_id = 1;
+            $system->update;
+
+            return $self->render_json({ok => Mojo::JSON->true});
+         }
+         else { # default boot, if state == INSTALLED (state_id: 4)
+            warn "boot from local hard disk...\n";
+
+            my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
+            my $boot_os = $boot_os_r->next;
+
+            return $self->render_text($boot_os->ipxe);
+         }
       }
-      elsif($system->state_id == 2) {
+      else { # no boot method found, use localboot for safety
+         warn "No Boot method found...\n";
+         warn "Returning localboot...\n";
 
-         $system->state_id = 3;
-         $system->update;
-
-         return $self->render_text($boot_os->template);
-      }
-      else {
-         warn "boot from local hard disk...\n";
-
+         my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
+         my $boot_os = $boot_os_r->next;
+         return $self->render_text($boot_os->ipxe);
       }
    }
-   else {
-      # system unknown, boot service os
+   else { # system unknown, boot service os
       my $boot_commands = "#!ipxe\n\n";
       $boot_commands .= "kernel http://192.168.7.1/linux ramdisk_size=200000 apm=power-off dist=rex_io_bmd image_url=http://192.168.7.1/rex_io_bmd.img REXIO_BOOTSTRAP_FILE=http://192.168.7.1/debian6.yml REXIO_SERVER=ws://192.168.1.4:3000/messagebroker\n";
       $boot_commands .= "initrd http://192.168.7.1/minirt.gz\n";

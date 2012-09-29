@@ -17,9 +17,11 @@ __PACKAGE__->attr(kernel => "String");
 __PACKAGE__->attr(initrd => "String");
 __PACKAGE__->attr(append => "Text");
 __PACKAGE__->attr(template => "Text");
+__PACKAGE__->attr(ipxe => "Text");
 
 __PACKAGE__->table("os_template");
 __PACKAGE__->primary_key("id");
 
+__PACKAGE__->has_n("hardware", "Rex::IO::Server::Model::Hardware", "os_template_id");
 
 1;
