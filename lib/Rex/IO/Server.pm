@@ -73,6 +73,7 @@ use DBIx::ORMapper::DM;
 use Rex::IO::Server::Model::Hardware;
 use Rex::IO::Server::Model::HardwareState;
 use Rex::IO::Server::Model::OsTemplate;
+use Rex::IO::Server::Model::Tree;
 
 our $VERSION = "0.0.4";
 
@@ -105,6 +106,10 @@ sub startup {
    $r->get("/messagebroker/clients")->to("message_broker#clients");
    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
 
+   $r->route("/hardware")->via("LIST")->to("hardware#list");
+
+   $r->get("/tree/root")->to("tree#root");
+
    # load server plugins
    for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {
       my $s = "Rex::IO::Server::$plug";
@@ -122,6 +127,7 @@ sub startup {
       Rex::IO::Server::Model::Hardware->set_data_source($db);
       Rex::IO::Server::Model::HardwareState->set_data_source($db);
       Rex::IO::Server::Model::OsTemplate->set_data_source($db);
+      Rex::IO::Server::Model::Tree->set_data_source($db);
    } or do {
       die("Can't connect to database!\n$@");
    };
