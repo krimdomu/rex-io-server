@@ -100,12 +100,35 @@ sub boot {
 
 }
 
+sub deploy {
+   my ($self) = @_;
+   
+   my $system_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name eq $self->stash("server") );
+   if(my $system = $system_r->next) {
+      my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("os") );
+      if(my $os = $os_r->next) {
+         $system->os_template_id = $os->id;
+         $system->update;
+
+         return $self->render_json({ok => Mojo::JSON->true});
+      }
+
+      else {
+         return $self->render_json({ok => Mojo::JSON->false, error => "OS not found"}, status => 404);
+      }
+   }
+
+   $self->render_json({ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
    $r->get("/deploy/wait/:name")->to("deploy#wait");
    $r->get("/deploy/boot")->to("deploy#boot");
+
+   $r->post("/deploy/:server/:os")->to("deploy#deploy");
 
    $r->post("/deploy/os/:name")->to("deploy-os#register");
    $r->delete("/deploy/os/:name")->to("deploy-os#delete");
