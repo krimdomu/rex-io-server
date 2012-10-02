@@ -7,7 +7,7 @@
 package Rex::IO::Server::Deploy;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Rex::IO::Server::Helper::DHCP::ISC;
+use Mojo::UserAgent;
 
 sub wait {
    my ($self) = @_;
@@ -18,9 +18,14 @@ sub boot {
 
    my $client = $self->tx->remote_address;
 
-   my $dhcp = Rex::IO::Server::Helper::DHCP::ISC->new;
+   my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
-   my $mac = $dhcp->get_mac_from_ip($client);
+   my $mac;
+   if(my $res = $tx->success) {
+      $mac = $res->json->{mac};
+
+      warn "GOT MAC: $mac\n";
+   }
 
    my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
 
@@ -137,5 +142,7 @@ sub __register__ {
    $r->delete("/deploy/os/:name")->to("deploy-os#delete");
    $r->route("/deploy/os")->via("LIST")->to("deploy-os#list");
 }
+
+sub _ua { return Mojo::UserAgent->new; }
 
 1;
