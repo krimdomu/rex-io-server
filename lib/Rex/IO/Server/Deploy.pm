@@ -90,9 +90,12 @@ sub boot {
       }
    }
    else { # system unknown, boot service os
+      my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
+      my $boot_os = $boot_os_r->next;
+
       my $boot_commands = "#!ipxe\n\n";
-      $boot_commands .= "kernel http://192.168.7.1/linux ramdisk_size=200000 apm=power-off dist=rex_io_bmd image_url=http://192.168.7.1/rex_io_bmd.img REXIO_BOOTSTRAP_FILE=http://192.168.7.1/debian6.yml REXIO_SERVER=ws://192.168.1.4:3000/messagebroker\n";
-      $boot_commands .= "initrd http://192.168.7.1/minirt.gz\n";
+      $boot_commands .= "kernel " . $boot_os->kernel . " " . $boot_os->append . "\n";
+      $boot_commands .= "initrd " . $boot_os->initrd . "\n";
       $boot_commands .= "boot";
 
       return $self->render_text($boot_commands);

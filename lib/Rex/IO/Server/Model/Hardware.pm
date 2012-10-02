@@ -28,16 +28,27 @@ __PACKAGE__->belongs_to("os_template" => "Rex::IO::Server::Model::OsTemplate", "
 sub to_hashRef {
    my ($self) = @_;
 
-   my $state = $self->state->next;
-
    my $data = $self->get_data;
+
+   my $state = $self->state->next;
    delete $data->{state_id};
 
-   $data->{state} = $state->name;
+   if($state) {
+      $data->{state} = $state->name;
+   }
+   else {
+      $data->{state} = "UNKNOWN";
+   }
 
    my $os = $self->os_template->next;
    delete $data->{os_template_id};
-   $data->{os} = $os->name;
+
+   if($os) {
+      $data->{os} = $os->name;
+   }
+   else {
+      $data->{os} = "UNKNWON";
+   }
 
    return $data;
 }
