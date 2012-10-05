@@ -116,6 +116,7 @@ sub deploy {
       my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("os") );
       if(my $os = $os_r->next) {
          $system->os_template_id = $os->id;
+         $system->state_id = 1;
          $system->update;
 
          return $self->render_json({ok => Mojo::JSON->true});
