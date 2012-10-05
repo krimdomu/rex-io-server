@@ -103,7 +103,7 @@ sub startup {
 
    # message broker routes
    $r->websocket("/messagebroker")->to("message_broker#broker");
-   $r->get("/messagebroker/clients")->to("message_broker#clients");
+   $r->route("/messagebroker/clients")->via("LIST")->to("message_broker#clients");
    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
 
    $r->route("/hardware")->via("LIST")->to("hardware#list");
