@@ -73,6 +73,7 @@ use DBIx::ORMapper::DM;
 use Rex::IO::Server::Model::Hardware;
 use Rex::IO::Server::Model::HardwareState;
 use Rex::IO::Server::Model::OsTemplate;
+use Rex::IO::Server::Model::NetworkAdapter;
 use Rex::IO::Server::Model::Tree;
 
 our $VERSION = "0.0.4";
@@ -127,6 +128,7 @@ sub startup {
       Rex::IO::Server::Model::Hardware->set_data_source($db);
       Rex::IO::Server::Model::HardwareState->set_data_source($db);
       Rex::IO::Server::Model::OsTemplate->set_data_source($db);
+      Rex::IO::Server::Model::NetworkAdapter->set_data_source($db);
       Rex::IO::Server::Model::Tree->set_data_source($db);
    } or do {
       die("Can't connect to database!\n$@");

@@ -23,7 +23,7 @@ sub new_lease {
 
    $mac =~ s/\-/:/g;
 
-   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . "\L$mac"), $json)->res;
+   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . "\L$mac", $json)->res;
 
    $self->render_json({ok => Mojo::JSON->true});
 }

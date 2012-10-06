@@ -13,7 +13,6 @@ use base qw(DBIx::ORMapper::DM::DataSource::Table);
 
 __PACKAGE__->attr(id => "Integer");
 __PACKAGE__->attr(name => "String");
-__PACKAGE__->attr(ip => "String");
 __PACKAGE__->attr(mac => "String");
 __PACKAGE__->attr(state_id => "Integer");
 __PACKAGE__->attr(os_template_id => "Integer");
@@ -51,6 +50,16 @@ sub to_hashRef {
    else {
       $data->{os} = "UNKNWON";
    }
+
+   #### network adapters
+   my $nw_r = $self->network_adapter;
+   my @nw_a = ();
+
+   while(my $nw = $nw_r->next) {
+      push(@nw_a, $nw->get_data);
+   }
+
+   $data->{network_adapters} = \@nw_a;
 
    return $data;
 }

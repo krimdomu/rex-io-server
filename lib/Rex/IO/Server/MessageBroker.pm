@@ -10,6 +10,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Data::Dumper;
 use Mojo::JSON;
 use Mojo::UserAgent;
+use Rex::IO::Server::Helper::IP;
 
 my $clients = {};
 
@@ -44,7 +45,12 @@ sub broker {
 
          map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
 
-         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->ip eq $self->tx->remote_address );
+         my @mac_addresses = ();
+         for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
+            push(@mac_addresses, $eth->{MACADDR});
+         }
+
+         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac == \@mac_addresses );
 
          if(! $hw->next) {
             my ($eth_dev) = grep { $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
@@ -52,14 +58,33 @@ sub broker {
             eval {
                my $new_hw = Rex::IO::Server::Model::Hardware->new(
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
-                  ip   => $self->tx->remote_address,
                   mac  => $eth_dev->{MACADDR},
                );
-
                $new_hw->save;
+
+               for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
+
+                  my $new_nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
+                     dev         => $eth->{DESCRIPTION},
+                     hardware_id => $new_hw->id,
+                     proto       => "static",
+                     ip          => ! ref($eth->{IPADDRESS}) ? ip_to_int($eth->{IPADDRESS}) : 0,
+                     netmask     => ! ref($eth->{IPMASK})    ? ip_to_int($eth->{IPMASK})    : 0,
+                     network     => ! ref($eth->{IPSUBNET})  ? ip_to_int($eth->{IPSUBNET})  : 0,
+                     gateway     => ! ref($eth->{IPGATEWAY}) ? ip_to_int($eth->{IPGATEWAY}) : 0,
+                  );
+
+                  $new_nw_a->save;
+
+               }
+
+               return 1;
             } or do {
                warn "Error saving new system in db.\n$@\n";
             };
+         }
+         else {
+            warn "Hardware already registered\n";
          }
       }
 
