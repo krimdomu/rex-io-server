@@ -2,7 +2,9 @@
 
 =head2 Rex::IO::Server
 
-This is the Server Component of Rex. This component is for collecting multiple backends under one middleware to get a consistent api to talk to the backends (like CMDBs, Issue/Incident Trackers, and more).
+This is the Server Component of Rex. This component is for collecting multiple backends under one middleware to get a consistent api to talk to the backends (like CMDBs, DHCP, DNS, Issue/Incident Trackers, and more).
+
+It also provides bare metal deployment capabilities.
 
 This is a work in progress project.
 
@@ -12,36 +14,5 @@ This is a work in progress project.
 
 =item Mojolicious
 
-=item Rex::IO::CMDB
-
 =back
-
-=head2 INSTALLATION
-
-First you have to install Mojolicious. You can download it from CPAN or from L<http://mojolicio.us>.
-
-Than you need to setup Rex::IO::CMDB L<https://github.com/krimdomu/rex-io-cmdb>.
-
-After that, you can setup Rex::IO::Server.
-
- git clone git://github.com/krimdomu/rex-io-server.git
- cd rex-io-server
-
-Now edit the file I<server.conf>. And set the url to Rex::IO::CMDB.
-
-And start the server:
-
- bin/rex_ioserver daemon
-
-You can also define an other Listen Port (default is 3000)
-
- bin/rex_ioserver daemon -l 'http://:4000'
-
-Right now there is no Webinterface. You can test if everything is correct with the following command:
-
- curl -X LIST http://localhost:3000/server
-
-If you get an answer like this it works:
-
- {"ok":true,"data":{}}
 
