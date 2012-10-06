@@ -22,6 +22,6 @@ __PACKAGE__->attr(ipxe => "Text");
 __PACKAGE__->table("os_template");
 __PACKAGE__->primary_key("id");
 
-__PACKAGE__->has_n("hardware", "Rex::IO::Server::Model::Hardware", "os_template_id");
+__PACKAGE__->belongs_to("hardware", "Rex::IO::Server::Model::Hardware", "os_template_id");
 
 1;

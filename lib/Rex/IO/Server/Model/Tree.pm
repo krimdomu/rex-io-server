@@ -18,7 +18,7 @@ __PACKAGE__->attr(name => "String");
 __PACKAGE__->table("tree");
 __PACKAGE__->primary_key("id");
 
-__PACKAGE__->has_n("Children", "Rex::IO::Server::Model::Tree", "parent");
-__PACKAGE__->belongs_to("Parent", "Rex::IO::Server::Model::Tree", "parent");
+__PACKAGE__->belongs_to("Children", "Rex::IO::Server::Model::Tree", "parent");
+__PACKAGE__->has("Parent", "Rex::IO::Server::Model::Tree", "parent");
 
 1;

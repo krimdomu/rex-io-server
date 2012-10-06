@@ -17,6 +17,6 @@ __PACKAGE__->attr(name => "String");
 __PACKAGE__->table("hardware_state");
 __PACKAGE__->primary_key("id");
 
-__PACKAGE__->has_n("hardware", "Rex::IO::Server::Model::Hardware", "state_id");
+__PACKAGE__->belongs_to("hardware", "Rex::IO::Server::Model::Hardware", "state_id");
 
 1;
