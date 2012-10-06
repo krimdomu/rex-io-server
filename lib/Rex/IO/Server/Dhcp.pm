@@ -7,6 +7,7 @@
 package Rex::IO::Server::Dhcp;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Mojo::JSON;
 use Mojo::UserAgent;
 use Data::Dumper;
 
@@ -15,7 +16,14 @@ sub new_lease {
 
    my $json = $self->req->json;
 
-   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . $self->param("mac"), $json)->res;
+   my $mac = $self->param("mac");
+   unless($mac =~ m/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/i) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "No MAC given."}, status => 500);
+   }
+
+   $mac =~ s/\-/:/g;
+
+   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . "\L$mac"), $json)->res;
 
    $self->render_json({ok => Mojo::JSON->true});
 }
