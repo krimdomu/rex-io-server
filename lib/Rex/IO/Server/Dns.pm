@@ -104,6 +104,10 @@ sub delete {
    my $domain = $self->param("domain");
    my $host   = $self->param("host");
 
+   if(! $self->_is_hostname($host)) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   }
+
    my $update = Net::DNS::Update->new($domain);
 
    $update->push(prerequisite => yxrrset("$host.$domain A"));
