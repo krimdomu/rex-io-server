@@ -14,7 +14,7 @@ use Mojo::JSON;
 sub list {
    my ($self) = @_;
 
-   my ($domain) = ($self->req->url =~ m/^.*\/(.*?)$/);
+   my $domain = $self->param("domain");
    my $ret = {};
 
    for my $rr ($self->_dns->axfr($domain)) {
@@ -34,7 +34,8 @@ sub list {
 sub get {
    my ($self) = @_;
 
-   my ($host, $domain) = ($self->req->url =~ m/^.*\/([^\/]+)\/(.*?)$/);
+   my $domain = $self->param("domain");
+   my $host   = $self->param("host");
 
    my $query = $self->_dns->search("$host.$domain");
 
@@ -55,7 +56,9 @@ sub get {
 sub add {
    my ($self) = @_;
 
-   my ($host, $domain) = ($self->req->url =~ m/^.*\/([^\/]+)\/(.*?)$/);
+   my $domain = $self->param("domain");
+   my $host   = $self->param("host");
+
    my $update = Net::DNS::Update->new($domain);
 
    my $json = $self->req->json;
@@ -90,7 +93,9 @@ sub add {
 sub delete {
    my ($self) = @_;
 
-   my ($host, $domain) = ($self->req->url =~ m/^.*\/([^\/]+)\/(.*?)$/);
+   my $domain = $self->param("domain");
+   my $host   = $self->param("host");
+
    my $update = Net::DNS::Update->new($domain);
 
    $update->push(prerequisite => yxrrset("$host.$domain A"));
@@ -121,10 +126,10 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->get('/dns/list/:domain')->to('dns#list');
-   $r->get('/dns/:host/:domain')->to('dns#get');
-   $r->post('/dns/:host/:domain')->to('dns#add');
-   $r->delete('/dns/:host/:domain')->to('dns#delete');
+   $r->route('/dns/#domain')->via("LIST")->to('dns#list');
+   $r->get('/dns/#domain/#host')->to('dns#get');
+   $r->post('/dns/#domain/#host')->to('dns#add');
+   $r->delete('/dns/#domain/#host')->to('dns#delete');
 }
 
 sub _dns {
