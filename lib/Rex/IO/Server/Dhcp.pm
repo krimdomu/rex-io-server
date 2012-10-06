@@ -15,9 +15,7 @@ sub new_lease {
 
    my $json = $self->req->json;
 
-   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . $self->stash("mac"), $json)->res;
-
-   warn Dumper($res);
+   my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . $self->param("mac"), $json)->res;
 
    $self->render_json({ok => Mojo::JSON->true});
 }
@@ -26,7 +24,7 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->post("/dhcp/host/:mac")->to("dhcp#new_lease");
+   $r->post("/dhcp/#mac")->to("dhcp#new_lease");
 }
 
 sub _ua {
