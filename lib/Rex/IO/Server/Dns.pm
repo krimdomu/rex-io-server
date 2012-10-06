@@ -65,6 +65,14 @@ sub add {
    my $ttl = $json->{ttl} ||= "86400";
    my $ip  = $json->{ip};
 
+   if(! $self->_is_ip($ip)) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
+   }
+
+   if(! $self->_is_hostname($host)) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   }
+
    # don't add it, if there is already an A record
    $update->push(prerequisite => nxrrset("$host.$domain. A"));
 
@@ -139,6 +147,22 @@ sub _dns {
    $res->nameservers($self->config->{dns}->{server});
 
    return $res;
+}
+
+sub _is_ip {
+   my ($self, $ip) = @_;
+
+   if($ip =~ m/^((25[0-5]|2[0-4]\d|1\d{2}|\d{1,2})\.){3}(25[0-5]|2[0-4]\d|1\d{2}|\d{1,2})$/) {
+      return 1;
+   }
+}
+
+sub _is_hostname {
+   my ($self, $hostname) = @_;
+
+   if($hostname =~ m/^([a-zA-Z0-9\-]*[a-zA-Z0-9])$/) {
+      return 1;
+   }
 }
 
 1;
