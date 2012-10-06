@@ -21,8 +21,10 @@ __PACKAGE__->attr(os_template_id => "Integer");
 __PACKAGE__->table("hardware");
 __PACKAGE__->primary_key("id");
 
-__PACKAGE__->has("state" => "Rex::IO::Server::Model::HardwareState", "state_id");
-__PACKAGE__->has("os_template" => "Rex::IO::Server::Model::OsTemplate", "os_template_id");
+__PACKAGE__->belongs_to("state" => "Rex::IO::Server::Model::HardwareState", "state_id");
+__PACKAGE__->belongs_to("os_template" => "Rex::IO::Server::Model::OsTemplate", "os_template_id");
+
+__PACKAGE__->has_n("network_adapter" => "Rex::IO::Server::Model::NetworkAdapter", "hardware_id");
 
 
 sub to_hashRef {
