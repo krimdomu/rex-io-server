@@ -26,5 +26,30 @@ sub list {
    $self->render_json(\@ret);
 }
 
+sub update {
+   my ($self) = @_;
+
+   my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+
+   if(my $hw = $hw_r->next) {
+      eval {
+         my $json = $self->req->json;
+
+         for my $k (keys %{ $json }) {
+            $hw->$k = $json->{$k};
+         }
+
+         $hw->update;
+
+         return $self->render_json({ok => Mojo::JSON->true});
+      } or do {
+         return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+      };
+   }
+   else {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+}
+
 
 1;
