@@ -66,7 +66,10 @@ sub boot {
             $system->state_id = 3;
             $system->update;
 
-            return $self->render_text($boot_os->template);
+            $self->stash("hardware", $system);
+
+            my $template = $boot_os->template;
+            return $self->render(inline => $template);
          }
          elsif($system->state_id == 3) { # hook after installation, must be called from within the template
 
