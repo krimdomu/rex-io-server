@@ -26,6 +26,20 @@ sub list {
    $self->render_json(\@ret);
 }
 
+sub search {
+   my ($self) = @_;
+
+   my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
+
+   my @ret = ();
+
+   while(my $hw = $hw_r->next) {
+      push(@ret, $hw->to_hashRef);
+   }
+
+   $self->render_json(\@ret);
+}
+
 sub update {
    my ($self) = @_;
 

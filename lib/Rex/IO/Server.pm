@@ -108,6 +108,7 @@ sub startup {
    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
 
    $r->route("/hardware")->via("LIST")->to("hardware#list");
+   $r->get("/hardware/search/:name")->to("hardware#search");
    $r->post("/hardware/:id")->to("hardware#update");
 
    $r->get("/tree/root")->to("tree#root");
