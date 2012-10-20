@@ -75,6 +75,10 @@ use Rex::IO::Server::Model::HardwareState;
 use Rex::IO::Server::Model::OsTemplate;
 use Rex::IO::Server::Model::NetworkAdapter;
 use Rex::IO::Server::Model::Tree;
+use Rex::IO::Server::Model::Bios;
+use Rex::IO::Server::Model::Harddrive;
+use Rex::IO::Server::Model::Memory;
+use Rex::IO::Server::Model::Processor;
 
 our $VERSION = "0.0.4";
 
@@ -132,6 +136,10 @@ sub startup {
       Rex::IO::Server::Model::OsTemplate->set_data_source($db);
       Rex::IO::Server::Model::NetworkAdapter->set_data_source($db);
       Rex::IO::Server::Model::Tree->set_data_source($db);
+      Rex::IO::Server::Model::Bios->set_data_source($db);
+      Rex::IO::Server::Model::Harddrive->set_data_source($db);
+      Rex::IO::Server::Model::Memory->set_data_source($db);
+      Rex::IO::Server::Model::Processor->set_data_source($db);
    } or do {
       die("Can't connect to database!\n$@");
    };

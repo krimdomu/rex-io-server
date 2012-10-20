@@ -56,6 +56,21 @@ sub broker {
             my ($eth_dev) = grep { $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
 
             eval {
+
+               # convert to array if not array
+               if(ref($json->{info}->{CONTENT}->{STORAGES}) ne "ARRAY") {
+                  $json->{info}->{CONTENT}->{STORAGE} = [ $json->{info}->{CONTENT}->{STORAGES} ];
+               }
+               if(ref($json->{info}->{CONTENT}->{NETWORKS}) ne "ARRAY") {
+                  $json->{info}->{CONTENT}->{NETWORKS} = [ $json->{info}->{CONTENT}->{NETWORKS} ];
+               }
+               if(ref($json->{info}->{CONTENT}->{MEMORIES}) ne "ARRAY") {
+                  $json->{info}->{CONTENT}->{MEMORIES} = [ $json->{info}->{CONTENT}->{MEMORIES} ];
+               }
+               if(ref($json->{info}->{CONTENT}->{CPUS}) ne "ARRAY") {
+                  $json->{info}->{CONTENT}->{CPUS} = [ $json->{info}->{CONTENT}->{CPUS} ];
+               }
+
                my $new_hw = Rex::IO::Server::Model::Hardware->new(
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
                   mac  => $eth_dev->{MACADDR},
@@ -63,6 +78,8 @@ sub broker {
                $new_hw->save;
 
                for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
+
+                  next if ($eth->{TYPE} ne "Ethernet");
 
                   my $new_nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
                      dev         => $eth->{DESCRIPTION},
@@ -75,6 +92,67 @@ sub broker {
                   );
 
                   $new_nw_a->save;
+
+               }
+
+               for my $storage (@{ $json->{info}->{CONTENT}->{STORAGES} }) {
+
+                  next if ($storage->{TYPE} ne "disk");
+
+                  my $new_store = Rex::IO::Server::Model::Harddrive->new(
+                     hardware_id => $new_hw->id,
+                     devname     => $storage->{NAME},
+                     size        => $storage->{DISKSIZE},
+                     vendor      => $storage->{MANUFACTURER},
+                  );
+
+                  $new_store->save;
+
+               }
+
+               my $bios_data = $json->{info}->{CONTENT}->{BIOS};
+               my ($mon, $day, $year) = split(/\//, $bios_data->{BDATE});
+
+               $bios_data->{BDATE} = "$year-$mon-$day 00:00:00";
+
+               my $new_bios = Rex::IO::Server::Model::Bios->new(
+                  hardware_id => $new_hw->id,
+                  biosdate    => $bios_data->{BDATE},
+                  version     => $bios_data->{BVERSION},
+                  ssn         => $bios_data->{SSN},
+                  manufacturer   => $bios_data->{MANUFACTURER},
+                  model       => $bios_data->{SMODEL},
+               );
+
+               $new_bios->save;
+
+               for my $mem (@{ $json->{info}->{CONTENT}->{MEMORIES} }) {
+
+                  next if ($mem->{CAPACITY} eq "No");
+                  
+                  my $new_mem = Rex::IO::Server::Model::Memory->new(
+                     hardware_id => $new_hw->id,
+                     size        => $mem->{CAPACITY},
+                     bank        => $mem->{NUMSLOTS},
+                     serialnumber => $mem->{SERIALNUMBER},
+                     speed       => $mem->{SPEED},
+                     type        => $mem->{TYPE},
+                  );
+
+                  $new_mem->save;
+
+               }
+
+               for my $cpu (@{ $json->{info}->{CONTENT}->{CPUS} }) {
+
+                  my $new_cpu = Rex::IO::Server::Model::Processor->new(
+                     hardware_id => $new_hw->id,
+                     modelname   => $cpu->{TYPE},
+                     vendor      => $cpu->{MANUFACTURER},
+                     mhz         => $cpu->{SPEED},
+                  );
+
+                  $new_cpu->save;
 
                }
 

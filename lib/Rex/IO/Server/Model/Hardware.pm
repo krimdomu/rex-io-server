@@ -24,6 +24,10 @@ __PACKAGE__->belongs_to("state" => "Rex::IO::Server::Model::HardwareState", "sta
 __PACKAGE__->belongs_to("os_template" => "Rex::IO::Server::Model::OsTemplate", "os_template_id");
 
 __PACKAGE__->has_n("network_adapter" => "Rex::IO::Server::Model::NetworkAdapter", "hardware_id");
+__PACKAGE__->has("bios" => "Rex::IO::Server::Model::Bios", "hardware_id");
+__PACKAGE__->has_n("harddrive" => "Rex::IO::Server::Model::Harddrive", "hardware_id");
+__PACKAGE__->has_n("memory" => "Rex::IO::Server::Model::Memory", "hardware_id");
+__PACKAGE__->has_n("processor" => "Rex::IO::Server::Model::Processor", "hardware_id");
 
 
 sub to_hashRef {
@@ -60,6 +64,40 @@ sub to_hashRef {
    }
 
    $data->{network_adapters} = \@nw_a;
+
+   #### bios
+   my $bios = $self->bios->next;
+   $data->{bios} = $bios->get_data;
+
+   #### harddrives
+   my $hd_r = $self->harddrive;
+   my @hd_a = ();
+
+   while(my $hd = $hd_r->next) {
+      push(@hd_a, $hd->get_data);
+   }
+
+   $data->{harddrives} = \@hd_a;
+
+   #### memory
+   my $mem_r = $self->memory;
+   my @mem_a = ();
+
+   while(my $mem = $mem_r->next) {
+      push(@mem_a, $mem->get_data);
+   }
+
+   $data->{memories} = \@mem_a;
+
+   #### processor
+   my $cpu_r = $self->memory;
+   my @cpu_a = ();
+
+   while(my $cpu = $cpu_r->next) {
+      push(@cpu_a, $cpu->get_data);
+   }
+
+   $data->{processors} = \@cpu_a;
 
    return $data;
 }
