@@ -16,12 +16,14 @@ __PACKAGE__->attr(name => "String");
 __PACKAGE__->attr(mac => "String");
 __PACKAGE__->attr(state_id => "Integer");
 __PACKAGE__->attr(os_template_id => "Integer");
+__PACKAGE__->attr(os_id => "Integer");
 
 __PACKAGE__->table("hardware");
 __PACKAGE__->primary_key("id");
 
 __PACKAGE__->belongs_to("state" => "Rex::IO::Server::Model::HardwareState", "state_id");
 __PACKAGE__->belongs_to("os_template" => "Rex::IO::Server::Model::OsTemplate", "os_template_id");
+__PACKAGE__->belongs_to("os" => "Rex::IO::Server::Model::Os", "os_id");
 
 __PACKAGE__->has_n("network_adapter" => "Rex::IO::Server::Model::NetworkAdapter", "hardware_id");
 __PACKAGE__->has("bios" => "Rex::IO::Server::Model::Bios", "hardware_id");
@@ -45,14 +47,20 @@ sub to_hashRef {
       $data->{state} = "UNKNOWN";
    }
 
-   my $os = $self->os_template->next;
+   my $os_template = $self->os_template->next;
    delete $data->{os_template_id};
 
-   if($os) {
-      $data->{os} = $os->name;
+   if($os_template) {
+      $data->{os_template} = {
+         id => $os_template->id,
+         name => $os_template->name,
+      };
    }
    else {
-      $data->{os} = "UNKNWON";
+      $data->{os_template} = {
+         id => 0,
+         name => "UNKNWON",
+      };
    }
 
    #### network adapters
@@ -90,7 +98,7 @@ sub to_hashRef {
    $data->{memories} = \@mem_a;
 
    #### processor
-   my $cpu_r = $self->memory;
+   my $cpu_r = $self->processor;
    my @cpu_a = ();
 
    while(my $cpu = $cpu_r->next) {
@@ -98,6 +106,11 @@ sub to_hashRef {
    }
 
    $data->{processors} = \@cpu_a;
+
+   #### os
+   my $os = $self->os->next->get_data;
+   $data->{os} = $os;
+   delete $data->{os_id};
 
    return $data;
 }

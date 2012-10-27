@@ -41,6 +41,7 @@ use Rex::IO::Server::Model::Bios;
 use Rex::IO::Server::Model::Harddrive;
 use Rex::IO::Server::Model::Memory;
 use Rex::IO::Server::Model::Processor;
+use Rex::IO::Server::Model::Os;
 
 our $VERSION = "0.0.4";
 
@@ -69,9 +70,14 @@ sub startup {
    $r->route("/messagebroker/clients")->via("LIST")->to("message_broker#clients");
    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
 
-   $r->route("/hardware")->via("LIST")->to("hardware#list");
-   $r->get("/hardware/search/:name")->to("hardware#search");
-   $r->post("/hardware/:id")->to("hardware#update");
+   for my $ctrl (qw/hardware os os_template/) {
+      my $ctrl_route = $ctrl;
+      $ctrl_route =~ s/_/-/gms;
+      $r->route("/$ctrl_route")->via("LIST")->to("$ctrl#list");
+      $r->get("/$ctrl_route/search/:name")->to("$ctrl#search");
+      $r->post("/$ctrl_route/:id")->to("$ctrl#update");
+      $r->get("/$ctrl_route/:id")->to("$ctrl#get");
+   }
 
    $r->get("/tree/root")->to("tree#root");
 
@@ -98,6 +104,7 @@ sub startup {
       Rex::IO::Server::Model::Harddrive->set_data_source($db);
       Rex::IO::Server::Model::Memory->set_data_source($db);
       Rex::IO::Server::Model::Processor->set_data_source($db);
+      Rex::IO::Server::Model::Os->set_data_source($db);
    } or do {
       die("Can't connect to database!\n$@");
    };
