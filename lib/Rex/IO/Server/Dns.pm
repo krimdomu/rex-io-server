@@ -11,7 +11,7 @@ use Net::DNS;
 use Data::Dumper;
 use Mojo::JSON;
 
-sub list {
+sub list_domain {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
@@ -29,6 +29,11 @@ sub list {
    }
 
    $self->render_json($ret);
+}
+
+sub list_tlds {
+   my ($self) = @_;
+   $self->render_json($self->config->{dns}->{tlds});
 }
 
 sub get {
@@ -138,10 +143,11 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->route('/dns/#domain')->via("LIST")->to('dns#list');
+   $r->route('/dns/#domain')->via("LIST")->to('dns#list_domain');
    $r->get('/dns/#domain/#host')->to('dns#get');
    $r->post('/dns/#domain/#host')->to('dns#add');
    $r->delete('/dns/#domain/#host')->to('dns#delete');
+   $r->route('/dns')->via("LIST")->to('dns#list_tlds');
 }
 
 sub _dns {

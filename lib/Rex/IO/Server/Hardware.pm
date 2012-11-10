@@ -53,7 +53,7 @@ sub update {
    my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
 
    if(my $hw = $hw_r->next) {
-      eval {
+      return eval {
          my $json = $self->req->json;
 
          for my $k (keys %{ $json }) {

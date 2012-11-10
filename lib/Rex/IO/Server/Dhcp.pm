@@ -28,16 +28,30 @@ sub new_lease {
    $self->render_json({ok => Mojo::JSON->true});
 }
 
+sub list_leases {
+   my ($self) = @_;
+
+   my $res = $self->_list("/")->res->json;
+   $self->render_json($res->{leases});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
    $r->post("/dhcp/#mac")->to("dhcp#new_lease");
+   $r->route("/dhcp")->via("LIST")->to("dhcp#list_leases");
 }
 
 sub _ua {
    my ($self) = @_;
    return Mojo::UserAgent->new;
+}
+
+sub _list {
+   my ($self, $url) = @_;
+   my $tx = $self->_ua->build_tx(LIST => $self->config->{dhcp}->{server} . $url);
+   $self->_ua->start($tx);
 }
 
 1;
