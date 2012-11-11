@@ -142,6 +142,7 @@ sub __register__ {
 
    $r->post("/deploy/:server/:os")->to("deploy#deploy");
 
+   $r->put("/deploy/os/:id")->to("deploy-os#update");
    $r->post("/deploy/os/:name")->to("deploy-os#register");
    $r->delete("/deploy/os/:name")->to("deploy-os#delete");
    $r->route("/deploy/os")->via("LIST")->to("deploy-os#list");

@@ -31,6 +31,28 @@ sub register {
    };
 }
 
+sub update {
+   my ($self) = @_;
+
+   my $id = $self->stash("id");
+
+   my $json = $self->req->json;
+
+   eval {
+      my $ot = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $id )->next;
+      for my $d (keys %{ $json }) {
+         $ot->$d = $json->{$d};
+      }
+
+      $ot->update;
+
+      return $self->render_json({ok => Mojo::JSON->true});
+   } or do {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+   };
+
+}
+
 sub delete {
    my ($self) = @_;
 
