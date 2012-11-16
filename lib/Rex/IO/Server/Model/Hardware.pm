@@ -74,8 +74,9 @@ sub to_hashRef {
    $data->{network_adapters} = \@nw_a;
 
    #### bios
-   my $bios = $self->bios->next;
-   $data->{bios} = $bios->get_data;
+   if(my $bios = $self->bios->next) {
+      $data->{bios} = $bios->get_data;
+   }
 
    #### harddrives
    my $hd_r = $self->harddrive;
@@ -108,8 +109,9 @@ sub to_hashRef {
    $data->{processors} = \@cpu_a;
 
    #### os
-   my $os = $self->os->next->get_data;
-   $data->{os} = $os;
+   if(my $os = $self->os->next) {
+      $data->{os} = $os->get_data;
+   }
    delete $data->{os_id};
 
    return $data;

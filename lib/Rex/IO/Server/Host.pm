@@ -17,14 +17,13 @@ sub add {
    my $mac = $self->stash("mac");
 
    my $json = $self->req->json;
-   my $ip = $json->{ip};
    my $name = $json->{name};
 
    eval {
       my $hw = Rex::IO::Server::Model::Hardware->new(
          name => $name,
          mac  => $mac,
-         ip   => $ip,
+         state_id => 1, # set unknown default state
       );
 
       $hw->save;
