@@ -42,7 +42,7 @@ sub list {
 
    my @ret;
    while(my $h = $hw->next) {
-      push(@ret, $h->get_data);
+      push(@ret, $h->to_hashRef);
    }
 
    $self->render_json({ok => Mojo::JSON->true, data => \@ret});
