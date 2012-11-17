@@ -80,6 +80,8 @@ sub startup {
       $r->post("/$ctrl_route")->to("$ctrl#add");
    }
 
+   $r->post("/network-adapter/:id")->to("hardware#update_network_adapter");
+
 
    $r->get("/tree/root")->to("tree#root");
 

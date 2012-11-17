@@ -9,6 +9,8 @@ package Rex::IO::Server::Hardware;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
 
+use Rex::IO::Server::Helper::IP;
+
 use Data::Dumper;
 
 
@@ -70,6 +72,33 @@ sub update {
    else {
       return $self->render_json({ok => Mojo::JSON->false}, status => 404);
    }
+}
+
+sub update_network_adapter {
+   my ($self) = @_;
+
+   my $nwa_id = $self->param("id");
+   my $json = $self->req->json;
+
+   return eval {
+      my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
+
+      my @calc_int = qw/ip netmask broadcast network gateway/;
+
+      for my $k (keys %{ $json }) {
+         if(@calc_int ~~ m/$k/ && $json->{$k}) {
+            $json->{$k} = ip_to_int($json->{$k});
+         }
+
+         $nw_a->$k = $json->{$k};
+      }
+
+      $nw_a->update;
+
+      return $self->render_json({ok => Mojo::JSON->true});
+   } or do {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+   };
 }
 
 

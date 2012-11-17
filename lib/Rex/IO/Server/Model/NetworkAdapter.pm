@@ -21,6 +21,7 @@ __PACKAGE__->attr(netmask => "Integer");
 __PACKAGE__->attr(broadcast => "Integer");
 __PACKAGE__->attr(network => "Integer");
 __PACKAGE__->attr(gateway => "Integer");
+__PACKAGE__->attr(mac => "String");
 
 __PACKAGE__->table("network_adapter");
 __PACKAGE__->primary_key("id");
