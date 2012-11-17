@@ -13,7 +13,6 @@ use base qw(DBIx::ORMapper::DM::DataSource::Table);
 
 __PACKAGE__->attr(id => "Integer");
 __PACKAGE__->attr(name => "String");
-__PACKAGE__->attr(mac => "String");
 __PACKAGE__->attr(state_id => "Integer");
 __PACKAGE__->attr(os_template_id => "Integer");
 __PACKAGE__->attr(os_id => "Integer");
@@ -31,6 +30,15 @@ __PACKAGE__->has_n("harddrive" => "Rex::IO::Server::Model::Harddrive", "hardware
 __PACKAGE__->has_n("memory" => "Rex::IO::Server::Model::Memory", "hardware_id");
 __PACKAGE__->has_n("processor" => "Rex::IO::Server::Model::Processor", "hardware_id");
 
+sub mac {
+   my ($self) = @_;
+
+   my $hw_net_boot = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->hardware_id == $self->id & Rex::IO::Server::Model::NetworkAdapter->boot == 1 )->next;
+
+   if($hw_net_boot) {
+      return $hw_net_boot->mac;
+   }
+}
 
 sub to_hashRef {
    my ($self) = @_;
@@ -69,6 +77,10 @@ sub to_hashRef {
 
    while(my $nw = $nw_r->next) {
       push(@nw_a, $nw->to_hashRef);
+
+      if($nw->boot) {
+         $data->{mac} = $nw->mac;
+      }
    }
 
    $data->{network_adapters} = \@nw_a;

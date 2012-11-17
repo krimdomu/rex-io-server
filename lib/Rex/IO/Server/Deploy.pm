@@ -27,7 +27,9 @@ sub boot {
       warn "GOT MAC: $mac\n";
    }
 
-   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
+   #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
+
+   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
 
    if(my $system = $hw->next) {
       # system known, do the registered boot
