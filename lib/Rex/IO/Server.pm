@@ -77,7 +77,9 @@ sub startup {
       $r->get("/$ctrl_route/search/:name")->to("$ctrl#search");
       $r->post("/$ctrl_route/:id")->to("$ctrl#update");
       $r->get("/$ctrl_route/:id")->to("$ctrl#get");
+      $r->post("/$ctrl_route")->to("$ctrl#add");
    }
+
 
    $r->get("/tree/root")->to("tree#root");
 

@@ -11,6 +11,20 @@ use Mojo::JSON;
 
 use Data::Dumper;
 
+sub add {
+   my ($self) = @_;
+
+   my $json = $self->req->json;
+
+   return eval {
+      my $new_t = Rex::IO::Server::Model::OsTemplate->new(%{ $json });
+      $new_t->save;
+
+      return $self->render_json({ok => Mojo::JSON->true});
+   } or do {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+   };
+}
 
 sub list {
    my ($self) = @_;
