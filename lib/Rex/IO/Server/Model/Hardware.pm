@@ -68,7 +68,7 @@ sub to_hashRef {
    my @nw_a = ();
 
    while(my $nw = $nw_r->next) {
-      push(@nw_a, $nw->get_data);
+      push(@nw_a, $nw->to_hashRef);
    }
 
    $data->{network_adapters} = \@nw_a;
