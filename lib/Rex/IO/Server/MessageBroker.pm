@@ -50,7 +50,8 @@ sub broker {
             push(@mac_addresses, $eth->{MACADDR});
          }
 
-         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac == \@mac_addresses );
+         #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac == \@mac_addresses );
+         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
 
          if(! $hw->next) {
             my ($eth_dev) = grep { $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
