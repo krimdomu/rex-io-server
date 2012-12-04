@@ -9,6 +9,8 @@ package Rex::IO::Server::Model::Hardware;
 use strict;
 use warnings;
 
+use Data::Dumper;
+
 use base qw(DBIx::ORMapper::DM::DataSource::Table);
 
 __PACKAGE__->attr(id => "Integer");
@@ -74,7 +76,6 @@ sub to_hashRef {
    #### network adapters
    my $nw_r = $self->network_adapter;
    my @nw_a = ();
-
    while(my $nw = $nw_r->next) {
       push(@nw_a, $nw->to_hashRef);
 

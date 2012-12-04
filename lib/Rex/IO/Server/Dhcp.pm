@@ -32,6 +32,11 @@ sub list_leases {
    my ($self) = @_;
 
    my $res = $self->_list("/")->res->json;
+
+   if(! $res->{leases}) {
+      return $self->render_json({});
+   }
+
    $self->render_json($res->{leases});
 }
 

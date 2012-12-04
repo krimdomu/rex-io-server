@@ -51,10 +51,10 @@ sub broker {
          }
 
          #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac == \@mac_addresses );
-         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
+         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac == \@mac_addresses );
 
          if(! $hw->next) {
-            my ($eth_dev) = grep { $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
+            my ($eth_dev) = grep { exists $_->{IPADDRESS} && $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
 
             eval {
 
@@ -74,13 +74,12 @@ sub broker {
 
                my $new_hw = Rex::IO::Server::Model::Hardware->new(
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
-                  mac  => $eth_dev->{MACADDR},
                );
                $new_hw->save;
-
                for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
 
-                  next if ($eth->{TYPE} ne "Ethernet");
+                  next if ($eth->{VIRTUALDEV} == 1);
+                  next if (exists $eth->{IPSUBNET6});
 
                   my $new_nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
                      dev         => $eth->{DESCRIPTION},
@@ -89,7 +88,8 @@ sub broker {
                      ip          => ! ref($eth->{IPADDRESS}) ? ip_to_int($eth->{IPADDRESS}) : 0,
                      netmask     => ! ref($eth->{IPMASK})    ? ip_to_int($eth->{IPMASK})    : 0,
                      network     => ! ref($eth->{IPSUBNET})  ? ip_to_int($eth->{IPSUBNET})  : 0,
-                     gateway     => ! ref($eth->{IPGATEWAY}) ? ip_to_int($eth->{IPGATEWAY}) : 0,
+                     #gateway     => ! ref($eth->{IPGATEWAY}) ? ip_to_int($eth->{IPGATEWAY}) : 0,
+                     mac         => $eth->{MACADDR},
                   );
 
                   $new_nw_a->save;
@@ -129,6 +129,7 @@ sub broker {
 
                for my $mem (@{ $json->{info}->{CONTENT}->{MEMORIES} }) {
 
+                  next if (! exists $mem->{CAPACITY});
                   next if ($mem->{CAPACITY} eq "No");
                   
                   my $new_mem = Rex::IO::Server::Model::Memory->new(
@@ -154,7 +155,6 @@ sub broker {
                   );
 
                   $new_cpu->save;
-
                }
 
                return 1;
