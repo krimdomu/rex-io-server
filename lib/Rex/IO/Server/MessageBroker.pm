@@ -50,7 +50,6 @@ sub broker {
             push(@mac_addresses, $eth->{MACADDR});
          }
 
-         #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac == \@mac_addresses );
          my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac == \@mac_addresses );
 
          if(! $hw->next) {
@@ -85,9 +84,9 @@ sub broker {
                      dev         => $eth->{DESCRIPTION},
                      hardware_id => $new_hw->id,
                      proto       => "static",
-                     ip          => ! ref($eth->{IPADDRESS}) ? ip_to_int($eth->{IPADDRESS}) : 0,
-                     netmask     => ! ref($eth->{IPMASK})    ? ip_to_int($eth->{IPMASK})    : 0,
-                     network     => ! ref($eth->{IPSUBNET})  ? ip_to_int($eth->{IPSUBNET})  : 0,
+                     ip          => ! ref($eth->{IPADDRESS}) ? ip_to_int($eth->{IPADDRESS} || 0) : 0,
+                     netmask     => ! ref($eth->{IPMASK})    ? ip_to_int($eth->{IPMASK} || 0)    : 0,
+                     network     => ! ref($eth->{IPSUBNET})  ? ip_to_int($eth->{IPSUBNET} || 0)  : 0,
                      #gateway     => ! ref($eth->{IPGATEWAY}) ? ip_to_int($eth->{IPGATEWAY}) : 0,
                      mac         => $eth->{MACADDR},
                   );
