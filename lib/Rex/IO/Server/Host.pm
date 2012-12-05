@@ -22,11 +22,19 @@ sub add {
    eval {
       my $hw = Rex::IO::Server::Model::Hardware->new(
          name => $name,
-         mac  => $mac,
          state_id => 1, # set unknown default state
       );
 
       $hw->save;
+
+      my $nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
+         hardware_id => $hw->id,
+         proto       => "dhcp",
+         boot        => 1,
+         mac         => $mac,
+      );
+
+      $nw_a->save;
 
       return $self->render_json({ok => Mojo::JSON->true});
    } or do {
