@@ -38,17 +38,28 @@ sub boot {
       my $boot_os_r = $system->os_template;
       if(my $boot_os = $boot_os_r->next) {
 
-         if($system->state_id == 1) { # first boot after service os / after registration
+         if($system->state_id == 1 || $self->param("deploy")) { # first boot after service os / after registration
                                       # return os template to deploy os
+
+            if($boot_os->id == 1) {
+               warn "Booting local... Setting system->state_id = 4";
+               $system->state_id = 4;
+               $system->update;
+               return $self->render_text($boot_os->ipxe);
+            }
 
             if($boot_os->ipxe) {
                # if there are ipxe commands, use them
-               return $self->render_text($system->ipxe);
+               warn "Booting ipxe commands... Setting system->state_id = 4";
+               $system->state_id = 4;
+               $system->update;
+               return $self->render_text($boot_os->ipxe);
             }
 
             my $append = $boot_os->append;
             my $hostname = $boot_os->name;
-            my $eth = "eth0";
+            my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
+            my $eth = $boot_eth->dev;
 
             $append =~ s/\%hostname/$hostname/g;
             $append =~ s/\%eth/$eth/g;
