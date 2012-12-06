@@ -58,7 +58,7 @@ sub get {
    $self->render_json($ret);
 }
 
-sub add {
+sub add_A_record {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
@@ -70,6 +70,12 @@ sub add {
    my $ttl = $json->{ttl} ||= "86400";
    my $ip  = $json->{ip};
 
+   my $record_type = "A";
+
+   if(exists $json->{record_type}) {
+      $record_type = $json->{record_type};
+   }
+
    if(! $self->_is_ip($ip)) {
       return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
    }
@@ -79,9 +85,9 @@ sub add {
    }
 
    # don't add it, if there is already an A record
-   $update->push(prerequisite => nxrrset("$host.$domain. A"));
+   $update->push(prerequisite => nxrrset("$host.$domain. $record_type"));
 
-   $update->push(update => rr_add("$host.$domain.  $ttl  A  $ip"));
+   $update->push(update => rr_add("$host.$domain.  $ttl  $record_type  $ip"));
 
    $update->sign_tsig($self->config->{dns}->{key_name}, $self->config->{dns}->{key});
 
@@ -103,7 +109,7 @@ sub add {
    }
 }
 
-sub delete {
+sub delete_A_record {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
@@ -143,10 +149,12 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->route('/dns/#domain')->via("LIST")->to('dns#list_domain');
+   $r->post('/dns/#domain/A/#host')->to('dns#add_A_record');
+   $r->delete('/dns/#domain/A/#host')->to('dns#delete_A_record');
+
    $r->get('/dns/#domain/#host')->to('dns#get');
-   $r->post('/dns/#domain/#host')->to('dns#add');
-   $r->delete('/dns/#domain/#host')->to('dns#delete');
+
+   $r->route('/dns/#domain')->via("LIST")->to('dns#list_domain');
    $r->route('/dns')->via("LIST")->to('dns#list_tlds');
 }
 
