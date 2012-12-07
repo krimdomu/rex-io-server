@@ -8,6 +8,7 @@ package Rex::IO::Server::Deploy;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::UserAgent;
+use Rex::IO::Server::Helper::IP;
 
 sub wait {
    my ($self) = @_;
@@ -18,10 +19,6 @@ sub boot {
 
    my $client = $self->tx->remote_address;
 
-   if($self->param("custom")) {
-      $client = $self->param("custom");
-   }
-
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
    my $mac;
@@ -31,9 +28,15 @@ sub boot {
       warn "GOT MAC: $mac\n";
    }
 
+   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
+
+   if($self->param("custom")) {
+      $client = $self->param("custom");
+      $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
+   }
+
    #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
 
-   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
 
    if(my $system = $hw->next) {
       # system known, do the registered boot
@@ -90,7 +93,7 @@ sub boot {
             my $template = $boot_os->template;
             return $self->render(inline => $template);
          }
-         elsif($system->state_id == 3) { # hook after installation, must be called from within the template
+         elsif($system->state_id == 3 || $self->param("finished")) { # hook after installation, must be called from within the template
 
             $system->state_id = 4;
             $system->os_template_id = 1;
