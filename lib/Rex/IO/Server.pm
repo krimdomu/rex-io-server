@@ -61,6 +61,7 @@ sub startup {
       }
    }
    $self->plugin('Config', file => $cfg);
+   $self->plugin('Rex::IO::Server::Mojolicious::Plugin::IP');
 
    # Router
    my $r = $self->routes;

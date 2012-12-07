@@ -18,6 +18,10 @@ sub boot {
 
    my $client = $self->tx->remote_address;
 
+   if($self->param("custom")) {
+      $client = $self->param("custom");
+   }
+
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
    my $mac;
@@ -74,7 +78,9 @@ sub boot {
 
             return $self->render_text($boot_commands);
          }
-         elsif($system->state_id == 2) { # request of kickstart/preseed/... file
+         elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
+
+         warn "rerturning kickstart template\n";
 
             $system->state_id = 3;
             $system->update;
