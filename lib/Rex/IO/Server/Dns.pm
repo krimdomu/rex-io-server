@@ -20,11 +20,38 @@ sub list_domain {
    for my $rr ($self->_dns->axfr($domain)) {
       if($rr->type eq "A") {
          $ret->{ $rr->name } = {
-            ip => $rr->address,
+            data => $rr->address,
             ttl => $rr->ttl,
             type => $rr->type,
             name => $rr->name,
          };
+      }
+      elsif($rr->type eq "TXT") {
+         $ret->{ $rr->name } = {
+            data => $rr->rdata,
+            ttl => $rr->ttl,
+            type => $rr->type,
+            name => $rr->name,
+         };
+      }
+      elsif($rr->type eq "CNAME") {
+         $ret->{ $rr->name } = {
+            data => $rr->cname,
+            ttl => $rr->ttl,
+            type => $rr->type,
+            name => $rr->name,
+         };
+      }
+      elsif($rr->type eq "MX") {
+         $ret->{ $rr->name } = {
+            data => $rr->exchange,
+            ttl => $rr->ttl,
+            type => $rr->type,
+            name => $rr->name,
+         };
+      }
+      else {
+         print STDERR Dumper($rr);
       }
    }
 
@@ -58,7 +85,7 @@ sub get {
    $self->render_json($ret);
 }
 
-sub add_A_record {
+sub add_record {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
@@ -67,27 +94,27 @@ sub add_A_record {
    my $update = Net::DNS::Update->new($domain);
 
    my $json = $self->req->json;
-   my $ttl = $json->{ttl} ||= "86400";
-   my $ip  = $json->{ip};
+   my $ttl  = $json->{ttl} ||= "86400";
+   my $data = $json->{data};
 
    my $record_type = "A";
 
-   if(exists $json->{record_type}) {
-      $record_type = $json->{record_type};
+   if(exists $json->{type}) {
+      $record_type = $json->{type};
    }
 
-   if(! $self->_is_ip($ip)) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
-   }
+   #if(! $self->_is_ip($ip)) {
+   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
+   #}
 
-   if(! $self->_is_hostname($host)) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
-   }
+   #if(! $self->_is_hostname($host)) {
+   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #}
 
    # don't add it, if there is already an A record
    $update->push(prerequisite => nxrrset("$host.$domain. $record_type"));
 
-   $update->push(update => rr_add("$host.$domain.  $ttl  $record_type  $ip"));
+   $update->push(update => rr_add("$host.$domain.  $ttl  $record_type  $data"));
 
    $update->sign_tsig($self->config->{dns}->{key_name}, $self->config->{dns}->{key});
 
@@ -109,20 +136,23 @@ sub add_A_record {
    }
 }
 
-sub delete_A_record {
+sub delete_record {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
    my $host   = $self->param("host");
+   my $type   = $self->param("type");
 
-   if(! $self->_is_hostname($host)) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
-   }
+   #if(! $self->_is_hostname($host)) {
+   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #}
+
+   warn "Got $domain / $type / $host";
 
    my $update = Net::DNS::Update->new($domain);
 
-   $update->push(prerequisite => yxrrset("$host.$domain A"));
-   $update->push(update => rr_del("$host.$domain A"));
+   $update->push(prerequisite => yxrrset("$host.$domain $type"));
+   $update->push(update => rr_del("$host.$domain $type"));
 
    $update->sign_tsig($self->config->{dns}->{key_name}, $self->config->{dns}->{key});
 
@@ -149,8 +179,8 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->post('/dns/#domain/A/#host')->to('dns#add_A_record');
-   $r->delete('/dns/#domain/A/#host')->to('dns#delete_A_record');
+   $r->post('/dns/#domain/#host')->to('dns#add_record');
+   $r->delete('/dns/#domain/:type/#host')->to('dns#delete_record');
 
    $r->get('/dns/#domain/#host')->to('dns#get');
 
