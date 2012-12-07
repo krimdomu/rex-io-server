@@ -93,7 +93,7 @@ sub startup {
    }
 
    # do database connection
-   DBIx::ORMapper::setup(default => "MySQL://localhost/rexio_server?username=rexio&password=rexio");
+   DBIx::ORMapper::setup(default => "MySQL://" . $self->config->{db}->{server} . "/" . $self->config->{db}->{schema} . "?username=" . $self->config->{db}->{username} . "&password=" . $self->config->{db}->{password});
 
    eval {
       my $db = DBIx::ORMapper::get_connection("default");
