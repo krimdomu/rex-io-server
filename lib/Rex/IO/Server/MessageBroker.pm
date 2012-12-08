@@ -29,8 +29,12 @@ sub broker {
       warn "client disconnected\n";
       my $new_clients = {};
 
-      for (keys %$clients) {
-         $new_clients->{$_} = [ grep { $_->{tx_id} ne sprintf("%s", $self->tx) } @{ $clients->{$_} } ];
+      for my $cl (keys %$clients) {
+         for my $cl_conn ( @{ $clients->{$cl} } ) {
+            if($cl_conn->{tx_id} ne sprintf("%s", $self->tx)) {
+               push(@{ $new_clients->{$cl} }, $cl_conn);
+            }
+         }
       }
 
       $clients = $new_clients;
