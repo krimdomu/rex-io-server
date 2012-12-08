@@ -12,6 +12,7 @@ use XML::Simple;
 use Compress::Zlib;
 
 use Data::Dumper;
+use Rex::IO::Server::Helper::IP;
 
 sub post {
    my ($self) = @_;
@@ -33,28 +34,93 @@ sub post {
       delete $ref->{CONTENT}->{PROCESSES};
       # delete the envs
       delete $ref->{CONTENT}->{ENVS};
+      # delete the softwares
+      delete $ref->{CONTENT}->{SOFTWARES};
 
       $ref->{CONTENT} = _normalize_hash($ref->{CONTENT});
 
-      my $data = $self->cmdb->add_section_to_server($server, "inventory", $ref->{CONTENT});
-      $self->chi->remove($server);
-      $self->chi->remove("server_list");
-
-      if(! ref($data) ) {
-         $self->render_data(
-            compress(
-               '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_NOT_UPDATED</REPLY>'
-            ),
-            status => 500
-         );
+      my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->uuid eq $ref->{CONTENT}->{HARDWARE}->{UUID} );
+      my $hw = $hw_r->next;
+      if($hw) {
+         # hardware found 
+         warn "Found hardware's uuid";
       }
       else {
+         for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+            $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
+            $hw = $hw_r->next;
+            if($hw) {
+               warn "Found hardware through ip address";
+               last;
+            }
+         }
+      }
+
+      unless($hw) {
+         warn "nothing found!";
+      }
+
+
+      # update network cards
+      my $net_devs = $hw->network_adapter;
+
+      my @new_net_dev;
+
+      NETDEVS: while(my $net_dev = $net_devs->next) {
+         INVENTORY: for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+
+            if($net_dev->dev eq $net->{DESCRIPTION}) {
+               warn "Netdev already found, updating...";
+
+               $net_dev->ip      = ip_to_int($net->{IPADDRESS} || 0);
+               $net_dev->netmask = ip_to_int($net->{IPMASK}    || 0);
+               $net_dev->network = ip_to_int($net->{IPSUBNET}  || 0);
+               $net_dev->gateway = ip_to_int($net->{IPGATEWAY} || 0);
+               $net_dev->mac     = $net->{MACADDR};
+
+               $net_dev->update;
+
+               $net = undef;
+               next NETDEVS;
+
+            }
+
+         } # END INVENTORY: for
+
+      }
+
+      for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+         next unless $net;
+
+         my $new_hw = Rex::IO::Server::Model::NetworkAdapter->new(
+            hardware_id => $hw->id,
+            dev         => $net->{DESCRIPTION},
+            ip          => ip_to_int($net->{IPADDRESS} || 0),
+            netmask     => ip_to_int($net->{IPMASK}    || 0),
+            network     => ip_to_int($net->{IPSUBNET}  || 0),
+            gateway     => ip_to_int($net->{IPGATEWAY} || 0),
+            proto       => "static",
+            mac         => $net->{MACADDR},
+         );
+
+         $new_hw->save;
+      }
+
+      #if(! ref($data) ) {
+      #   $self->render_data(
+      #      compress(
+      #         '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_NOT_UPDATED</REPLY>'
+      #      ),
+      #      status => 500
+      #   );
+      #}
+      #else {
          $self->render_data(
             compress(
-               '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_UPDATE</REPLY>'
+               '<?xml version="1.0" encoding="UTF-8"?><REPLY>><RESPONSE>ACCOUNT_UPDATE</RESPONSE></REPLY>'
             )
          );
-      }
+      #}
    }
 }
 
