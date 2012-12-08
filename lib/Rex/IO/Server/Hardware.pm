@@ -101,5 +101,24 @@ sub update_network_adapter {
    };
 }
 
+sub purge {
+   my ($self) = @_;
+
+   my $hw_i = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+
+   return eval {
+      if(my $hw = $hw_i->next) {
+         $hw->purge;
+         return $self->render_json({ok => Mojo::JSON->true});
+      }
+      else {
+         return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      }
+   } or do {
+      return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+   };
+
+}
+
 
 1;

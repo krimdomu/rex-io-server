@@ -70,6 +70,7 @@ sub startup {
    $r->websocket("/messagebroker")->to("message_broker#broker");
    $r->route("/messagebroker/clients")->via("LIST")->to("message_broker#clients");
    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
+   $r->get("/messagebroker/online/#ip")->to("message_broker#is_online");
 
    for my $ctrl (qw/hardware os os_template/) {
       my $ctrl_route = $ctrl;
@@ -80,6 +81,8 @@ sub startup {
       $r->get("/$ctrl_route/:id")->to("$ctrl#get");
       $r->post("/$ctrl_route")->to("$ctrl#add");
    }
+
+   $r->delete("/hardware/:id")->to("hardware#purge");
 
    $r->post("/network-adapter/:id")->to("hardware#update_network_adapter");
 

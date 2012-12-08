@@ -18,6 +18,7 @@ __PACKAGE__->attr(name => "String");
 __PACKAGE__->attr(state_id => "Integer");
 __PACKAGE__->attr(os_template_id => "Integer");
 __PACKAGE__->attr(os_id => "Integer");
+__PACKAGE__->attr(uuid => "String");
 
 __PACKAGE__->table("hardware");
 __PACKAGE__->primary_key("id");
@@ -128,6 +129,20 @@ sub to_hashRef {
    delete $data->{os_id};
 
    return $data;
+}
+
+# delete hardware completely
+sub purge {
+   my ($self) = @_;
+
+   for my $obj (qw/network_adapter bios harddrive memory processor/) {
+      my $devs = $self->$obj;
+      while(my $dev = $devs->next) {
+         $dev->delete;
+      }
+   }
+
+   $self->delete;
 }
 
 1;
