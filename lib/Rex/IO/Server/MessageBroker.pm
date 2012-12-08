@@ -73,6 +73,7 @@ sub broker {
 
                my $new_hw = Rex::IO::Server::Model::Hardware->new(
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
+                  uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
                );
                $new_hw->save;
                for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
@@ -187,7 +188,26 @@ sub broker {
 
 sub clients {
    my ($self) = @_;
-   $self->render_json($clients);
+
+   if($self->param("only_ip")) {
+      my @ips = keys %{ $clients };
+      return $self->render_json({ok => Mojo::JSON->true, data => \@ips});
+   }
+   else {
+      return $self->render_json($clients);
+   }
+}
+
+sub is_online {
+   my ($self) = @_;
+
+   my $ip = $self->param("ip");
+   if(exists $clients->{$ip}) {
+      return $self->render_json({ok => Mojo::JSON->true});
+   }
+   else {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
 }
 
 sub message_to_server {
