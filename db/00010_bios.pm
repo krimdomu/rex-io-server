@@ -26,7 +26,7 @@ sub up {
 
 sub down {
 
-   drop_table "os_template";
+   drop_table "bios";
 
 }
 
