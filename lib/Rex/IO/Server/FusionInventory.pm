@@ -62,6 +62,9 @@ sub post {
       }
       else {
          for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+            next unless $net->{IPADDRESS};
+            next unless $net->{VIRTUALDEV} == 0;
+
             $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
             $hw = $hw_r->next;
             if($hw) {
@@ -73,6 +76,12 @@ sub post {
 
       unless($hw) {
          $self->app->log->debug("nothing found!");
+
+         $hw = Rex::IO::Server::Model::Hardware->new(
+            name => $ref->{CONTENT}->{HARDWARE}->{NAME},
+            uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} || '',
+         );
+         $hw->save;
       }
 
       return eval {

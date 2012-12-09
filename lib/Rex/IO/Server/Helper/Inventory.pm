@@ -133,6 +133,7 @@ sub inventor {
       INVHDDS: for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
 
          next INVHDDS unless $hdd;
+         next INVHDDS unless $hdd->{SERIALNUMER};
 
          if($hdd_dev->serial eq $hdd->{SERIALNUMBER}) {
 
