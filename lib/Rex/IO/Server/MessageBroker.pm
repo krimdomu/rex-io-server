@@ -11,6 +11,7 @@ use Data::Dumper;
 use Mojo::JSON;
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
+use Rex::IO::Server::Helper::Inventory;
 
 my $clients = {};
 
@@ -80,87 +81,8 @@ sub broker {
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
                );
                $new_hw->save;
-               for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
 
-                  #next if ($eth->{VIRTUALDEV} == 1);
-                  # for now, skip ipv6
-                  next if (exists $eth->{IPSUBNET6});
-
-                  my $new_nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
-                     dev         => $eth->{DESCRIPTION},
-                     hardware_id => $new_hw->id,
-                     proto       => "static",
-                     ip          => ! ref($eth->{IPADDRESS}) ? ip_to_int($eth->{IPADDRESS} || 0) : 0,
-                     netmask     => ! ref($eth->{IPMASK})    ? ip_to_int($eth->{IPMASK}    || 0) : 0,
-                     network     => ! ref($eth->{IPSUBNET})  ? ip_to_int($eth->{IPSUBNET}  || 0) : 0,
-                     gateway     => ! ref($eth->{IPGATEWAY}) ? ip_to_int($eth->{IPGATEWAY} || 0) : 0,
-                     mac         => $eth->{MACADDR},
-                  );
-
-                  $new_nw_a->save;
-
-               }
-
-               for my $storage (@{ $json->{info}->{CONTENT}->{STORAGES} }) {
-
-                  next if ($storage->{TYPE} ne "disk");
-
-                  my $new_store = Rex::IO::Server::Model::Harddrive->new(
-                     hardware_id => $new_hw->id,
-                     devname     => $storage->{NAME},
-                     size        => $storage->{DISKSIZE},
-                     vendor      => $storage->{MANUFACTURER},
-                  );
-
-                  $new_store->save;
-
-               }
-
-               my $bios_data = $json->{info}->{CONTENT}->{BIOS};
-               my ($mon, $day, $year) = split(/\//, $bios_data->{BDATE});
-
-               $bios_data->{BDATE} = "$year-$mon-$day 00:00:00";
-
-               my $new_bios = Rex::IO::Server::Model::Bios->new(
-                  hardware_id => $new_hw->id,
-                  biosdate    => $bios_data->{BDATE},
-                  version     => $bios_data->{BVERSION},
-                  ssn         => $bios_data->{SSN},
-                  manufacturer   => $bios_data->{MANUFACTURER},
-                  model       => $bios_data->{SMODEL},
-               );
-
-               $new_bios->save;
-
-               for my $mem (@{ $json->{info}->{CONTENT}->{MEMORIES} }) {
-
-                  next if (! exists $mem->{CAPACITY});
-                  next if ($mem->{CAPACITY} eq "No");
-                  
-                  my $new_mem = Rex::IO::Server::Model::Memory->new(
-                     hardware_id => $new_hw->id,
-                     size        => $mem->{CAPACITY},
-                     bank        => $mem->{NUMSLOTS} || 0,
-                     serialnumber => $mem->{SERIALNUMBER},
-                     speed       => $mem->{SPEED},
-                     type        => $mem->{TYPE},
-                  );
-
-                  $new_mem->save;
-
-               }
-
-               for my $cpu (@{ $json->{info}->{CONTENT}->{CPUS} }) {
-
-                  my $new_cpu = Rex::IO::Server::Model::Processor->new(
-                     hardware_id => $new_hw->id,
-                     modelname   => $cpu->{TYPE},
-                     vendor      => $cpu->{MANUFACTURER},
-                     mhz         => $cpu->{SPEED},
-                  );
-
-                  $new_cpu->save;
-               }
+               $self->inventor($new_hw, $json->{info});
 
                return 1;
             } or do {
