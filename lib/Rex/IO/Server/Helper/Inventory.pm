@@ -171,7 +171,7 @@ sub inventor {
 #################################################################################
    my $op_r = $hw->os;
    my ($os_version, $rest) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSVERSION});
-   my ($os_name, $rest) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSNAME});
+   my ($os_name, $rest2) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSNAME});
 
    $self->app->log->debug("Found OS: $os_name / $os_version");
 
@@ -233,7 +233,7 @@ sub inventor {
 
    for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
       next unless $net;
-      next if (exists $eth->{IPSUBNET6} && ! exists $eth->{IPSUBNET});
+      next if (exists $net->{IPSUBNET6} && ! exists $net->{IPSUBNET});
 
       my $new_hw = Rex::IO::Server::Model::NetworkAdapter->new(
          hardware_id => $hw->id,
