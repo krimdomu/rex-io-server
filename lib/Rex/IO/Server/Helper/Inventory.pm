@@ -218,6 +218,7 @@ sub inventor {
             $net_dev->network = ip_to_int($net->{IPSUBNET}  || 0);
             $net_dev->gateway = ip_to_int($net->{IPGATEWAY} || 0);
             $net_dev->mac     = $net->{MACADDR};
+            $net_dev->virtual = $net->{VIRTUALDEV};
 
             $net_dev->update;
 
@@ -232,6 +233,7 @@ sub inventor {
 
    for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
       next unless $net;
+      next if (exists $eth->{IPSUBNET6} && ! exists $eth->{IPSUBNET});
 
       my $new_hw = Rex::IO::Server::Model::NetworkAdapter->new(
          hardware_id => $hw->id,
@@ -240,6 +242,7 @@ sub inventor {
          netmask     => ip_to_int($net->{IPMASK}    || 0),
          network     => ip_to_int($net->{IPSUBNET}  || 0),
          gateway     => ip_to_int($net->{IPGATEWAY} || 0),
+         virtual     => $net->{VIRTUALDEV},
          proto       => "static",
          mac         => $net->{MACADDR},
       );

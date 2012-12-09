@@ -23,6 +23,7 @@ __PACKAGE__->attr(network => "Integer");
 __PACKAGE__->attr(gateway => "Integer");
 __PACKAGE__->attr(mac => "String");
 __PACKAGE__->attr(boot => "Integer");
+__PACKAGE__->attr(virtual => "Integer");
 
 __PACKAGE__->table("network_adapter");
 __PACKAGE__->primary_key("id");
