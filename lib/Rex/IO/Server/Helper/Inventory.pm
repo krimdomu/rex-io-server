@@ -170,8 +170,9 @@ sub inventor {
 # update operating system
 #################################################################################
    my $op_r = $hw->os;
-   my ($os_version, $rest) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSVERSION});
-   my ($os_name, $rest2) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSNAME});
+
+   my $os_version = $ref->{CONTENT}->{HARDWARE}->{OSVERSION};
+   my $os_name    = $ref->{CONTENT}->{HARDWARE}->{OSNAME};
 
    $self->app->log->debug("Found OS: $os_name / $os_version");
 
@@ -180,6 +181,27 @@ sub inventor {
                 & (Rex::IO::Server::Model::Os->name eq $os_name)
               );
    my $os = $os_r->next;
+
+   unless($os) {
+      my ($rest, $rest2);
+      ($os_version, $rest) = split(/ /, $os_version);
+
+      $os_r = Rex::IO::Server::Model::Os->all( 
+                  (Rex::IO::Server::Model::Os->version eq $os_version) 
+                & (Rex::IO::Server::Model::Os->name eq $os_name)
+              );
+      $os = $os_r->next;
+
+      unless($os) {
+         ($os_name, $rest2) = split(/ /, $os_name);
+
+         $os_r = Rex::IO::Server::Model::Os->all( 
+                  (Rex::IO::Server::Model::Os->version eq $os_version) 
+                & (Rex::IO::Server::Model::Os->name eq $os_name)
+              );
+         $os = $os_r->next;
+      }
+   }
 
    if(my $op = $op_r->next) {
       $self->app->log->debug("updating os");
