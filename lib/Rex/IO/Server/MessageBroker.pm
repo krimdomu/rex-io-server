@@ -140,7 +140,7 @@ sub broker {
                   my $new_mem = Rex::IO::Server::Model::Memory->new(
                      hardware_id => $new_hw->id,
                      size        => $mem->{CAPACITY},
-                     bank        => $mem->{NUMSLOTS},
+                     bank        => $mem->{NUMSLOTS} || 0,
                      serialnumber => $mem->{SERIALNUMBER},
                      speed       => $mem->{SPEED},
                      type        => $mem->{TYPE},

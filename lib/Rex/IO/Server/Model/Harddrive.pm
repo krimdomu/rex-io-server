@@ -16,6 +16,7 @@ __PACKAGE__->attr(hardware_id => "Integer");
 __PACKAGE__->attr(devname => "String");
 __PACKAGE__->attr(size => "Integer");
 __PACKAGE__->attr(vendor => "String");
+__PACKAGE__->attr(serial => "String");
 
 __PACKAGE__->table("harddrive");
 __PACKAGE__->primary_key("id");
