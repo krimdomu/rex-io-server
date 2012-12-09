@@ -82,7 +82,8 @@ sub broker {
                $new_hw->save;
                for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
 
-                  next if ($eth->{VIRTUALDEV} == 1);
+                  #next if ($eth->{VIRTUALDEV} == 1);
+                  # for now, skip ipv6
                   next if (exists $eth->{IPSUBNET6});
 
                   my $new_nw_a = Rex::IO::Server::Model::NetworkAdapter->new(
@@ -223,6 +224,7 @@ sub message_to_server {
    map {
          #warn "Sending message to client...\n";
          #warn Mojo::JSON->encode($json) . "\n";
+         $self->app->log->debug("Sending message to client: " . $to .  " => " . Mojo::JSON->encode($json));
 
          $_->{tx}->send(Mojo::JSON->encode($json))
       } @{ $clients->{$to} };

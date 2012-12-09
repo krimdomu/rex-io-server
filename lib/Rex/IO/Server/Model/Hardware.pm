@@ -36,7 +36,7 @@ __PACKAGE__->has_n("processor" => "Rex::IO::Server::Model::Processor", "hardware
 sub mac {
    my ($self) = @_;
 
-   my $hw_net_boot = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->hardware_id == $self->id & Rex::IO::Server::Model::NetworkAdapter->boot == 1 )->next;
+   my $hw_net_boot = Rex::IO::Server::Model::NetworkAdapter->all( (Rex::IO::Server::Model::NetworkAdapter->hardware_id == $self->id) & (Rex::IO::Server::Model::NetworkAdapter->boot == 1) )->next;
 
    if($hw_net_boot) {
       return $hw_net_boot->mac;

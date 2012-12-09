@@ -43,23 +43,49 @@ sub post {
       my $hw = $hw_r->next;
       if($hw) {
          # hardware found 
-         warn "Found hardware's uuid";
+         $self->app->log->debug("Found hardware's uuid");
       }
       else {
          for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
             $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
             $hw = $hw_r->next;
             if($hw) {
-               warn "Found hardware through ip address";
+               $self->app->log->debug("Found hardware through ip address");
                last;
             }
          }
       }
 
       unless($hw) {
-         warn "nothing found!";
+         $self->app->log->debug("nothing found!");
       }
 
+      # update operating system
+      my $op_r = $hw->os;
+      my $os_name = $ref->{CONTENT}->{HARDWARE}->{OSNAME};
+      my ($os_version, $rest) = split(/ /, $ref->{CONTENT}->{HARDWARE}->{OSVERSION});
+
+      $self->app->log->debug("Found OS: $os_name / $os_version");
+
+      my $os_r = Rex::IO::Server::Model::Os->all( 
+                     (Rex::IO::Server::Model::Os->version eq $os_version) 
+                   & (Rex::IO::Server::Model::Os->name eq $os_name)
+                 );
+      my $os = $os_r->next;
+
+      if(my $op = $op_r->next) {
+         $self->app->log->debug("updating os");
+         $hw->os_id = $os->id;
+         $hw->update;
+      }
+      else {
+         $self->app->log->debug("Registering new OS");
+         $hw->state_id = 4;
+         $hw->update;
+
+         $hw->os_id = $os->id;
+         $hw->update;
+      }
 
       # update network cards
       my $net_devs = $hw->network_adapter;
@@ -69,8 +95,9 @@ sub post {
       NETDEVS: while(my $net_dev = $net_devs->next) {
          INVENTORY: for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
 
+            next INVENTORY unless $net;
+
             if($net_dev->dev eq $net->{DESCRIPTION}) {
-               warn "Netdev already found, updating...";
 
                $net_dev->ip      = ip_to_int($net->{IPADDRESS} || 0);
                $net_dev->netmask = ip_to_int($net->{IPMASK}    || 0);
