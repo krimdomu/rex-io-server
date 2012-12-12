@@ -99,7 +99,7 @@ sub startup {
    $r->get("/plugins")->to("plugin#list");
 
    # do database connection
-   DBIx::ORMapper::setup(default => "MySQL://" . $self->config->{db}->{server} . "/" . $self->config->{db}->{schema} . "?username=" . $self->config->{db}->{username} . "&password=" . $self->config->{db}->{password});
+   DBIx::ORMapper::setup(default => "MySQL://" . $self->config->{database}->{server} . "/" . $self->config->{database}->{schema} . "?username=" . $self->config->{database}->{username} . "&password=" . $self->config->{database}->{password});
 
    eval {
       my $db = DBIx::ORMapper::get_connection("default");
