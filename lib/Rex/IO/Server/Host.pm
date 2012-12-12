@@ -22,6 +22,7 @@ sub add {
    eval {
       my $hw = Rex::IO::Server::Model::Hardware->new(
          name => $name,
+         uuid => $json->{uuid},
          state_id => 1, # set unknown default state
       );
 
