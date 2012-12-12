@@ -96,6 +96,8 @@ sub startup {
       $s->__register__($self);
    }
 
+   $r->get("/plugins")->to("plugin#list");
+
    # do database connection
    DBIx::ORMapper::setup(default => "MySQL://" . $self->config->{db}->{server} . "/" . $self->config->{db}->{schema} . "?username=" . $self->config->{db}->{username} . "&password=" . $self->config->{db}->{password});
 
