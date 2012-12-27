@@ -1,6 +1,5 @@
 =pod
 
-
 =head2 Rex::IO::Server
 
 This is the Server Component of Rex. This component is for collecting multiple backends under one middleware to get a consistent api to talk to the backends (like CMDBs, DHCP, DNS, Issue/Incident Trackers, and more).
