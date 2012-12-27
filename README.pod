@@ -1,5 +1,6 @@
 =pod
 
+
 =head2 Rex::IO::Server
 
 This is the Server Component of Rex. This component is for collecting multiple backends under one middleware to get a consistent api to talk to the backends (like CMDBs, DHCP, DNS, Issue/Incident Trackers, and more).
@@ -37,15 +38,13 @@ Configure a subnet to boot iPXE.
 	option routers 192.168.7.1;
 
 	if exists user-class and option user-class = "iPXE" {
-		filename "http://rex-io-server/deploy/boot";
+		filename "http://rex-io-server/deploy/boot?deploy=true";
 	} else {
 		filename "undionly.kpxe";
 	}
  }
 
 =head3 TFTP
-
-...tbd...
 
 Download L<http://boot.ipxe.org/undionly.kpxe> into your tftp-root.
 
