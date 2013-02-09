@@ -17,11 +17,11 @@ use Data::Dumper;
 sub list {
    my ($self) = @_;
 
-   my $hw_r = Rex::IO::Server::Model::Hardware->all;
+   my @all_hw = $self->db->resultset('Hardware')->all;
 
-   my @ret = ();
+   my @ret;
 
-   while(my $hw = $hw_r->next) {
+   for my $hw (@all_hw) {
       push(@ret, $hw->to_hashRef);
    }
 

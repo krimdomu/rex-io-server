@@ -28,20 +28,19 @@ use Mojo::UserAgent;
 use Mojo::IOLoop;
 use Data::Dumper;
 
-use DBIx::ORMapper;
-use DBIx::ORMapper::Connection::Server::MySQL;
-use DBIx::ORMapper::DM;
+use Rex::IO::Server::Schema;
 
-use Rex::IO::Server::Model::Hardware;
-use Rex::IO::Server::Model::HardwareState;
-use Rex::IO::Server::Model::OsTemplate;
-use Rex::IO::Server::Model::NetworkAdapter;
-use Rex::IO::Server::Model::Tree;
-use Rex::IO::Server::Model::Bios;
-use Rex::IO::Server::Model::Harddrive;
-use Rex::IO::Server::Model::Memory;
-use Rex::IO::Server::Model::Processor;
-use Rex::IO::Server::Model::Os;
+has schema => sub {
+   my ($self) = @_;
+
+   my $dsn = "DBI:mysql:"
+           . "database=". $self->config->{database}->{schema} . ";"
+           . "host="    . $self->config->{database}->{host};
+            
+   return Rex::IO::Server::Schema->connect($dsn, 
+      $self->config->{database}->{username},
+      $self->config->{database}->{password});
+};
 
 our $VERSION = "0.0.4";
 
@@ -51,6 +50,8 @@ sub startup {
 
    # Documentation browser under "/perldoc"
    #$self->plugin('PODRenderer');
+
+   $self->helper(db => sub { $self->app->schema });
 
    my @cfg = ("/etc/rex/io/server.conf", "/usr/local/etc/rex/io/server.conf", "server.conf");
    my $cfg;
@@ -97,27 +98,6 @@ sub startup {
    }
 
    $r->get("/plugins")->to("plugin#list");
-
-   # do database connection
-   DBIx::ORMapper::setup(default => "MySQL://" . $self->config->{database}->{server} . "/" . $self->config->{database}->{schema} . "?username=" . $self->config->{database}->{username} . "&password=" . $self->config->{database}->{password});
-
-   eval {
-      my $db = DBIx::ORMapper::get_connection("default");
-      $db->connect;
-
-      Rex::IO::Server::Model::Hardware->set_data_source($db);
-      Rex::IO::Server::Model::HardwareState->set_data_source($db);
-      Rex::IO::Server::Model::OsTemplate->set_data_source($db);
-      Rex::IO::Server::Model::NetworkAdapter->set_data_source($db);
-      Rex::IO::Server::Model::Tree->set_data_source($db);
-      Rex::IO::Server::Model::Bios->set_data_source($db);
-      Rex::IO::Server::Model::Harddrive->set_data_source($db);
-      Rex::IO::Server::Model::Memory->set_data_source($db);
-      Rex::IO::Server::Model::Processor->set_data_source($db);
-      Rex::IO::Server::Model::Os->set_data_source($db);
-   } or do {
-      die("Can't connect to database!\n$@");
-   };
 
 }
 

@@ -29,12 +29,12 @@ sub add {
 sub list {
    my ($self) = @_;
 
-   my $os_r = Rex::IO::Server::Model::OsTemplate->all;
+   my @os_r = $self->db->resultset("OsTemplate")->all;
 
    my @ret = ();
 
-   while(my $os = $os_r->next) {
-      push(@ret, $os->get_data);
+   for my $os (@os_r) {
+      push(@ret, { $os->get_columns });
    }
 
    $self->render_json(\@ret);

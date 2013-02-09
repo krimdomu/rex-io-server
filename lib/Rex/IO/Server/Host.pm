@@ -46,11 +46,12 @@ sub add {
 sub list {
    my ($self) = @_;
 
-   my $hw = Rex::IO::Server::Model::Hardware->all;
+   my @all_hw = $self->db->resultset('Hardware')->all;
 
    my @ret;
-   while(my $h = $hw->next) {
-      push(@ret, $h->to_hashRef);
+
+   for my $hw (@all_hw) {
+      push(@ret, $hw->to_hashRef);
    }
 
    $self->render_json({ok => Mojo::JSON->true, data => \@ret});
