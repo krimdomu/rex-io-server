@@ -1,8 +1,0 @@
-database:
-   type: MySQL
-   host: localhost
-   schema: rexio_server
-   username: rexio
-   password: rexio
-
-directory: db
