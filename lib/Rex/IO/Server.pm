@@ -42,7 +42,7 @@ has schema => sub {
       $self->config->{database}->{password});
 };
 
-our $VERSION = "0.0.4";
+our $VERSION = "0.0.5";
 
 # This method will run once at server start
 sub startup {
