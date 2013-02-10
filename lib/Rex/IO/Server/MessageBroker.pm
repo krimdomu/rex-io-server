@@ -55,9 +55,10 @@ sub broker {
             push(@mac_addresses, $eth->{MACADDR});
          }
 
-         my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac == \@mac_addresses );
+         #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac == \@mac_addresses );
+         my $hw = $self->db->resultset("Hardware")->search({ "network_adapters.mac" => { "-in" => \@mac_addresses } });
 
-         if(! $hw->next) {
+         if(! $hw->first) {
             my ($eth_dev) = grep { exists $_->{IPADDRESS} && $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
 
             eval {
@@ -76,11 +77,15 @@ sub broker {
                   $json->{info}->{CONTENT}->{CPUS} = [ $json->{info}->{CONTENT}->{CPUS} ];
                }
 
-               my $new_hw = Rex::IO::Server::Model::Hardware->new(
+#               my $new_hw = Rex::IO::Server::Model::Hardware->new(
+#                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
+#                  uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
+#               );
+               my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
-               );
-               $new_hw->save;
+               });
+               $new_hw->update;
 
                $self->inventor($new_hw, $json->{info});
 

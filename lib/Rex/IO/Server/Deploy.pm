@@ -28,44 +28,48 @@ sub boot {
       warn "GOT MAC: $mac\n";
    }
 
-   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac );
+   #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
+   my $hw = $self->db->resultset("Hardware")->search({ mac => $mac })->first;
 
    if($self->param("custom")) {
       $client = $self->param("custom");
-      $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
+      #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
+      $hw = $self->db->resultset("Hardware")->search({
+            "network_adapters.ip" => ip_to_int($client),
+         })->first;
    }
 
-   #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
-
-
-   if(my $system = $hw->next) {
+   if(my $system = $hw) {
       # system known, do the registered boot
       warn "HW is known, returning registered os template\n";
 
       my $boot_os_r = $system->os_template;
-      if(my $boot_os = $boot_os_r->next) {
+      if(my $boot_os = $boot_os_r) {
 
          if($system->state_id == 1 || $self->param("deploy")) { # first boot after service os / after registration
                                       # return os template to deploy os
 
             if($boot_os->id == 1) {
                warn "Booting local... Setting system->state_id = 4";
-               $system->state_id = 4;
-               $system->update;
+               $system->update({
+                  state_id => 4
+               });
                return $self->render_text($boot_os->ipxe);
             }
 
             if($boot_os->ipxe) {
                # if there are ipxe commands, use them
                warn "Booting ipxe commands... Setting system->state_id = 4";
-               $system->state_id = 4;
-               $system->update;
+               $system->update({
+                  state_id => 4
+               });
                return $self->render_text($boot_os->ipxe);
             }
 
             my $append = $boot_os->append;
             my $hostname = $boot_os->name;
-            my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
+            #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
+            my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
             my $eth = $boot_eth->dev;
 
             $append =~ s/\%hostname/$hostname/g;
@@ -76,8 +80,9 @@ sub boot {
                               . "initrd " . $boot_os->initrd . "\n"
                               . "boot";
 
-            $system->state_id = 2;
-            $system->update;
+            $system->update({
+               state_id => 2
+            });
 
             return $self->render_text($boot_commands);
          }
@@ -85,8 +90,9 @@ sub boot {
 
          warn "rerturning kickstart template\n";
 
-            $system->state_id = 3;
-            $system->update;
+            $system->update({
+               state_id => 3
+            });
 
             $self->stash("hardware", $system);
 
@@ -95,17 +101,19 @@ sub boot {
          }
          elsif($system->state_id == 3 || $self->param("finished")) { # hook after installation, must be called from within the template
 
-            $system->state_id = 4;
-            $system->os_template_id = 1;
-            $system->update;
+            $system->update({
+               state_id => 4,
+               os_template_id => 1,
+            });
 
             return $self->render_json({ok => Mojo::JSON->true});
          }
          else { # default boot, if state == INSTALLED (state_id: 4)
             warn "boot from local hard disk...\n";
 
-            my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
-            my $boot_os = $boot_os_r->next;
+            #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
+            my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
+            my $boot_os = $boot_os_r;
 
             return $self->render_text($boot_os->ipxe);
          }
@@ -114,14 +122,16 @@ sub boot {
          warn "No Boot method found...\n";
          warn "Returning localboot...\n";
 
-         my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
-         my $boot_os = $boot_os_r->next;
+         #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
+         my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
+         my $boot_os = $boot_os_r;
          return $self->render_text($boot_os->ipxe);
       }
    }
    else { # system unknown, boot service os
-      my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
-      my $boot_os = $boot_os_r->next;
+      #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
+      my $boot_os_r = $self->db->resultset("OsTemplate")->find(2);
+      my $boot_os = $boot_os_r;
 
       my $boot_commands = "#!ipxe\n\n";
       $boot_commands .= "kernel " . $boot_os->kernel . " " . $boot_os->append . "\n";
@@ -136,13 +146,16 @@ sub boot {
 sub deploy {
    my ($self) = @_;
    
-   my $system_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name eq $self->stash("server") );
-   if(my $system = $system_r->next) {
-      my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("os") );
-      if(my $os = $os_r->next) {
-         $system->os_template_id = $os->id;
-         $system->state_id = 1;
-         $system->update;
+   #my $system_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name eq $self->stash("server") );
+   my $system_r = $self->db->resultset("Hardware")->search({ name => $self->stash("server") });
+   if(my $system = $system_r->first) {
+      #my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("os") );
+      my $os_r = $self->db->resultset("OsTemplate")->search({ name => $self->stash("os") });
+      if(my $os = $os_r->first) {
+         $system->update({
+            os_template_id => $os->id,
+            state_id => 1,
+         });
 
          return $self->render_json({ok => Mojo::JSON->true});
       }

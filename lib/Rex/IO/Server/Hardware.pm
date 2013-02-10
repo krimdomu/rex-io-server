@@ -31,11 +31,12 @@ sub list {
 sub search {
    my ($self) = @_;
 
-   my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
+   #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
+   my @hw_r = $self->db->resultset("Hardware")->search({ name => { like => $self->param("name") . '%' } });
 
    my @ret = ();
 
-   while(my $hw = $hw_r->next) {
+   for my $hw (@hw_r) {
       push(@ret, $hw->to_hashRef);
    }
 
@@ -45,21 +46,23 @@ sub search {
 sub get {
    my ($self) = @_;
 
-   my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
+   #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
+   my $hw = $self->db->resultset("Hardware")->find($self->param("id"));
    $self->render_json($hw->to_hashRef);
 }
 
 sub update {
    my ($self) = @_;
 
-   my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+   #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+   my $hw_r = $self->db->resultset("Hardware")->find($self->param("id"));
 
-   if(my $hw = $hw_r->next) {
+   if(my $hw = $hw_r) {
       return eval {
          my $json = $self->req->json;
 
          for my $k (keys %{ $json }) {
-            $hw->$k = $json->{$k};
+            $hw->$k($json->{$k});
          }
 
          $hw->update;
@@ -81,7 +84,8 @@ sub update_network_adapter {
    my $json = $self->req->json;
 
    return eval {
-      my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
+      #my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
+      my $nw_a = $self->db->resultset("NetworkAdapter")->find($nwa_id);
 
       my @calc_int = qw/ip netmask broadcast network gateway/;
 
@@ -90,7 +94,7 @@ sub update_network_adapter {
             $json->{$k} = ip_to_int($json->{$k});
          }
 
-         $nw_a->$k = $json->{$k};
+         $nw_a->$k($json->{$k});
       }
 
       $nw_a->update;
@@ -104,10 +108,11 @@ sub update_network_adapter {
 sub purge {
    my ($self) = @_;
 
-   my $hw_i = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+   #my $hw_i = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+   my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
 
    return eval {
-      if(my $hw = $hw_i->next) {
+      if(my $hw = $hw_i) {
          $hw->purge;
          return $self->render_json({ok => Mojo::JSON->true});
       }

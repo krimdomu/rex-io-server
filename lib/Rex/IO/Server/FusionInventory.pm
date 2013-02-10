@@ -54,8 +54,9 @@ sub post {
          $ref->{CONTENT}->{CPUS} = [ $ref->{CONTENT}->{CPUS} ];
       }
 
-      my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->uuid eq $ref->{CONTENT}->{HARDWARE}->{UUID} );
-      my $hw = $hw_r->next;
+      #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->uuid eq $ref->{CONTENT}->{HARDWARE}->{UUID} );
+      my $hw_r = $self->db->resultset("Hardware")->search({ uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} });
+      my $hw = $hw_r->first;
       if($hw) {
          # hardware found 
          $self->app->log->debug("Found hardware's uuid");
@@ -65,8 +66,11 @@ sub post {
             next unless $net->{IPADDRESS};
             next unless $net->{VIRTUALDEV} == 0;
 
-            $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
-            $hw = $hw_r->next;
+            #$hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
+            $hw_r = $self->db->resultset("Hardware")->search({
+                  "network_adapters.ip" => ip_to_int($net->{IPADDRESS} || 0)
+               });
+            $hw = $hw_r->first;
             if($hw) {
                $self->app->log->debug("Found hardware through ip address");
                last;
@@ -77,11 +81,16 @@ sub post {
       unless($hw) {
          $self->app->log->debug("nothing found!");
 
-         $hw = Rex::IO::Server::Model::Hardware->new(
+         #$hw = Rex::IO::Server::Model::Hardware->new(
+         #   name => $ref->{CONTENT}->{HARDWARE}->{NAME},
+         #   uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} || '',
+         #);
+         my $hw = $self->db->resultset("Hardware")->create({
             name => $ref->{CONTENT}->{HARDWARE}->{NAME},
             uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} || '',
-         );
-         $hw->save;
+         });
+
+         $hw->update;
       }
 
       return eval {

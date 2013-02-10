@@ -15,12 +15,6 @@ use Data::Dumper;
 sub root {
    my ($self) = @_;
 
-   my $tree_r = Rex::IO::Server::Model::Tree->all( Rex::IO::Server::Model::Tree->id == 1 );
-
-   if(my $root = $tree_r->next) {
-      return $self->render_json($root->get_data);
-   }
-
    $self->render_json({ok => Mojo::JSON->false}, status => 404);
 }
 

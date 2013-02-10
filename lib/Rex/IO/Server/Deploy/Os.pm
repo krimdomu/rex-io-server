@@ -22,8 +22,9 @@ sub register {
    $json->{name} = $name;
 
    eval {
-      my $ot = Rex::IO::Server::Model::OsTemplate->new(%{ $json });
-      $ot->save;
+      #my $ot = Rex::IO::Server::Model::OsTemplate->new(%{ $json });
+      my $ot = $self->db->resultset("OsTemplate")->create($json);
+      $ot->update;
 
       return $self->render_json({ok => Mojo::JSON->true});
    } or do {
@@ -39,9 +40,10 @@ sub update {
    my $json = $self->req->json;
 
    eval {
-      my $ot = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $id )->next;
+      #my $ot = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $id )->next;
+      my $ot = $self->db->resultset("OsTemplate")->find($id);
       for my $d (keys %{ $json }) {
-         $ot->$d = $json->{$d};
+         $ot->$d($json->{$d});
       }
 
       $ot->update;
@@ -57,8 +59,9 @@ sub delete {
    my ($self) = @_;
 
    eval {
-      my $ot = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("name") );
-      if(my $t = $ot->next) {
+      #my $ot = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name eq $self->stash("name") );
+      my $ot = $self->db->resultset("OsTemplate")->search({ name => $self->stash("name") });
+      if(my $t = $ot->first) {
          $t->delete;
          return $self->render_json({ok => Mojo::JSON->true});
       }
@@ -75,11 +78,12 @@ sub delete {
 sub list {
    my ($self) = @_;
 
-   my $ot = Rex::IO::Server::Model::OsTemplate->all;
+   #my $ot = Rex::IO::Server::Model::OsTemplate->all;
+   my @ot = $self->db->resultset("OsTemplate")->all;
 
    my @ret = ();
-   while(my $t = $ot->next) {
-      push(@ret, $t->get_data);
+   for my $t (@ot) {
+      push(@ret, { $t->get_columns });
    }
 
    $self->render_json(\@ret);

@@ -17,8 +17,9 @@ sub add {
    my $json = $self->req->json;
 
    return eval {
-      my $new_t = Rex::IO::Server::Model::OsTemplate->new(%{ $json });
-      $new_t->save;
+#      my $new_t = Rex::IO::Server::Model::OsTemplate->new(%{ $json });
+      my $new_t = $self->db->resultset("OsTemplate")->create($json);
+      $new_t->update;
 
       return $self->render_json({ok => Mojo::JSON->true});
    } or do {
@@ -43,12 +44,13 @@ sub list {
 sub search {
    my ($self) = @_;
 
-   my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name % ($self->param("name") . '%'));
+   #my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->name % ($self->param("name") . '%'));
+   my @os_r = $self->db->resultset("OsTemplate")->search({ name => { like => $self->param("name") . '%' } });
 
    my @ret = ();
 
-   while(my $os = $os_r->next) {
-      push(@ret, $os->get_data);
+   for my $os (@os_r) {
+      push(@ret, { $os->get_columns });
    }
 
    $self->render_json(\@ret);
@@ -57,21 +59,23 @@ sub search {
 sub get {
    my ($self) = @_;
 
-   my $os = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $self->param("id"))->next;
-   $self->render_json($os->get_data);
+   #my $os = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $self->param("id"))->next;
+   my $os = $self->db->resultset("OsTemplate")->find($self->param("id"));
+   $self->render_json({ $os->get_columns });
 }
 
 sub update {
    my ($self) = @_;
 
-   my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $self->param("id") );
+   #my $os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $self->param("id") );
+   my $os_r = $self->db->resultset("OsTemplate")->find($self->param("id"));
 
-   if(my $os = $os_r->next) {
+   if(my $os = $os_r) {
       eval {
          my $json = $self->req->json;
 
          for my $k (keys %{ $json }) {
-            $os->$k = $json->{$k};
+            $os->$k($json->{$k});
          }
 
          $os->update;
