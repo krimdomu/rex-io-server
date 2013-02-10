@@ -175,12 +175,13 @@ sub __register__ {
    $r->get("/deploy/wait/:name")->to("deploy#wait");
    $r->get("/deploy/boot")->to("deploy#boot");
 
-   $r->post("/deploy/:server/:os")->to("deploy#deploy");
+   # write new boot info, needs auth
+   $r->post("/deploy/:server/:os")->over(authenticated => 1)->to("deploy#deploy");
 
-   $r->put("/deploy/os/:id")->to("deploy-os#update");
-   $r->post("/deploy/os/:name")->to("deploy-os#register");
-   $r->delete("/deploy/os/:name")->to("deploy-os#delete");
-   $r->route("/deploy/os")->via("LIST")->to("deploy-os#list");
+   $r->put("/deploy/os/:id")->over(authenticated => 1)->to("deploy-os#update");
+   $r->post("/deploy/os/:name")->over(authenticated => 1)->to("deploy-os#register");
+   $r->delete("/deploy/os/:name")->over(authenticated => 1)->to("deploy-os#delete");
+   $r->route("/deploy/os")->via("LIST")->over(authenticated => 1)->to("deploy-os#list");
 }
 
 sub _ua { return Mojo::UserAgent->new; }

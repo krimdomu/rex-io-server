@@ -179,13 +179,13 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->post('/dns/#domain/#host')->to('dns#add_record');
-   $r->delete('/dns/#domain/:type/#host')->to('dns#delete_record');
+   $r->post('/dns/#domain/#host')->over(authenticated => 1)->to('dns#add_record');
+   $r->delete('/dns/#domain/:type/#host')->over(authenticated => 1)->to('dns#delete_record');
 
-   $r->get('/dns/#domain/#host')->to('dns#get');
+   $r->get('/dns/#domain/#host')->over(authenticated => 1)->to('dns#get');
 
-   $r->route('/dns/#domain')->via("LIST")->to('dns#list_domain');
-   $r->route('/dns')->via("LIST")->to('dns#list_tlds');
+   $r->route('/dns/#domain')->via("LIST")->over(authenticated => 1)->to('dns#list_domain');
+   $r->route('/dns')->via("LIST")->over(authenticated => 1)->to('dns#list_tlds');
 }
 
 sub _dns {

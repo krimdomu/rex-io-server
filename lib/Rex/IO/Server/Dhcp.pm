@@ -44,8 +44,8 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->post("/dhcp/#mac")->to("dhcp#new_lease");
-   $r->route("/dhcp")->via("LIST")->to("dhcp#list_leases");
+   $r->post("/dhcp/#mac")->over(authenticated => 1)->to("dhcp#new_lease");
+   $r->route("/dhcp")->via("LIST")->over(authenticated => 1)->to("dhcp#list_leases");
 }
 
 sub _ua {

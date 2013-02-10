@@ -48,11 +48,14 @@ our $VERSION = "0.0.4";
 sub startup {
    my $self = shift;
 
-   # Documentation browser under "/perldoc"
-   #$self->plugin('PODRenderer');
-
+   #######################################################################
+   # Define some custom helpers
+   #######################################################################
    $self->helper(db => sub { $self->app->schema });
 
+   #######################################################################
+   # Load configuration
+   #######################################################################
    my @cfg = ("/etc/rex/io/server.conf", "/usr/local/etc/rex/io/server.conf", "server.conf");
    my $cfg;
    for my $file (@cfg) {
@@ -61,43 +64,86 @@ sub startup {
          last;
       }
    }
+
+   #######################################################################
+   # Load plugins
+   #######################################################################
    $self->plugin('Config', file => $cfg);
    $self->plugin('Rex::IO::Server::Mojolicious::Plugin::IP');
+   $self->plugin('Rex::IO::Server::Mojolicious::Plugin::User');
+   $self->plugin("Authentication" => {
+      autoload_user => 1,
+      session_key   => $self->config->{session}->{key},
+      load_user     => sub {
+         my ($app, $uid) = @_;
+         my $user = $app->get_user(by_id => $uid);
+         return $user; # user objekt
+      },
+      validate_user => sub {
+         my ($app, $username, $password, $extradata) = @_;
+         my $user = $app->get_user(by_name => $username);
 
-   # Router
+         if($user->check_password($password)) {
+            return $user->id;
+         }
+
+         return;
+      },
+   });
+
+   #######################################################################
+   # Setup routing
+   #######################################################################
    my $r = $self->routes;
 
-   # message broker routes
+   #######################################################################
+   # routes that don't need authentication
+   #######################################################################
    $r->websocket("/messagebroker")->to("message_broker#broker");
-   $r->route("/messagebroker/clients")->via("LIST")->to("message_broker#clients");
-   $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
-   $r->get("/messagebroker/online/#ip")->to("message_broker#is_online");
+   $r->post("/auth")->to(cb => sub {
+      my ($app) = @_;
+      my $data = $app->req->json;
+
+      if($app->authenticate($data->{user}, $data->{password})) {
+         return $app->render_json({ok => Mojo::JSON->true}, status => 200);
+      }
+      else {
+         return $app->render_json({ok => Mojo::JSON->false}, status => 401);
+      }
+   });
+
+   #######################################################################
+   # routes that need authentication
+   #######################################################################
+   $r->route("/messagebroker/clients")->via("LIST")->over(authenticated => 1)->to("message_broker#clients");
+   $r->post("/messagebroker/:to")->over(authenticated => 1)->to("message_broker#message_to_server");
+   $r->get("/messagebroker/online/#ip")->over(authenticated => 1)->to("message_broker#is_online");
 
    for my $ctrl (qw/hardware os os_template/) {
       my $ctrl_route = $ctrl;
       $ctrl_route =~ s/_/-/gms;
-      $r->route("/$ctrl_route")->via("LIST")->to("$ctrl#list");
-      $r->get("/$ctrl_route/search/:name")->to("$ctrl#search");
-      $r->post("/$ctrl_route/:id")->to("$ctrl#update");
-      $r->get("/$ctrl_route/:id")->to("$ctrl#get");
-      $r->post("/$ctrl_route")->to("$ctrl#add");
+      $r->route("/$ctrl_route")->via("LIST")->over(authenticated => 1)->to("$ctrl#list");
+      $r->get("/$ctrl_route/search/:name")->over(authenticated => 1)->to("$ctrl#search");
+      $r->post("/$ctrl_route/:id")->over(authenticated => 1)->to("$ctrl#update");
+      $r->get("/$ctrl_route/:id")->over(authenticated => 1)->to("$ctrl#get");
+      $r->post("/$ctrl_route")->over(authenticated => 1)->to("$ctrl#add");
    }
 
-   $r->delete("/hardware/:id")->to("hardware#purge");
+   $r->delete("/hardware/:id")->over(authenticated => 1)->to("hardware#purge");
 
-   $r->post("/network-adapter/:id")->to("hardware#update_network_adapter");
+   $r->post("/network-adapter/:id")->over(authenticated => 1)->to("hardware#update_network_adapter");
 
 
-   $r->get("/tree/root")->to("tree#root");
-
+   #
    # load server plugins
+   #
    for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {
       my $s = "Rex::IO::Server::$plug";
       eval "require $s";
       $s->__register__($self);
    }
 
-   $r->get("/plugins")->to("plugin#list");
+   $r->get("/plugins")->over(authenticated => 1)->to("plugin#list");
 
 }
 

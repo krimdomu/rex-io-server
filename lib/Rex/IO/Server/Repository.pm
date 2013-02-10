@@ -57,8 +57,8 @@ sub __register__ {
    my $r = $app->routes;
 
 
-   $r->route("/repository/update")->via("UPDATE")->to("repository#update");
-   $r->get("/repository/:service")->to("repository#get_service");
+   $r->route("/repository/update")->via("UPDATE")->over(authenticated => 1)->to("repository#update");
+   $r->get("/repository/:service")->over(authenticated => 1)->to("repository#get_service");
 }
 
 1;

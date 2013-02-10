@@ -176,6 +176,7 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
+   # updating inventory, don't need authentication
    $r->post("/fusioninventory")->to("fusion_inventory#post");
 }
 

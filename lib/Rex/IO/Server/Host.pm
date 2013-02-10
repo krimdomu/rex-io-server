@@ -92,9 +92,9 @@ sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
-   $r->get("/host/:mac")->to("host#get");
-   $r->post("/host/:mac")->to("host#add");
-   $r->route("/host")->via("LIST")->to("host#list");
+   $r->get("/host/:mac")->over(authenticated => 1)->to("host#get");
+   $r->post("/host/:mac")->over(authenticated => 1)->to("host#add");
+   $r->route("/host")->via("LIST")->over(authenticated => 1)->to("host#list");
 }
 
 1;
