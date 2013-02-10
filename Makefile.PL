@@ -6,6 +6,7 @@ my %deps = (
                   'Mojolicious' => '2.98',
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
+                  'DBIx::Class' => 0,
 );
 
 WriteMakefile1(
@@ -14,11 +15,7 @@ WriteMakefile1(
          repository => 'https://github.com/krimdomu/rex-io-server',
       },
    },
-   BUILD_REQUIRES => {
-      'Mojolicious' => '2.98',
-      'Compress::Zlib' => 0,
-      'XML::Simple' => 0,
-   },
+   BUILD_REQUIRES => \%deps,
 
    NAME => 'Rex::IO::Server',
    VERSION_FROM => 'lib/Rex/IO/Server.pm',
