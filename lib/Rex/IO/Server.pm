@@ -68,9 +68,9 @@ sub startup {
    #######################################################################
    # Load plugins
    #######################################################################
-   $self->plugin('Config', file => $cfg);
-   $self->plugin('Rex::IO::Server::Mojolicious::Plugin::IP');
-   $self->plugin('Rex::IO::Server::Mojolicious::Plugin::User');
+   $self->plugin("Config", file => $cfg);
+   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::IP");
+   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::User");
    $self->plugin("Authentication" => {
       autoload_user => 1,
       session_key   => $self->config->{session}->{key},
@@ -80,7 +80,7 @@ sub startup {
          return $user; # user objekt
       },
       validate_user => sub {
-         my ($app, $username, $password, $extradata) = @_;
+         my ($app, $username, $password, $extra_data) = @_;
          my $user = $app->get_user(by_name => $username);
 
          if($user->check_password($password)) {
@@ -107,7 +107,11 @@ sub startup {
       my $data = $app->req->json;
 
       if($app->authenticate($data->{user}, $data->{password})) {
-         return $app->render_json({ok => Mojo::JSON->true}, status => 200);
+         my $user = $app->current_user;
+         return $app->render_json({ok => Mojo::JSON->true, data => {
+               id   => $user->id,
+               name => $user->name,
+            }}, status => 200);
       }
       else {
          return $app->render_json({ok => Mojo::JSON->false}, status => 401);
@@ -135,6 +139,7 @@ sub startup {
 
    $r->post("/network-adapter/:id")->over(authenticated => 1)->to("hardware#update_network_adapter");
 
+   $r->get("/user/:id")->over(authenticated => 1)->to("user#get");
 
    #
    # load server plugins
