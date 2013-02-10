@@ -100,6 +100,8 @@ sub startup {
    # routes that don't need authentication
    #######################################################################
    $r->websocket("/messagebroker")->to("message_broker#broker");
+
+   # authentication route. needs to be split out in an own controller
    $r->post("/auth")->to(cb => sub {
       my ($app) = @_;
       my $data = $app->req->json;
