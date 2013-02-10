@@ -4,6 +4,7 @@ use ExtUtils::MakeMaker;
 
 my %deps = (
                   'Mojolicious' => '2.98',
+                  'Mojolicious::Plugin::Authentication' => '1.24',
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
                   'DBIx::Class' => 0,
