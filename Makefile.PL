@@ -7,6 +7,7 @@ my %deps = (
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
                   'DBIx::Class' => 0,
+                  'Digest::Bcrypt' => 0,
 );
 
 WriteMakefile1(
