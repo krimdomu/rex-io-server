@@ -65,7 +65,7 @@ sub broker {
 
                # convert to array if not array
                if(ref($json->{info}->{CONTENT}->{STORAGES}) ne "ARRAY") {
-                  $json->{info}->{CONTENT}->{STORAGE} = [ $json->{info}->{CONTENT}->{STORAGES} ];
+                  $json->{info}->{CONTENT}->{STORAGES} = [ $json->{info}->{CONTENT}->{STORAGES} ];
                }
                if(ref($json->{info}->{CONTENT}->{NETWORKS}) ne "ARRAY") {
                   $json->{info}->{CONTENT}->{NETWORKS} = [ $json->{info}->{CONTENT}->{NETWORKS} ];
