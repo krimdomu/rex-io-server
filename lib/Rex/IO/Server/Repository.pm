@@ -3,9 +3,16 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Cwd qw(getcwd);
 use Mojo::JSON;
+use Data::Dumper;
+use Rex::IO::Server::Helper::IP;
 
 sub get_service {
    my $self = shift;
+
+   my $hw = $self->_get_client;
+   if(! ref $hw) {
+      return $hw;
+   }
 
    my $cwd = getcwd;
    my $repo_dir = $self->config->{repository}->{path} . "/" . $self->param("environment");
@@ -32,14 +39,38 @@ sub get_service {
 sub catalog {
    my ($self) = @_;
 
-   my $hw_name = "foobar";
-   my $hw_r = $self->db->resultset("Hardware")->search({ name => $hw_name });
-   if(my $hw = $hw_r->first) {
+   my $hw = $self->_get_client;
+   if(ref $hw) {
       my @services = $hw->services;
       return $self->render_json({ok => Mojo::JSON->true, data => [ map { $_ = $_->service_name } @services ]});
    }
 
-   return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   return $hw;
+}
+
+sub get_lib {
+   my ($self) = @_;
+
+   my $hw = $self->_get_client;
+   if(! ref $hw) {
+      return $hw;
+   }
+
+   my $lib_file = $self->param("lib");
+   $lib_file =~ s/::/\//g;
+
+   my $file = $self->config->{repository}->{path} . "/" . $self->param("environment") . "/lib/$lib_file.pm";
+
+   if(! -f $file) {
+      $file = $self->config->{repository}->{path} . "/" . $self->param("environment") . "/lib/$lib_file/__module__.pm";
+   }
+
+   if(-f $file) {
+      my $content = eval { local(@ARGV, $/) = ($file); <>; };
+      return $self->render_data($content);
+   }
+
+   return $self->render_data("die;", status => 404);
 }
 
 sub __register__ {
@@ -48,6 +79,30 @@ sub __register__ {
 
    $r->get("/repository/:environment/catalog")->to("repository#catalog");
    $r->get("/repository/:environment/service/:service")->to("repository#get_service");
+   $r->get("/repository/:environment/lib/*lib")->to("repository#get_lib");
+}
+
+sub _get_client {
+   my ($self) = @_;
+
+   my $client = $self->tx->remote_address;
+
+   # check if $client is ip address
+   if($client =~ m/^(\d+\.\d+\.\d+\.\d+)$/) {
+      $client = ip_to_int($client);
+   }
+   else {
+      return $self->render_json({ok => Mojo::JSON->false, error => "$client is not a valid ipv4 address"}, status => 500);
+   }
+
+   my $nwa_r = $self->db->resultset("NetworkAdapter")->search({ ip => $client });
+   my $nwa   = $nwa_r->first;
+
+   if(! $nwa) {
+      return $self->render_json({ok => Mojo::JSON->false, error => int_to_ip($client) . " not found in database"}, status => 404);
+   }
+
+   return $nwa->hardware;
 }
 
 1;

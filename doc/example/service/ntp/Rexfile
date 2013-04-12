@@ -1,8 +1,32 @@
 # Rexfile
-use Rex::IO::Client;
 
-task "do", sub {
+task "bootstrap", sub {
+};
+
+task "prepackage", sub {
+};
+
+task "package", sub {
+   install "ntp";
+};
+
+task "postpackage", sub {
+};
+
+task "configure", sub {
    file "/etc/ntp.conf",
-      content => template("templates/etc/ntp.conf.tpl", cmdb_get("service://ntp/etc/ntp.conf"));
+      content => template("templates/etc/ntp.conf.tpl", cmdb_get("/ntp/server"));
+};
+
+task "__io__", sub {
+   do_task [qw/
+   
+      bootstrap
+      prepackage
+      package
+      postpackage
+      configure
+   
+   /];
 };
 

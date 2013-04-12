@@ -9,6 +9,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
+use Data::Dumper;
 
 sub wait {
    my ($self) = @_;
