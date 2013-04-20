@@ -29,6 +29,7 @@ __PACKAGE__->has_many("harddrives" => "Rex::IO::Server::Schema::Result::Harddriv
 __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "hardware_id");
 __PACKAGE__->has_many("processors" => "Rex::IO::Server::Schema::Result::Processor", "hardware_id");
 __PACKAGE__->has_many("services" => "Rex::IO::Server::Schema::Result::HardwareService", "hardware_id");
+__PACKAGE__->has_many("hardware_services", "Rex::IO::Server::Schema::Result::HardwareService", "hardware_id");
 
 sub mac {
    my ($self) = @_;
