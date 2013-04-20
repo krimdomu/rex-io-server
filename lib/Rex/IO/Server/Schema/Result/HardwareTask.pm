@@ -13,7 +13,7 @@ use base qw(DBIx::Class::Core);
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware_task");
-__PACKAGE__->add_columns(qw/id hardware_id task_id/);
+__PACKAGE__->add_columns(qw/id hardware_id task_id task_order/);
 
 __PACKAGE__->set_primary_key("id");
 

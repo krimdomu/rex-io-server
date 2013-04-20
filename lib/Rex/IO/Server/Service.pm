@@ -35,6 +35,7 @@ sub add_task_to_host {
 
    my $host_id = $self->param("hostid");
    my $task_id = $self->param("taskid");
+   my $json = $self->req->json;
 
    my $host = $self->db->resultset("Hardware")->find($host_id);
    my $task = $self->db->resultset("ServiceTask")->find($task_id);
@@ -50,6 +51,7 @@ sub add_task_to_host {
    $self->db->resultset("HardwareTask")->create({
       task_id     => $task_id,
       hardware_id => $host_id,
+      task_order  => $json->{task_order},
    });
 
    $self->render_json({ok => Mojo::JSON->true});
@@ -137,6 +139,21 @@ sub get_service_for_host {
    $self->render_json({ok => Mojo::JSON->true, data => \@tasks});
 }
 
+sub remove_all_tasks_from_host {
+   my ($self) = @_;
+
+   my $host_id = $self->param("hostid");
+   my $host = $self->db->resultset("Hardware")->find($host_id);
+
+   if(! $host) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   $host->remove_tasks;
+
+   $self->render_json({ok => Mojo::JSON->true});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
@@ -147,6 +164,7 @@ sub __register__ {
    $r->route("/service")->via("LIST")->to("service#get_all");
    $r->route("/service/:id")->via("LIST")->to("service#get_service");
    $r->route("/service/host/:hostid")->via("LIST")->to("service#get_service_for_host");
+   $r->delete("/service/host/:hostid")->to("service#remove_all_tasks_from_host");
 }
 
 1;

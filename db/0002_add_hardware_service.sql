@@ -25,3 +25,5 @@ CREATE TABLE `service_task` (
      PRIMARY KEY (`id`),
      KEY `service_id` (`service_id`)
 ) ENGINE=InnoDB ;
+
+ALTER TABLE hardware_task ADD COLUMN (`task_order` int(11) DEFAULT 0);
