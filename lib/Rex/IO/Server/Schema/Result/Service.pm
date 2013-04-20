@@ -21,7 +21,11 @@ __PACKAGE__->has_many("tasks", "Rex::IO::Server::Schema::Result::ServiceTask", "
 
 sub to_hashRef {
    my ($self) = @_;
-   return { $self->get_columns };
+   my $data = { $self->get_columns };
+
+   $data->{tasks} = [ $self->get_tasks ];
+
+   return $data;
 }
 
 sub get_tasks {

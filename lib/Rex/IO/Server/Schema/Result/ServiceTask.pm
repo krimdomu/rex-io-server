@@ -22,7 +22,11 @@ __PACKAGE__->has_many("hardware_tasks", "Rex::IO::Server::Schema::Result::Hardwa
 
 sub to_hashRef {
    my ($self) = @_;
-   return { $self->get_columns };
+   my $data = { $self->get_columns };
+
+   $data->{service} = { $self->service->get_columns };
+
+   return $data;
 }
 
 1;
