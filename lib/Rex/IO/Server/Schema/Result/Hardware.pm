@@ -28,8 +28,7 @@ __PACKAGE__->has_one("bios" => "Rex::IO::Server::Schema::Result::Bios", "hardwar
 __PACKAGE__->has_many("harddrives" => "Rex::IO::Server::Schema::Result::Harddrive", "hardware_id");
 __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "hardware_id");
 __PACKAGE__->has_many("processors" => "Rex::IO::Server::Schema::Result::Processor", "hardware_id");
-__PACKAGE__->has_many("services" => "Rex::IO::Server::Schema::Result::HardwareService", "hardware_id");
-__PACKAGE__->has_many("hardware_services", "Rex::IO::Server::Schema::Result::HardwareService", "hardware_id");
+__PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id");
 
 sub mac {
    my ($self) = @_;
@@ -142,6 +141,19 @@ sub purge {
    #}
 
    #$self->delete;
+}
+
+sub get_tasks {
+   my ($self) = @_;
+
+   my @ret;
+
+   for my $hw_task ($self->tasks) {
+      my $task = $hw_task->task;
+      push(@ret, $task->to_hashRef());
+   }
+
+   return @ret;
 }
 
 1;

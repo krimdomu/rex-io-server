@@ -12,13 +12,22 @@ sub register {
    my $service_name = $self->param("name");
    my $json = $self->req->json;
 
-   my $service = $self->db->resultset("Service")->create({
-      service_name => $service_name,
-      task_name    => $json->{task_name},
+   my $service_o = $self->db->resultset("Service")->search({ service_name => $service_name });
+
+   my $service = $service_o->first;
+   if(! $service) {
+      $service = $self->db->resultset("Service")->create({
+         service_name => $service_name,
+      });
+   }
+
+   my $task = $self->db->resultset("ServiceTask")->create({
+      service_id       => $service->id,
+      task_name        => $json->{task_name},
       task_description => $json->{task_description},
    });
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render_json({ok => Mojo::JSON->true, data => { service_id => $service->id, task_id => $task->id }});
 }
 
 sub add_task_to_host {
@@ -27,8 +36,19 @@ sub add_task_to_host {
    my $host_id = $self->param("hostid");
    my $task_id = $self->param("taskid");
 
-   $self->db->resultset("HardwareService")->create({
-      service_id => $task_id,
+   my $host = $self->db->resultset("Hardware")->find($host_id);
+   my $task = $self->db->resultset("ServiceTask")->find($task_id);
+
+   if(! $host) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
+   }
+
+   if(! $task) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
+   }
+
+   $self->db->resultset("HardwareTask")->create({
+      task_id     => $task_id,
       hardware_id => $host_id,
    });
 
@@ -43,7 +63,17 @@ sub run_task_on_host {
    my $task_id = $self->param("taskid");
 
    my $host = $self->db->resultset("Hardware")->find($host_id);
-   my $task = $self->db->resultset("Service")->find($task_id);
+   my $task = $self->db->resultset("ServiceTask")->find($task_id);
+
+   if(! $host) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
+   }
+
+   if(! $task) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
+   }
+
+   my $service = $task->service;
 
    Mojo::IOLoop->delay(
       sub {
@@ -51,7 +81,7 @@ sub run_task_on_host {
          my $ref = {
             host   => $host->name,
             cmd    => "Execute",
-            script => $task->service_name,
+            script => $service->service_name,
             task   => $task->task_name,
          };
          my $json = Mojo::JSON->new;
@@ -63,13 +93,60 @@ sub run_task_on_host {
    );
 }
 
+sub get_all {
+   my ($self) = @_;
+
+   my @services = $self->db->resultset("Service")->all;
+
+   my @ret;
+
+   for my $service (@services) {
+      push(@ret, $service->to_hashRef);
+   }
+
+   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+}
+
+sub get_service {
+   my ($self) = @_;
+
+   my $service_id = $self->param("id");
+   my $service = $self->db->resultset("Service")->find($service_id);
+
+   if(! $service) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   my @tasks = $service->get_tasks;
+
+   $self->render_json({ok => Mojo::JSON->true, data => \@tasks});
+}
+
+sub get_service_for_host {
+   my ($self) = @_;
+
+   my $host_id = $self->param("hostid");
+   my $host = $self->db->resultset("Hardware")->find($host_id);
+
+   if(! $host) {
+      return $self->render_json({ok => Mojo::JSON->false, error => "Host not found."}, status => 404);
+   }
+
+   my @tasks = $host->get_tasks;
+
+   $self->render_json({ok => Mojo::JSON->true, data => \@tasks});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
 
    $r->post("/service/:name")->to("service#register");
-   $r->post("/service/host/:hostid/:taskid")->to("service#add_task_to_host");
-   $r->route("/service/host/:hostid/:taskid")->via("RUN")->to("service#run_task_on_host");
+   $r->post("/service/host/:hostid/task/:taskid")->to("service#add_task_to_host");
+   $r->route("/service/host/:hostid/task/:taskid")->via("RUN")->to("service#run_task_on_host");
+   $r->route("/service")->via("LIST")->to("service#get_all");
+   $r->route("/service/:id")->via("LIST")->to("service#get_service");
+   $r->route("/service/host/:hostid")->via("LIST")->to("service#get_service_for_host");
 }
 
 1;
