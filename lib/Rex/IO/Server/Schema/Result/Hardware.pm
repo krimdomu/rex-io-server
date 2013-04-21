@@ -29,6 +29,7 @@ __PACKAGE__->has_many("harddrives" => "Rex::IO::Server::Schema::Result::Harddriv
 __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "hardware_id");
 __PACKAGE__->has_many("processors" => "Rex::IO::Server::Schema::Result::Processor", "hardware_id");
 __PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id");
+__PACKAGE__->has_many("performance_counters" => "Rex::IO::Server::Schema::Result::PerformanceCounter", "hardware_id");
 
 sub mac {
    my ($self) = @_;
@@ -164,6 +165,21 @@ sub remove_tasks {
    for my $hw_task ($self->tasks) {
       $hw_task->delete;
    }
+}
+
+sub get_monitor_items {
+   my ($self) = @_;
+
+   my @ret = ();
+
+   for my $pc ($self->performance_counters) {
+      my $template = $pc->template;
+      for my $template_item ($template->items) {
+         push(@ret, $template_item->to_hashRef);
+      }
+   }
+
+   return @ret;
 }
 
 1;

@@ -1,0 +1,10 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Rex::IO::Server::PerformanceCollector;
+
+my $pc = Rex::IO::Server::PerformanceCollector->new;
+$pc->start;
+

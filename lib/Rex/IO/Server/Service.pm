@@ -87,7 +87,7 @@ sub run_task_on_host {
             task   => $task->task_name,
          };
          my $json = Mojo::JSON->new;
-         $redis->publish($self->config->{redis}->{queue} => $json->encode($ref), $delay->begin);
+         $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode($ref), $delay->begin);
       },
       sub {
          $self->render_json({ok => Mojo::JSON->true});
@@ -190,7 +190,7 @@ sub run_tasks {
       sub {
          my ($delay) = @_;
          my $json = Mojo::JSON->new;
-         $redis->publish($self->config->{redis}->{queue} => $json->encode(\@ref), $delay->begin);
+         $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode(\@ref), $delay->begin);
       },
       sub {
          $self->render_json({ok => Mojo::JSON->true});
@@ -216,7 +216,7 @@ sub __register__ {
 
 sub redis {
    my ($self) = @_;
-   return Mojo::Redis->new(server => $self->config->{redis}->{server} . ":" . $self->config->{redis}->{port});
+   return Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
 }
 
 sub get_random {
