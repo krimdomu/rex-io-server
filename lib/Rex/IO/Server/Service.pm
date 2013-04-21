@@ -174,11 +174,14 @@ sub run_tasks {
          return $self->render_json({ok => Mojo::JSON->false}, status => 404, error => "Host not found");
       }
 
+      my $magic = $self->get_random(16, 'a' .. 'z');
+
       push(@ref, {
          host   => $host_o->name,
          cmd    => "Execute",
          script => $service_o->service_name,
          task   => $task_o->task_name,
+         magic  => $magic,
       });
    }
 
@@ -193,8 +196,6 @@ sub run_tasks {
          $self->render_json({ok => Mojo::JSON->true});
       }
    );
-
-   print STDERR Dumper(\@tasks);
 
    $self->render_json({ok => Mojo::JSON->true});
 }
@@ -216,6 +217,20 @@ sub __register__ {
 sub redis {
    my ($self) = @_;
    return Mojo::Redis->new(server => $self->config->{redis}->{server} . ":" . $self->config->{redis}->{port});
+}
+
+sub get_random {
+   my $self = shift;
+	my $count = shift;
+	my @chars = @_;
+	
+	srand();
+	my $ret = "";
+	for(1..$count) {
+		$ret .= $chars[int(rand(scalar(@chars)-1))];
+	}
+	
+	return $ret;
 }
 
 1;
