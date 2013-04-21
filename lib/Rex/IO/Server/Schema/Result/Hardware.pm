@@ -175,7 +175,9 @@ sub get_monitor_items {
    for my $pc ($self->performance_counters) {
       my $template = $pc->template;
       for my $template_item ($template->items) {
-         push(@ret, $template_item->to_hashRef);
+         my $ref = $template_item->to_hashRef;
+         $ref->{performance_counter_id} = $pc->id;
+         push(@ret, $ref);
       }
    }
 

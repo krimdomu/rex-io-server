@@ -102,9 +102,28 @@ sub start {
 sub process_message {
    my ($self, $ref) = @_;
 
+   if(!$ref) {
+      $self->log->error("Invalid json message.");
+      return;
+   }
+
    my $host = $self->db->resultset("Hardware")->search({name => $ref->{host}})->first;
 
    if($host) {
+      my @counters = $host->get_monitor_items;
+      if(my ($counter) = grep { $_->{check_key} eq $ref->{check_key} } @counters) {
+
+         $self->log->info("found monitor for " . $ref->{check_key} . " on host " . $host->name);
+         my $pcv = $self->db->resultset("PerformanceCounterValue")->create({
+            performance_counter_id => $counter->{performance_counter_id},
+            template_item_id       => $counter->{id},
+            value                  => $ref->{value},
+            created                => time,
+         });
+      }
+      else {
+         $self->log->error("NO monitor found for " . $ref->{check_key} . " on host " . $host->name);
+      }
    }
    else {
       $self->log->info("Host: " . $ref->{host} . " not found.");

@@ -16,7 +16,7 @@ CREATE TABLE `performance_counter_value` (
      `performance_counter_id` int(11) NOT NULL,
      `template_item_id` int(11) NOT NULL,
      `value` int(11) NOT NULL,
-     `created` DATETIME NOT NULL,
+     `created` int(11) unsigned NOT NULL,
      PRIMARY KEY (`id`),
      KEY `performance_counter_id` (`performance_counter_id`),
      KEY `created` (`created`)
