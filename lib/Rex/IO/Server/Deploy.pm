@@ -35,9 +35,14 @@ sub boot {
    if($self->param("custom")) {
       $client = $self->param("custom");
       #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
-      $hw = $self->db->resultset("Hardware")->search({
+      $hw = $self->db->resultset("Hardware")->search(
+         {
             "network_adapters.ip" => ip_to_int($client),
-         })->first;
+         },
+         {
+            join => "network_adapters",
+         }
+      )->first;
    }
 
    if(my $system = $hw) {

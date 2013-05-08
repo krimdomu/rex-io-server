@@ -81,7 +81,6 @@ sub post {
          }
       }
 
-      my $hw;
       unless($hw) {
          $self->app->log->debug("nothing found!");
 

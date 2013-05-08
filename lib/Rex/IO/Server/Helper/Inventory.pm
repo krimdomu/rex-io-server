@@ -21,6 +21,8 @@ use Data::Dumper;
 sub inventor {
    my ($self, $hw, $ref) = @_;
 
+   $hw->discard_changes; # get new infos from db (needed for relations)
+
 #################################################################################
 # update bios
 #################################################################################
@@ -71,6 +73,8 @@ sub inventor {
       INVMEMS: for my $mem ( @{ $ref->{CONTENT}->{MEMORIES} } ) {
 
          next INVMEMS unless $mem;
+         next unless($mem->{CAPACITY});
+         next unless($mem->{CAPACITY} =~ m/^\d+$/);
 
          if($mem_dev->serialnumber eq $mem->{SERIALNUMBER}) {
 
@@ -92,6 +96,9 @@ sub inventor {
 
    for my $mem ( @{ $ref->{CONTENT}->{MEMORIES} } ) {
       next unless $mem;
+      next unless($mem->{CAPACITY});
+      next unless($mem->{CAPACITY} =~ m/^\d+$/);
+
       $self->app->log->debug("Creating new memory entry");
 
       my $new_mem = $self->db->resultset("Memory")->create({
@@ -152,7 +159,7 @@ sub inventor {
             $self->app->log->debug("Updating harddrive id: " . $hdd_dev->id . " / " . $hdd_dev->serial);
             $hdd_dev->update({
                size => $hdd->{DISKSIZE},
-               vendor => $hdd->{MANUFACTURER},
+               vendor => (ref $hdd->{MANUFACTURER} ? "" : $hdd->{MANUFACTURER}),
                devname => $hdd->{NAME},
             });
 
@@ -167,11 +174,13 @@ sub inventor {
 
    for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
       next unless $hdd;
+      next unless ($hdd->{TYPE} eq "disk");
+
       $self->app->log->debug("Adding new harddrive");
       my $new_hdd = $self->db->resultset("Harddrive")->create({
          hardware_id => $hw->id,
          size        => $hdd->{DISKSIZE},
-         vendor      => $hdd->{MANUFACTURER},
+         vendor      => (ref $hdd->{MANUFACTURER} ? "" : $hdd->{MANUFACTURER}),
          devname     => $hdd->{NAME},
          serial      => $hdd->{SERIALNUMBER},
       });
@@ -191,55 +200,73 @@ sub inventor {
 
    $self->app->log->debug("Found OS: $os_name / $os_version");
 
-   my $os_r = Rex::IO::Server::Model::Os->all( 
-                  (Rex::IO::Server::Model::Os->version eq $os_version) 
-                & (Rex::IO::Server::Model::Os->name eq $os_name)
-              );
+   my $os_r = $self->db->resultset("Os")->search(
+      {
+         version => $os_version,
+         name    => $os_name,
+      },
+   );
+
+   #my $os_r = Rex::IO::Server::Model::Os->all( 
+   #               (Rex::IO::Server::Model::Os->version eq $os_version) 
+   #             & (Rex::IO::Server::Model::Os->name eq $os_name)
+   #           );
    my $os = $os_r->next;
 
    unless($os) {
-      my ($rest, $rest2);
-      ($os_version, $rest) = split(/ /, $os_version);
+      my ($rest, $rest2, $start);
+      ($start, $os_version) = split(/ /, $os_name);
+      $self->app->log->debug("os not found trying with $os_name / $os_version");
 
-      $os_r = Rex::IO::Server::Model::Os->all( 
-                  (Rex::IO::Server::Model::Os->version eq $os_version) 
-                & (Rex::IO::Server::Model::Os->name eq $os_name)
-              );
+      $os_r = $self->db->resultset("Os")->search(
+         {
+            version => $os_version,
+            name    => $os_name,
+         },
+      );
+
       $os = $os_r->next;
 
       unless($os) {
          ($os_name, $rest2) = split(/ /, $os_name);
+         $self->app->log->debug("os not found trying with $os_name / $os_version");
 
-         $os_r = Rex::IO::Server::Model::Os->all( 
-                  (Rex::IO::Server::Model::Os->version eq $os_version) 
-                & (Rex::IO::Server::Model::Os->name eq $os_name)
-              );
+         $os_r = $self->db->resultset("Os")->search(
+            {
+               version => $os_version,
+               name    => $os_name,
+            },
+         );
+
          $os = $os_r->next;
       }
    }
 
-   if(my $op = $op_r->next) {
+   if(my $op = $op_r) {
       $self->app->log->debug("updating os");
-      $hw->os_id = $os->id;
-      $hw->update;
+      $hw->update({
+         os_id => $os->id,
+      });
    }
    elsif($os) {
       $self->app->log->debug("Registering new OS");
-      $hw->state_id = 4;
-      $hw->update;
-
-      $hw->os_id = $os->id;
-      $hw->update;
+      $hw->update({
+         state_id => 4,
+         os_id    => $os->id,
+      });
    }
    else {
       $self->app->log->debug("Unknown OS >>$os_name<< and version >>$os_version<<");
    }
 
+   $self->app->log->debug("Updated OS information");
+
 #################################################################################
 # update network devices
 #################################################################################
 
-   my $net_devs = $hw->network_adapter;
+   $self->app->log->debug("Updating network adapters");
+   my $net_devs = $hw->network_adapters;
 
    my @new_net_dev;
 
@@ -249,15 +276,16 @@ sub inventor {
          next INVNET unless $net;
 
          if($net_dev->dev eq $net->{DESCRIPTION}) {
+            $self->app->log->debug("Updating existing network adapter: " . $net_dev->id);
 
-            $net_dev->ip      = ip_to_int($net->{IPADDRESS} || 0);
-            $net_dev->netmask = ip_to_int($net->{IPMASK}    || 0);
-            $net_dev->network = ip_to_int($net->{IPSUBNET}  || 0);
-            $net_dev->gateway = ip_to_int($net->{IPGATEWAY} || 0);
-            $net_dev->mac     = $net->{MACADDR};
-            $net_dev->virtual = $net->{VIRTUALDEV};
-
-            $net_dev->update;
+            $net_dev->update({
+               ip => ip_to_int($net->{IPADDRESS} || 0),
+               netmask => ip_to_int($net->{IPMASK} || 0),
+               network => ip_to_int($net->{IPSUBNET} || 0),
+               gateway => ip_to_int($net->{IPGATEWAY} || 0),
+               mac => $net->{MACADDR} || "",
+               virtual => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}) ,
+            });
 
             $net = undef;
             next NETDEVS;
@@ -272,20 +300,22 @@ sub inventor {
       next unless $net;
       next if (exists $net->{IPSUBNET6} && ! exists $net->{IPSUBNET});
 
-      my $new_hw = Rex::IO::Server::Model::NetworkAdapter->new(
+      my $new_hw = $self->db->resultset("NetworkAdapter")->create({
          hardware_id => $hw->id,
          dev         => $net->{DESCRIPTION},
          ip          => ip_to_int($net->{IPADDRESS} || 0),
          netmask     => ip_to_int($net->{IPMASK}    || 0),
          network     => ip_to_int($net->{IPSUBNET}  || 0),
          gateway     => ip_to_int($net->{IPGATEWAY} || 0),
-         virtual     => $net->{VIRTUALDEV},
+         virtual     => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}),
          proto       => "static",
-         mac         => $net->{MACADDR},
-      );
+         mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
+      });
 
       $new_hw->save;
    }
+
+   $self->app->log->debug("Networkadapter updated");
 
    $self->app->log->debug("hardware updated");
 
