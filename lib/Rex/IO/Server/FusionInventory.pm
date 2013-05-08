@@ -68,7 +68,10 @@ sub post {
 
             #$hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip eq ip_to_int($net->{IPADDRESS} || 0) );
             $hw_r = $self->db->resultset("Hardware")->search({
-                  "network_adapters.ip" => ip_to_int($net->{IPADDRESS} || 0)
+                  "network_adapters.ip" => ip_to_int($net->{IPADDRESS} || 0),
+               },
+               {
+                  join => "network_adapters",
                });
             $hw = $hw_r->first;
             if($hw) {
@@ -78,6 +81,7 @@ sub post {
          }
       }
 
+      my $hw;
       unless($hw) {
          $self->app->log->debug("nothing found!");
 
@@ -85,12 +89,12 @@ sub post {
          #   name => $ref->{CONTENT}->{HARDWARE}->{NAME},
          #   uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} || '',
          #);
-         my $hw = $self->db->resultset("Hardware")->create({
+         $hw = $self->db->resultset("Hardware")->create({
             name => $ref->{CONTENT}->{HARDWARE}->{NAME},
             uuid => $ref->{CONTENT}->{HARDWARE}->{UUID} || '',
          });
 
-         $hw->update;
+         #$hw->update;
       }
 
       return eval {

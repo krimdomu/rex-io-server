@@ -14,6 +14,7 @@ use base qw(Exporter);
 use vars qw(@EXPORT);
 
 use Rex::IO::Server::Helper::IP;
+use Data::Dumper;
 
 @EXPORT = qw(inventor);
 
@@ -23,6 +24,7 @@ sub inventor {
 #################################################################################
 # update bios
 #################################################################################
+   $self->app->log->debug("Updating BIOS");
    my $bios_r = $hw->bios;
 
    my $bios_data = $ref->{CONTENT}->{BIOS};
@@ -34,46 +36,50 @@ sub inventor {
       $bios_data->{BDATE} = "1970-01-01 00:00:00";
    }
 
-   if(my $bios = $bios_r->next) {
-      $bios->biosdate     = $bios_data->{BDATE};
-      $bios->version      = $bios_data->{BVERSION};
-      $bios->ssn          = $bios_data->{SSN};
-      $bios->manufacturer = $bios_data->{MANUFACTURER};
-      $bios->model        = $bios_data->{SMODEL};
-
-      $bios->update;
+   if(my $bios = $bios_r) {
+      $self->app->log->debug("Found existing Bios");
+      $bios->update({
+         biosdate => $bios_data->{BDATE},
+         version  => $bios_data->{BVERSION},
+         ssn      => $bios_data->{SSN},
+         manufacturer => $bios_data->{MANUFACTURER},
+         model        => $bios_data->{SMODEL},
+      });
    }
    else {
-      my $new_bios = Rex::IO::Server::Model::Bios->new(
-         hardware_id => $hw->id,
-         biosdate    => $bios_data->{BDATE},
-         version     => $bios_data->{BVERSION},
-         ssn         => $bios_data->{SSN},
-         manufacturer   => $bios_data->{MANUFACTURER},
-         model       => $bios_data->{SMODEL},
-      );
-      $new_bios->save;
+      $self->app->log->debug("Creating new Bios entry");
+      my $new_bios = $self->db->resultset("Bios")->create({
+         hardware_id  => $hw->id,
+         biosdate     => $bios_data->{BDATE},
+         version      => $bios_data->{BVERSION},
+         ssn          => $bios_data->{SSN},
+         manufacturer => $bios_data->{MANUFACTURER},
+         model        => $bios_data->{SMODEL},
+      });
    }
+   $self->app->log->debug("Bios updated");
 
 #################################################################################
 # update memories
 #################################################################################
 
-   my $mem_r = $hw->memory;
+   $self->app->log->debug("Updating memory information");
+   my $mem_r = $hw->memories;
 
    MEMS: while(my $mem_dev = $mem_r->next) {
+      $self->app->log->debug("Updating already registered memory");
       INVMEMS: for my $mem ( @{ $ref->{CONTENT}->{MEMORIES} } ) {
 
          next INVMEMS unless $mem;
 
          if($mem_dev->serialnumber eq $mem->{SERIALNUMBER}) {
 
-            $mem_dev->size    = $mem->{CAPACITY};
-            $mem_dev->bank    = $mem->{NUMSLOTS} || 0;
-            $mem_dev->speed   = $mem->{SPEED};
-            $mem_dev->type    = $mem->{TYPE};
-
-            $mem_dev->update;
+            $mem_dev->update({
+                  size => $mem->{CAPACITY},
+                  bank => $mem->{NUMSLOTS} || 0,
+                  speed => $mem->{SPEED},
+                  type  => $mem->{TYPE},
+            });
 
             $mem = undef;
             next MEMS;
@@ -86,62 +92,69 @@ sub inventor {
 
    for my $mem ( @{ $ref->{CONTENT}->{MEMORIES} } ) {
       next unless $mem;
+      $self->app->log->debug("Creating new memory entry");
 
-      my $new_mem = Rex::IO::Server::Model::Memory->new(
+      my $new_mem = $self->db->resultset("Memory")->create({
          hardware_id  => $hw->id,
          size         => $mem->{CAPACITY},
          bank         => $mem->{NUMSLOTS} || 0,
          serialnumber => $mem->{SERIALNUMBER},
          speed        => $mem->{SPEED},
          type         => $mem->{TYPE},
-      );
-
-      $new_mem->save;
+      });
    }
+
+   $self->app->log->debug("Updated memory information");
 
 #################################################################################
 # update processor
 #################################################################################
 
-   my $cpu_r = $hw->processor;
+   $self->app->log->debug("Updating cpu information");
+   my $cpu_r = $hw->processors;
 
    # first remove cpus
+   $self->app->log->debug("First deleting cpus");
    while(my $cpu_dev = $cpu_r->next) {
+      $self->app->log->debug("   id: " . $cpu_dev->id);
       $cpu_dev->delete;
    }
 
    for my $cpu ( @{ $ref->{CONTENT}->{CPUS} } ) {
 
-      my $new_cpu = Rex::IO::Server::Model::Processor->new(
+      $self->app->log->debug("Adding new cpu");
+      my $new_cpu = $self->db->resultset("Processor")->create({
          hardware_id  => $hw->id,
          modelname    => $cpu->{NAME},
          vendor       => $cpu->{MANUFACTURER} || '<UNKNOWN>',
          #flags        => $cpu->{FLAGS},
          mhz          => $cpu->{SPEED},
          #cache        => $mem->{CACHE},
-      );
-
-      $new_cpu->save;
+      });
    }
+
+   $self->app->log->debug("Updated cpu information");
 
 #################################################################################
 # update harddrives
 #################################################################################
-   my $hdd_r = $hw->harddrive;
+   $self->app->log->debug("Updating harddrives");
+   my $hdd_r = $hw->harddrives;
 
    HDDS: while(my $hdd_dev = $hdd_r->next) {
+      $self->app->log->debug("Updating existing harddrives");
       INVHDDS: for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
 
          next INVHDDS unless $hdd;
          next INVHDDS unless $hdd->{SERIALNUMBER};
 
          if($hdd_dev->serial eq $hdd->{SERIALNUMBER}) {
-
-            $hdd_dev->size    = $hdd->{DISKSIZE};
-            $hdd_dev->vendor  = $hdd->{MANUFACTURER};
-            $hdd_dev->devname = $hdd->{NAME};
-
-            $hdd_dev->update;
+            $self->app->log->debug("Updating harddrive id: " . $hdd_dev->id . " / " . $hdd_dev->serial);
+            $hdd_dev->update({
+               size => $hdd->{DISKSIZE},
+               vendor => $hdd->{MANUFACTURER},
+               devname => $hdd->{NAME},
+            });
 
             $hdd = undef;
             next HDDS;
@@ -154,22 +167,23 @@ sub inventor {
 
    for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
       next unless $hdd;
-
-      my $new_hdd = Rex::IO::Server::Model::Harddrive->new(
+      $self->app->log->debug("Adding new harddrive");
+      my $new_hdd = $self->db->resultset("Harddrive")->create({
          hardware_id => $hw->id,
          size        => $hdd->{DISKSIZE},
          vendor      => $hdd->{MANUFACTURER},
          devname     => $hdd->{NAME},
          serial      => $hdd->{SERIALNUMBER},
-      );
-
-      $new_hdd->save;
+      });
    }
+
+   $self->app->log->debug("Updated harddrives.");
 
 
 #################################################################################
 # update operating system
 #################################################################################
+   $self->app->log->debug("Updating OS information");
    my $op_r = $hw->os;
 
    my $os_version = $ref->{CONTENT}->{HARDWARE}->{OSVERSION};
