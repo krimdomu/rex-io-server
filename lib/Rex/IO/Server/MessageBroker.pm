@@ -23,6 +23,8 @@ sub broker {
 
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
+   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{monitor}->{server} . ":" . $self->config->{redis}->{monitor}->{port});
+
    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
 
    #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
@@ -151,12 +153,25 @@ sub broker {
                   if(my ($counter) = grep { $_->{check_key} eq $itm_name } @counters) {
 
                      $self->app->log->info("found monitor for " . $itm_name . " on host " . $host->name);
-                     my $pcv = $self->db->resultset("PerformanceCounterValue")->create({
+
+                     my $mon_data = {
                         performance_counter_id => $counter->{performance_counter_id},
                         template_item_id       => $counter->{id},
                         value                  => $mon_itm->{values}->{$itm_name},
                         created                => time,
-                     });
+                     };
+
+                     my $pcv = $self->db->resultset("PerformanceCounterValue")->create($mon_data);
+
+                     my $redis_data = $mon_data;
+                     $redis_data->{check_key}   = $counter->{check_key};
+                     $redis_data->{host}        = $host->id;
+                     $redis_data->{check_name}  = $counter->{name};
+                     $redis_data->{divisor}     = $counter->{divisor};
+                     $redis_data->{relative}    = $counter->{relative};
+                     $redis_data->{calculation} = $counter->{calculation};
+
+                     $redis->publish($self->config->{redis}->{monitor}->{queue} => Mojo::JSON->encode($redis_data));
                   }
                   else {
                      $self->app->log->error("NO monitor found for " . $itm_name . " on host " . $host->name);

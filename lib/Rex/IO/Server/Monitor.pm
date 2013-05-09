@@ -95,6 +95,7 @@ sub __register__ {
    $r->post("/monitor/template/:templateid/host/:hostid")->to("monitor#add_template_to_host");
 
    $r->route("/monitor/host/:hostid/item")->via("LIST")->to("monitor#get_items_of_host");
+
 }
 
 

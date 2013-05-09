@@ -13,7 +13,7 @@ use base qw(DBIx::Class::Core);
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("performance_counter_template_item");
-__PACKAGE__->add_columns(qw/id template_id name check_key unit divisor relative/);
+__PACKAGE__->add_columns(qw/id template_id name check_key unit divisor relative calculation/);
 
 __PACKAGE__->set_primary_key("id");
 
