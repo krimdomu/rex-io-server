@@ -18,13 +18,14 @@ my $clients = {};
 sub broker {
    my ($self) = @_;
 
-   warn "client connected: ". $self->tx->remote_address . "\n";
+   my $client_ip = $self->tx->remote_address;
+   $self->app->log->debug("messagebroker / client connected: $client_ip");
 
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
 
-   $self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
+   #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
 
    $self->on(finish => sub {
       warn "client disconnected\n";
@@ -46,6 +47,8 @@ sub broker {
 
       my $json = Mojo::JSON->decode($message);
 
+      # @todo needs to split out into modules
+      # hello action
       if(exists $json->{type} && $json->{type} eq "hello") {
 
          map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
@@ -56,10 +59,16 @@ sub broker {
          }
 
          #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->mac == \@mac_addresses );
-         my $hw = $self->db->resultset("Hardware")->search({ "network_adapters.mac" => { "-in" => \@mac_addresses } });
+         my $hw = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.mac" => { "-in" => \@mac_addresses }
+            },
+            {
+               join => "network_adapters",
+            }
+         );
 
          if(! $hw->first) {
-            my ($eth_dev) = grep { exists $_->{IPADDRESS} && $_->{IPADDRESS} eq $self->tx->remote_address } @{ $json->{info}->{CONTENT}->{NETWORKS} };
 
             eval {
 
@@ -85,28 +94,93 @@ sub broker {
                   name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
                });
-               $new_hw->update;
 
                $self->inventor($new_hw, $json->{info});
 
                return 1;
             } or do {
-               warn "Error saving new system in db.\n$@\n";
+               $self->app->log->error("Error saving new system in db.\n$@");
             };
          }
          else {
-            warn "Hardware already registered\n";
+            $self->app->log->debug("Hardware already registered");
          }
       }
 
+      # return action
       elsif(exists $json->{type} && $json->{type} eq "return") {
-         warn "Some thing returns...\n";
-         warn Dumper($json);
+         $self->app->log->debug("messagebroker / Some thing returns...");
+         $self->app->log->debug(Dumper($json));
       }
 
+      # monitor action
+      elsif(exists $json->{type} && $json->{type} eq "monitor") {
+         $self->app->log->debug("Got monitor event from: $client_ip");
+
+         # get the host object out of db
+         my $host = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.ip" => ip_to_int($client_ip),
+            },
+            {
+               join => "network_adapters",
+            },
+         )->first;
+
+         my $data = $json->{data};
+
+         # convert every input into a multi type
+         for my $data_itm (@{ $data }) {
+            if($data_itm->{type} eq "single") {
+               $data_itm = {
+                  type => "multi",
+                  values => {
+                     $data_itm->{name} => $data_itm->{value},
+                  },
+               };
+            }
+         }
+
+         if($host) {
+            my @counters = $host->get_monitor_items;
+
+            for my $mon_itm (@{ $data }) { # iterate over all monitoring items
+
+               for my $itm_name (keys %{ $mon_itm->{values} }) { # iterate over all values inside a monitoring item
+
+                  if(my ($counter) = grep { $_->{check_key} eq $itm_name } @counters) {
+
+                     $self->app->log->info("found monitor for " . $itm_name . " on host " . $host->name);
+                     my $pcv = $self->db->resultset("PerformanceCounterValue")->create({
+                        performance_counter_id => $counter->{performance_counter_id},
+                        template_item_id       => $counter->{id},
+                        value                  => $mon_itm->{values}->{$itm_name},
+                        created                => time,
+                     });
+                  }
+                  else {
+                     $self->app->log->error("NO monitor found for " . $itm_name . " on host " . $host->name);
+                  }
+
+               } # /end iterate over all values
+
+            } # /end iterate over all monitoring items
+         }
+         else {
+            $self->app->log->info("Host: " . $client_ip . " not found.");
+         }
+
+      }
+
+      # ping action
+      elsif(exists $json->{type} && $json->{type} eq "ping") {
+         $self->app->log->debug("Got ping event from: $client_ip");
+         $self->send(Mojo::JSON->encode({type => "ping_answer", ping_answer => "Welcome to the real world."}));
+      }
+
+      # unknown action/type
       else {
-         warn "Got unknown message type.\n";
-         warn "    $message\n";
+         $self->app->log->error("Got unknown message type.\n   $message");
       }
 
 #      if(exists $json->{type} && $json->{type} eq "broadcast") {
