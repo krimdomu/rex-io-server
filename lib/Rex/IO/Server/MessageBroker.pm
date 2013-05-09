@@ -50,8 +50,25 @@ sub broker {
       my $json = Mojo::JSON->decode($message);
 
       # @todo needs to split out into modules
+      # send message to server
+      if(exists $json->{to_ip}) {
+         map {
+               #warn "Sending message to client...\n";
+               #warn Mojo::JSON->encode($json) . "\n";
+               $self->app->log->debug("Sending message to client: " . $json->{to_ip} .  " => " . Mojo::JSON->encode($json));
+               
+               if(! exists $_->{sequences}) {
+                  $_->{sequences} = [];
+               }
+
+               push(@{ $_->{sequences} }, $json->{seq}) if($json->{seq});
+
+               $_->{tx}->send(Mojo::JSON->encode($json));
+         } @{ $clients->{$json->{to_ip}} };
+      }
+
       # hello action
-      if(exists $json->{type} && $json->{type} eq "hello") {
+      elsif(exists $json->{type} && $json->{type} eq "hello") {
 
          map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
 
@@ -113,6 +130,21 @@ sub broker {
       elsif(exists $json->{type} && $json->{type} eq "return") {
          $self->app->log->debug("messagebroker / Some thing returns...");
          $self->app->log->debug(Dumper($json));
+
+         # check if we have a valid sequence
+         my $sseq = $json->{seq};
+         for my $client (keys %{ $clients }) {
+            for my $c (@{ $clients->{$client} }) {
+               next if(! exists $c->{sequences});
+
+               my ($seq) = grep { m/\Q$sseq\E/ } @{ $c->{sequences} };
+               if($seq) {
+                  $self->app->log->debug("Found valid return sequence... sending data");
+                  $c->{tx}->send(Mojo::JSON->encode($json));
+               }
+            }
+         }
+
       }
 
       # monitor action
@@ -241,8 +273,14 @@ sub message_to_server {
          #warn "Sending message to client...\n";
          #warn Mojo::JSON->encode($json) . "\n";
          $self->app->log->debug("Sending message to client: " . $to .  " => " . Mojo::JSON->encode($json));
+         
+         if(! exists $_->{sequences}) {
+            $_->{sequences} = [];
+         }
 
-         $_->{tx}->send(Mojo::JSON->encode($json))
+         push(@{ $_->{sequences} }, $json->{seq}) if($json->{seq});
+
+         $_->{tx}->send(Mojo::JSON->encode($json));
       } @{ $clients->{$to} };
 
    $self->render_json({ok => Mojo::JSON->true});
