@@ -225,6 +225,23 @@ sub broker {
          $self->send(Mojo::JSON->encode({type => "ping_answer", ping_answer => "Welcome to the real world."}));
       }
 
+      elsif(exists $json->{type} && $json->{type} eq "log") {
+         # get the host object out of db
+         my $host = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.ip" => ip_to_int($client_ip),
+            },
+            {
+               join => "network_adapters",
+            },
+         )->first;
+
+         $self->app->log_writer->write($json->{tag}, $json->{data});
+
+         $json->{host_id} = $host->id;
+         $redis->publish($self->config->{redis}->{log}->{queue} => Mojo::JSON->encode($json));
+      }
+
       # unknown action/type
       else {
          $self->app->log->error("Got unknown message type.\n   $message");

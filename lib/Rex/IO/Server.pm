@@ -29,6 +29,7 @@ use Mojo::IOLoop;
 use Data::Dumper;
 
 use Rex::IO::Server::Schema;
+use Rex::IO::Server::Log::Output;
 
 has schema => sub {
    my ($self) = @_;
@@ -40,6 +41,16 @@ has schema => sub {
    return Rex::IO::Server::Schema->connect($dsn, 
       $self->config->{database}->{username},
       $self->config->{database}->{password});
+};
+
+has log_writer => sub {
+   my ($self) = @_;
+
+   if(exists $self->{log_writer}) {
+      return $self->{log_writer};
+   }
+
+   $self->{log_writer} = Rex::IO::Server::Log::Output->create($self->config->{log}->{output}->{type}, app => $self);
 };
 
 our $VERSION = "0.0.5";
