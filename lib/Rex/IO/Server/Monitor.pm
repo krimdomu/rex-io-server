@@ -5,6 +5,7 @@ use Cwd qw(getcwd);
 use Mojo::JSON;
 use Data::Dumper;
 use Mojo::Redis;
+use POSIX;
 
 sub template_new {
    my ($self) = @_;
@@ -86,6 +87,53 @@ sub get_items_of_host {
    $self->render_json({ok => Mojo::JSON->true, data => [ $host->get_monitor_items ]});
 }
 
+sub get_alerts {
+   my ($self) = @_;
+
+   my @alerts = $self->db->resultset("CurrentAlert")->search({});
+
+   my @ret;
+
+   for my $alert (@alerts) {
+      push @ret, {
+         created => $alert->created,
+         time    => strftime("%Y-%m-%d %H:%M:%S", localtime($alert->created)),
+         host    => $alert->hardware->name,
+         name    => $alert->template_item->name,
+         template_item_id => $alert->template_item_id,
+         hardware_id      => $alert->hardware_id,
+      };
+   }
+
+   $self->render_json(\@ret);
+}
+
+sub get_alerts_of_host {
+   my ($self) = @_;
+
+   my $host_id = $self->param("hostid");
+
+   my @alerts = $self->db->resultset("CurrentAlert")->search(
+      {
+         hardware_id => $host_id,
+      }
+   );
+
+   my @ret;
+   for my $alert (@alerts) {
+      push @ret, {
+         created => $alert->created,
+         time    => strftime("%Y-%m-%d %H:%M:%S", localtime($alert->created)),
+         host    => $alert->hardware->name,
+         name    => $alert->template_item->name,
+         template_item_id => $alert->template_item_id,
+         hardware_id      => $alert->hardware_id,
+      };
+   }
+
+   $self->render_json(\@ret);
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
@@ -95,6 +143,8 @@ sub __register__ {
    $r->post("/monitor/template/:templateid/host/:hostid")->to("monitor#add_template_to_host");
 
    $r->route("/monitor/host/:hostid/item")->via("LIST")->to("monitor#get_items_of_host");
+   $r->route("/monitor/alerts")->via("LIST")->to("monitor#get_alerts");
+   $r->route("/monitor/alerts/:hostid")->via("LIST")->to("monitor#get_alerts_of_host");
 
 }
 

@@ -15,6 +15,7 @@ use Mojo::Log;
 use Mojo::JSON;
 use Mojo::Redis;
 use Data::Dumper;
+use POSIX;
 
 use Rex::IO::Server::Schema;
 use Rex::IO::Server::Calculator;
@@ -221,13 +222,47 @@ sub process_message {
             else {
                if($need_alert) {
                   $self->log->debug("Sending alert...");
+                  my $host_o          = $self->db->resultset("Hardware")->find($msg->{host});
+                  my $template_item_o = $self->db->resultset("PerformanceCounterTemplateItem")->find($msg->{template_item_id});
+
                   $self->redis->set($alert_key => 1);
+                  $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $self->json->encode({
+                     type => "alert",
+                     time => strftime("%Y-%m-%d %H:%M:%S", localtime(time)),
+                     host => { $host_o->get_columns },
+                     template_item => { $template_item_o->get_columns },
+                  }));
+
+                  $self->db->resultset("CurrentAlert")->create({
+                     hardware_id => $host_o->id,
+                     template_item_id => $template_item_o->id,
+                     created => time,
+                  });
                }
                else {
                   # remove alert key
                   if(defined $res) {
                      $self->log->debug("All good again, removing alert key...");
                      $self->redis->del($alert_key);
+
+                     my $host_o          = $self->db->resultset("Hardware")->find($msg->{host});
+                     my $template_item_o = $self->db->resultset("PerformanceCounterTemplateItem")->find($msg->{template_item_id});
+
+                     $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $self->json->encode({
+                        type => "clear",
+                        time => strftime("%Y-%m-%d %H:%M:%S", localtime(time)),
+                        host => { $host_o->get_columns },
+                        template_item => { $template_item_o->get_columns },
+                     }));
+
+                     my $alert = $self->db->resultset("CurrentAlert")->search(
+                        {
+                           hardware_id => $host_o->id,
+                           template_item_id => $template_item_o->id,
+                        },
+                     )->first;
+
+                     $alert->delete;
                   }
                   else {
                      $self->log->debug("All good, doing nothing...");

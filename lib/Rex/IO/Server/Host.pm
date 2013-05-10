@@ -88,6 +88,29 @@ sub get {
    $self->render_json({ok => Mojo::JSON->false}, status => 404);
 }
 
+sub count {
+   my ($self) = @_;
+
+   my $count = $self->db->resultset("Hardware")->search()->count;
+
+   $self->render_json({ok => Mojo::JSON->true, count => $count});
+}
+
+sub count_os {
+   my ($self) = @_;
+
+   my @os = $self->db->resultset("Hardware")->search(
+      {},
+      {
+         group_by => "os_id",
+      },
+   );
+
+   my @oses = map { $_->os->name } grep { $_->os } @os;
+
+   $self->render_json({ok => Mojo::JSON->true, count => scalar @oses});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
@@ -95,6 +118,8 @@ sub __register__ {
    $r->get("/host/:mac")->over(authenticated => 1)->to("host#get");
    $r->post("/host/:mac")->over(authenticated => 1)->to("host#add");
    $r->route("/host")->via("LIST")->over(authenticated => 1)->to("host#list");
+   $r->route("/host")->via("COUNT")->over(authenticated => 1)->to("host#count");
+   $r->route("/host/os")->via("COUNT")->over(authenticated => 0)->to("host#count_os");
 }
 
 1;

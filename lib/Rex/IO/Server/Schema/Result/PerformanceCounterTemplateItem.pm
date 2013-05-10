@@ -19,6 +19,7 @@ __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to("template", "Rex::IO::Server::Schema::Result::PerformanceCounterTemplate", "template_id");
 __PACKAGE__->has_many("performance_counter_values", "Rex::IO::Server::Schema::Result::PerformanceCounterValue", "template_item_id");
+__PACKAGE__->has_many("alerts", "Rex::IO::Server::Schema::Result::CurrentAlert", "template_item_id");
 
 sub to_hashRef {
    my ($self) = @_;
