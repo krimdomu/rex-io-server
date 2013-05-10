@@ -50,7 +50,7 @@ has log_writer => sub {
       return $self->{log_writer};
    }
 
-   $self->{log_writer} = Rex::IO::Server::Log::Output->create($self->config->{log}->{output}->{type}, app => $self);
+   $self->{log_writer} = Rex::IO::Server::Log::Output->create($self->config->{logstream}->{output}->{type}, app => $self);
 };
 
 our $VERSION = "0.0.5";

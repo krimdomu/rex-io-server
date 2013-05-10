@@ -30,6 +30,7 @@ __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "
 __PACKAGE__->has_many("processors" => "Rex::IO::Server::Schema::Result::Processor", "hardware_id");
 __PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id");
 __PACKAGE__->has_many("performance_counters" => "Rex::IO::Server::Schema::Result::PerformanceCounter", "hardware_id");
+__PACKAGE__->has_many("performance_counter_values" => "Rex::IO::Server::Schema::Result::PerformanceCounterValue", "hardware_id");
 
 sub mac {
    my ($self) = @_;

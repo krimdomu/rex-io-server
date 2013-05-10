@@ -12,6 +12,7 @@ use Mojo::JSON;
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Inventory;
+use Rex::IO::Server::Calculator;
 
 my $clients = {};
 
@@ -193,7 +194,8 @@ sub broker {
                         created                => time,
                      };
 
-                     my $pcv = $self->db->resultset("PerformanceCounterValue")->create($mon_data);
+                     #my $pcv = $self->db->resultset("PerformanceCounterValue")->create($mon_data);
+                     #my $failure = $pcv->template_item->failure;
 
                      my $redis_data = $mon_data;
                      $redis_data->{check_key}   = $counter->{check_key};
@@ -225,6 +227,7 @@ sub broker {
          $self->send(Mojo::JSON->encode({type => "ping_answer", ping_answer => "Welcome to the real world."}));
       }
 
+      # log action
       elsif(exists $json->{type} && $json->{type} eq "log") {
          # get the host object out of db
          my $host = $self->db->resultset("Hardware")->search(

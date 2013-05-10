@@ -36,7 +36,7 @@ sub write {
    $data->{'@timestamp'} = strftime("%Y-%m-%dT%H:%M%:%S%z", localtime($data->{time}));
    $data->{tag} = $tag;
 
-   my $index_type = $self->app->config->{log}->{output}->{index_type};
+   my $index_type = $self->app->config->{logstream}->{output}->{index_type};
    
    my $message = [
       Mojo::JSON->encode({
@@ -46,8 +46,8 @@ sub write {
       Mojo::JSON->encode($data),
    ];
 
-   my $server = $self->app->config->{log}->{output}->{host};
-   my $port   = $self->app->config->{log}->{output}->{port};
+   my $server = $self->app->config->{logstream}->{output}->{host};
+   my $port   = $self->app->config->{logstream}->{output}->{port};
 
    $self->app->log->debug("Sending log data to elasticsearch:");
    $self->app->log->debug(Dumper($message));
@@ -60,7 +60,7 @@ sub write {
 sub search {
    my ($self, %opt) = @_;
 
-   my $index_type = $self->app->config->{log}->{output}->{index_type};
+   my $index_type = $self->app->config->{logstream}->{output}->{index_type};
 
    my $query = {
       query => {
@@ -80,8 +80,8 @@ sub search {
    };
 
    my $target_index = "logstash-" . strftime("%Y.%m.%d", localtime(time));
-   my $server = $self->app->config->{log}->{output}->{host};
-   my $port   = $self->app->config->{log}->{output}->{port};
+   my $server = $self->app->config->{logstream}->{output}->{host};
+   my $port   = $self->app->config->{logstream}->{output}->{port};
 
    my $tx = $self->ua->post("http://$server:$port/$target_index/_search", {}, json => $query);
    if (my $res = $tx->success) {

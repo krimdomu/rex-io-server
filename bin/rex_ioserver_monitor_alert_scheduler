@@ -1,0 +1,10 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Rex::IO::Server::MonitorAlertScheduler;
+
+my $ac = Rex::IO::Server::MonitorAlertScheduler->new;
+$ac->start;
+
