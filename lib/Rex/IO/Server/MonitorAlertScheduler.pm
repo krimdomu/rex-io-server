@@ -16,6 +16,7 @@ use Mojo::JSON;
 use Mojo::Redis;
 use Data::Dumper;
 use POSIX;
+use MIME::Base64;
 
 use Rex::IO::Server::Schema;
 use Rex::IO::Server::Calculator;
@@ -225,19 +226,26 @@ sub process_message {
                   my $host_o          = $self->db->resultset("Hardware")->find($msg->{host});
                   my $template_item_o = $self->db->resultset("PerformanceCounterTemplateItem")->find($msg->{template_item_id});
 
-                  $self->redis->set($alert_key => 1);
-                  $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $self->json->encode({
+                  my $notify_data = {
                      type => "alert",
                      time => strftime("%Y-%m-%d %H:%M:%S", localtime(time)),
                      host => { $host_o->get_columns },
                      template_item => { $template_item_o->get_columns },
-                  }));
+                  };
+
+                  my $notify_data_str = $self->json->encode($notify_data);
+                  my $notify_data_str_b64 = encode_base64($notify_data_str);
+
+                  $self->redis->set($alert_key => 1);
+                  $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $notify_data_str);
 
                   $self->db->resultset("CurrentAlert")->create({
                      hardware_id => $host_o->id,
                      template_item_id => $template_item_o->id,
                      created => time,
                   });
+
+                  system($self->config->{monitor}->{alert_action} . " '$notify_data_str_b64'");
                }
                else {
                   # remove alert key
@@ -248,12 +256,17 @@ sub process_message {
                      my $host_o          = $self->db->resultset("Hardware")->find($msg->{host});
                      my $template_item_o = $self->db->resultset("PerformanceCounterTemplateItem")->find($msg->{template_item_id});
 
-                     $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $self->json->encode({
+                     my $notify_data = {
                         type => "clear",
                         time => strftime("%Y-%m-%d %H:%M:%S", localtime(time)),
                         host => { $host_o->get_columns },
                         template_item => { $template_item_o->get_columns },
-                     }));
+                     };
+
+                     my $notify_data_str = $self->json->encode($notify_data);
+                     my $notify_data_str_b64 = encode_base64($notify_data_str);
+
+                     $self->redis->publish($self->config->{redis}->{monitor}->{queue} . ":alerts", $notify_data_str);
 
                      my $alert = $self->db->resultset("CurrentAlert")->search(
                         {
@@ -263,6 +276,8 @@ sub process_message {
                      )->first;
 
                      $alert->delete;
+
+                     system($self->config->{monitor}->{clear_action} . " '$notify_data_str_b64'");
                   }
                   else {
                      $self->log->debug("All good, doing nothing...");

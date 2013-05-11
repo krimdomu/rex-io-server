@@ -15,13 +15,14 @@ use base qw(DBIx::Class::Core);
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
-__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid/);
+__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id/);
 
 __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to("state" => "Rex::IO::Server::Schema::Result::HardwareState", "state_id");
 __PACKAGE__->belongs_to("os_template" => "Rex::IO::Server::Schema::Result::OsTemplate", "os_template_id");
 __PACKAGE__->belongs_to("os" => "Rex::IO::Server::Schema::Result::Os", "os_id");
+__PACKAGE__->belongs_to("server_group" => "Rex::IO::Server::Schema::Result::ServerGroup", "server_group_id");
 
 __PACKAGE__->has_many("network_adapters" => "Rex::IO::Server::Schema::Result::NetworkAdapter", "hardware_id");
 __PACKAGE__->has_one("bios" => "Rex::IO::Server::Schema::Result::Bios", "hardware_id");
