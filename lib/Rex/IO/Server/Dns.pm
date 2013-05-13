@@ -60,7 +60,22 @@ sub list_domain {
 
 sub list_tlds {
    my ($self) = @_;
-   $self->render_json($self->config->{dns}->{tlds});
+
+   my @ret = ();
+
+   for my $tld (@{ $self->config->{dns}->{tlds} }) {
+      if(ref $tld eq "HASH") {
+         push @ret, $tld;
+      }
+      else {
+         push @ret, {
+            zone => $tld,
+            name => $tld,
+         };
+      }
+   }
+
+   $self->render_json(\@ret);
 }
 
 sub get {
