@@ -15,6 +15,7 @@ use vars qw(@EXPORT);
 
 use Rex::IO::Server::Helper::IP;
 use Data::Dumper;
+use Digest::MD5 qw(md5_hex);
 
 @EXPORT = qw(inventor);
 
@@ -50,13 +51,25 @@ sub inventor {
    }
    else {
       $self->app->log->debug("Creating new Bios entry");
+      $self->app->log->debug(Dumper($bios_data));
+
       my $new_bios = $self->db->resultset("Bios")->create({
          hardware_id  => $hw->id,
-         biosdate     => $bios_data->{BDATE},
-         version      => $bios_data->{BVERSION},
-         ssn          => $bios_data->{SSN},
-         manufacturer => $bios_data->{MANUFACTURER},
-         model        => $bios_data->{SMODEL},
+         biosdate     => (ref $bios_data->{BDATE} ? "" : $bios_data->{BDATE}),
+         version      => (ref $bios_data->{BVERSION} ? "" : $bios_data->{BVERSION}),
+         ssn          => (ref $bios_data->{SSN} ? "" : $bios_data->{SSN}),
+         manufacturer => (ref $bios_data->{MANUFACTURER} ? 
+                                 (
+                                    ref $bios_data->{BMANUFACTURER} ?
+                                       (
+                                          ref $bios_data->{SMANUFACTURER} ?
+                                             ""
+                                          : $bios_data->{SMANUFACTURER}
+                                       )
+                                    : $bios_data->{BMANUFACTURER} 
+                                 )
+                              : $bios_data->{MANUFACTURER}),
+         model        => (ref $bios_data->{SMODEL} ? "" : $bios_data->{SMODEL}),
       });
    }
    $self->app->log->debug("Bios updated");
@@ -66,6 +79,8 @@ sub inventor {
 #################################################################################
 
    $self->app->log->debug("Updating memory information");
+   $self->app->log->debug(Dumper($ref->{CONTENT}->{MEMORIES}));
+
    my $mem_r = $hw->memories;
 
    MEMS: while(my $mem_dev = $mem_r->next) {
@@ -94,6 +109,7 @@ sub inventor {
 
    }
 
+
    for my $mem ( @{ $ref->{CONTENT}->{MEMORIES} } ) {
       next unless $mem;
       next unless($mem->{CAPACITY});
@@ -118,6 +134,8 @@ sub inventor {
 #################################################################################
 
    $self->app->log->debug("Updating cpu information");
+   $self->app->log->debug(Dumper($ref->{CONTENT}->{CPUS}));
+
    my $cpu_r = $hw->processors;
 
    # first remove cpus
@@ -126,6 +144,7 @@ sub inventor {
       $self->app->log->debug("   id: " . $cpu_dev->id);
       $cpu_dev->delete;
    }
+
 
    for my $cpu ( @{ $ref->{CONTENT}->{CPUS} } ) {
 
@@ -146,6 +165,8 @@ sub inventor {
 # update harddrives
 #################################################################################
    $self->app->log->debug("Updating harddrives");
+   $self->app->log->debug(Dumper($ref->{CONTENT}->{STORAGES}));
+
    my $hdd_r = $hw->harddrives;
 
    HDDS: while(my $hdd_dev = $hdd_r->next) {
@@ -153,7 +174,10 @@ sub inventor {
       INVHDDS: for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
 
          next INVHDDS unless $hdd;
-         next INVHDDS unless $hdd->{SERIALNUMBER};
+
+         if(! exists $hdd->{SERIALNUMBER}) {
+            $hdd->{SERIALNUMBER} = md5_hex($hdd->{NAME} . "-" . $hdd->{DESCRIPTION} . "-" . $hdd->{MANUFACTURER} . "-" . $hdd->{TYPE});
+         }
 
          if($hdd_dev->serial eq $hdd->{SERIALNUMBER}) {
             $self->app->log->debug("Updating harddrive id: " . $hdd_dev->id . " / " . $hdd_dev->serial);
@@ -172,6 +196,7 @@ sub inventor {
 
    }
 
+
    for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
       next unless $hdd;
       next unless ($hdd->{TYPE} eq "disk");
@@ -181,8 +206,10 @@ sub inventor {
          hardware_id => $hw->id,
          size        => $hdd->{DISKSIZE},
          vendor      => (ref $hdd->{MANUFACTURER} ? "" : $hdd->{MANUFACTURER}),
-         devname     => $hdd->{NAME},
-         serial      => $hdd->{SERIALNUMBER},
+         devname     => (ref $hdd->{NAME} ? "" : $hdd->{NAME}),
+         serial      => (ref $hdd->{SERIALNUMBER} ? 
+                           md5_hex($hdd->{NAME} . "-" . $hdd->{DESCRIPTION} . "-" . $hdd->{MANUFACTURER} . "-" . $hdd->{TYPE})
+                         : $hdd->{SERIALNUMBER}),
       });
    }
 
@@ -193,6 +220,8 @@ sub inventor {
 # update operating system
 #################################################################################
    $self->app->log->debug("Updating OS information");
+   $self->app->log->debug(Dumper($ref->{CONTENT}->{HARDWARE}));
+
    my $op_r = $hw->os;
 
    my $os_version = $ref->{CONTENT}->{HARDWARE}->{OSVERSION};
@@ -266,6 +295,8 @@ sub inventor {
 #################################################################################
 
    $self->app->log->debug("Updating network adapters");
+   $self->app->log->debug(Dumper($ref->{CONTENT}->{NETWORKS}));
+
    my $net_devs = $hw->network_adapters;
 
    my @new_net_dev;
@@ -311,8 +342,6 @@ sub inventor {
          proto       => "static",
          mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
       });
-
-      $new_hw->save;
    }
 
    $self->app->log->debug("Networkadapter updated");

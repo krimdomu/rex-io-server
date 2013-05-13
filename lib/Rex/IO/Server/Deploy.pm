@@ -26,14 +26,25 @@ sub boot {
    if(my $res = $tx->success) {
       $mac = $res->json->{mac};
 
-      warn "GOT MAC: $mac\n";
+      $self->app->log->debug("GOT MAC: $mac");
+   }
+   else {
+      $self->app->log->debug("MAC not found!");
    }
 
    #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->mac eq $mac );
-   my $hw = $self->db->resultset("Hardware")->search({ mac => $mac })->first;
+   my $hw = $self->db->resultset("Hardware")->search(
+      {
+         "network_adapters.mac" => $mac
+      },
+      {
+         join => "network_adapters",
+      },
+   )->first;
 
    if($self->param("custom")) {
       $client = $self->param("custom");
+      $self->app->log->debug("Got custom parameter: $client");
       #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
       $hw = $self->db->resultset("Hardware")->search(
          {
@@ -47,7 +58,7 @@ sub boot {
 
    if(my $system = $hw) {
       # system known, do the registered boot
-      warn "HW is known, returning registered os template\n";
+      $self->app->log->debug("HW is known, returning registered os template");
 
       my $boot_os_r = $system->os_template;
       if(my $boot_os = $boot_os_r) {
@@ -56,7 +67,7 @@ sub boot {
                                       # return os template to deploy os
 
             if($boot_os->id == 1) {
-               warn "Booting local... Setting system->state_id = 4";
+               $self->app->log->debug("Booting local... Setting system->state_id = 4");
                $system->update({
                   state_id => 4
                });
@@ -65,7 +76,7 @@ sub boot {
 
             if($boot_os->ipxe) {
                # if there are ipxe commands, use them
-               warn "Booting ipxe commands... Setting system->state_id = 4";
+               $self->app->log->debug("Booting ipxe commands... Setting system->state_id = 4");
                $system->update({
                   state_id => 4
                });
@@ -86,6 +97,8 @@ sub boot {
                               . "initrd " . $boot_os->initrd . "\n"
                               . "boot";
 
+            $self->app->log->debug("Sending boot command:\n$boot_commands");
+
             $system->update({
                state_id => 2
             });
@@ -94,7 +107,7 @@ sub boot {
          }
          elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
 
-         warn "rerturning kickstart template\n";
+            $self->app->log->debug("rerturning kickstart template");
 
             $system->update({
                state_id => 3
@@ -103,9 +116,14 @@ sub boot {
             $self->stash("hardware", $system);
 
             my $template = $boot_os->template;
+
+            $self->app->log->debug("Sending kickstart template:\n$template");
+
             return $self->render(inline => $template);
          }
          elsif($system->state_id == 3 || $self->param("finished")) { # hook after installation, must be called from within the template
+
+            $self->app->log->debug("Installation finished, setting system state_id = 4");
 
             $system->update({
                state_id => 4,
@@ -115,7 +133,7 @@ sub boot {
             return $self->render_json({ok => Mojo::JSON->true});
          }
          else { # default boot, if state == INSTALLED (state_id: 4)
-            warn "boot from local hard disk...\n";
+            $self->app->log->debug("boot from local hard disk... state == INSTALLED");
 
             #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
             my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
@@ -125,8 +143,8 @@ sub boot {
          }
       }
       else { # no boot method found, use localboot for safety
-         warn "No Boot method found...\n";
-         warn "Returning localboot...\n";
+         $self->app->log->debug("No Boot method found...");
+         $self->app->log->debug("Returning localboot...");
 
          #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
          my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
@@ -135,6 +153,7 @@ sub boot {
       }
    }
    else { # system unknown, boot service os
+      $self->app->log->debug("System unknown, booting service OS");
       #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 2 );
       my $boot_os_r = $self->db->resultset("OsTemplate")->find(2);
       my $boot_os = $boot_os_r;
@@ -143,6 +162,8 @@ sub boot {
       $boot_commands .= "kernel " . $boot_os->kernel . " " . $boot_os->append . "\n";
       $boot_commands .= "initrd " . $boot_os->initrd . "\n";
       $boot_commands .= "boot";
+
+      $self->app->log->debug("Sending boot commands\n$boot_commands");
 
       return $self->render_text($boot_commands);
    }
