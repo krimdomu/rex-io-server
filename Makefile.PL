@@ -10,6 +10,7 @@ my %deps = (
                   'DBIx::Class' => 0,
                   'Digest::Bcrypt' => 0,
                   'Mojo::Redis' => 0,
+                  'DBIx::Class::Tree::AdjacencyList' => 0,
 );
 
 WriteMakefile1(

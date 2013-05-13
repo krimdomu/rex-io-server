@@ -41,5 +41,5 @@ $bcrypt->add($pass);
 
 my $pw = $bcrypt->hexdigest;
 
-print "INSERT INTO user (name, password) VALUES('$user', '$pw')\n";
+print "INSERT INTO users (name, password) VALUES('$user', '$pw')\n";
 
