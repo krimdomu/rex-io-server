@@ -50,6 +50,14 @@ sub list_domain {
             name => $rr->name,
          };
       }
+      elsif($rr->type eq "PTR") {
+         $ret->{ $rr->name } = {
+            data => $rr->ptrdname,
+            ttl => $rr->ttl,
+            type => $rr->type,
+            name => $rr->name,
+         };
+      }
       else {
          print STDERR Dumper($rr);
       }
