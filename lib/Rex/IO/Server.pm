@@ -40,7 +40,8 @@ has schema => sub {
             
    return Rex::IO::Server::Schema->connect($dsn, 
       $self->config->{database}->{username},
-      $self->config->{database}->{password});
+      $self->config->{database}->{password},
+      { mysql_enable_utf8 => 1 });
 };
 
 has log_writer => sub {
