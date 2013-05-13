@@ -13,13 +13,13 @@ CREATE TABLE `incidents` (
      `content` LONGTEXT,
      PRIMARY KEY (`id`),
      KEY `status_id` (`status_id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 CREATE TABLE `incident_status` (
      `id` int(11) NOT NULL AUTO_INCREMENT,
      `name` VARCHAR(255) NOT NULL,
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 CREATE TABLE `incident_message` (
      `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -30,7 +30,7 @@ CREATE TABLE `incident_message` (
      `message` LONGTEXT,
      PRIMARY KEY (`id`),
      KEY `incident_id` (`incident_id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 
 INSERT INTO `incident_status` (`id`, `name`) VALUES(1, 'new');

@@ -9,7 +9,7 @@ CREATE TABLE `performance_counter` (
      `template_id` int(11) NOT NULL,
      PRIMARY KEY (`id`),
      KEY `hardware_id` (`hardware_id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 CREATE TABLE `performance_counter_value` (
      `id` bigint NOT NULL AUTO_INCREMENT,
@@ -20,14 +20,14 @@ CREATE TABLE `performance_counter_value` (
      PRIMARY KEY (`id`),
      KEY `performance_counter_id` (`performance_counter_id`),
      KEY `created` (`created`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 
 CREATE TABLE `performance_counter_template` (
      `id` int(11) NOT NULL AUTO_INCREMENT,
      `name` varchar(100) NOT NULL,
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 
 
 CREATE TABLE `performance_counter_template_item` (
@@ -39,5 +39,5 @@ CREATE TABLE `performance_counter_template_item` (
      `divisor` int(11) DEFAULT 1,
      `relative` int(1) DEFAULT 0,
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 

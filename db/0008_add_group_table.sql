@@ -8,5 +8,5 @@ CREATE TABLE `server_groups` (
      `created` TIMESTAMP NOT NULL DEFAULT NOW(),
      PRIMARY KEY (`id`),
      KEY `parent_id` (`parent_id`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 

@@ -9,5 +9,5 @@ CREATE TABLE `current_alerts` (
      KEY `hardware_id` (`hardware_id`),
      KEY `template_item_id` (`template_item_id`),
      KEY `created` (`created`)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB CHARACTER SET utf8;
 

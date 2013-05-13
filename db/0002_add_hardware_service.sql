@@ -7,14 +7,14 @@ CREATE TABLE `hardware_task` (
      `task_id` int(11) DEFAULT NULL,
      PRIMARY KEY (`id`),
      KEY `hardware_id` (`hardware_id`)
-) ENGINE=InnoDB ;
+) ENGINE=InnoDB CHARACTER SET utf8 ;
 
 DROP TABLE IF EXISTS `service`;
 CREATE TABLE `service` (
      `id` int(11) NOT NULL AUTO_INCREMENT,
      `service_name` varchar(255) DEFAULT NULL,
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB ;
+) ENGINE=InnoDB CHARACTER SET utf8 ;
 
 DROP TABLE IF EXISTS `service_task`;
 CREATE TABLE `service_task` (
@@ -24,6 +24,6 @@ CREATE TABLE `service_task` (
      `task_description` varchar(255) DEFAULT NULL,
      PRIMARY KEY (`id`),
      KEY `service_id` (`service_id`)
-) ENGINE=InnoDB ;
+) ENGINE=InnoDB CHARACTER SET utf8 ;
 
 ALTER TABLE hardware_task ADD COLUMN (`task_order` int(11) DEFAULT 0);
