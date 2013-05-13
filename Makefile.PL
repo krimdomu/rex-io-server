@@ -11,6 +11,7 @@ my %deps = (
                   'Digest::Bcrypt' => 0,
                   'Mojo::Redis' => 0,
                   'DBIx::Class::Tree::AdjacencyList' => 0,
+                  'Net::DNS' => 0,
 );
 
 WriteMakefile1(
