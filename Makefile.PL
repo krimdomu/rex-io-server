@@ -9,6 +9,7 @@ my %deps = (
                   'XML::Simple' => 0,
                   'DBIx::Class' => 0,
                   'Digest::Bcrypt' => 0,
+                  'Mojo::Redis' => 0,
 );
 
 WriteMakefile1(
