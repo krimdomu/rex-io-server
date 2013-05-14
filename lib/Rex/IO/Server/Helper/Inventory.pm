@@ -171,6 +171,15 @@ sub inventor {
 
    my $hdd_r = $hw->harddrives;
 
+   my $fdisk;
+
+   if(exists $ref->{fdisk}) {
+      $self->app->log->debug("fdisk fallback available");
+      my @lines = split(/\n/, $ref->{fdisk});
+      $fdisk = read_fdisk(@lines);
+      $self->app->log->debug(Dumper($fdisk));
+   }
+
    HDDS: while(my $hdd_dev = $hdd_r->next) {
       $self->app->log->debug("Updating existing harddrives");
       INVHDDS: for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
@@ -181,12 +190,11 @@ sub inventor {
             $hdd->{SERIALNUMBER} = md5_hex($hdd->{NAME} . "-" . $hdd->{DESCRIPTION} . "-" . $hdd->{MANUFACTURER} . "-" . $hdd->{TYPE});
          }
 
-         if(! $hdd->{DISKSIZE}) {
+         if(! exists $hdd->{DISKSIZE}) {
             # fallback to fdisk data if available
             if(exists $ref->{fdisk}) {
-               my @lines = split(/\n/, $ref->{fdisk});
-               my $fdisk = read_fdisk(@lines);
                $hdd->{DISKSIZE} = $fdisk->{"/dev/" . $hdd->{NAME}}->{size} / 1024 / 1024;
+               $self->app->log->debug("New Disksize: " . $hdd->{DISKSIZE});
             }
          }
 
@@ -211,6 +219,14 @@ sub inventor {
    for my $hdd ( @{ $ref->{CONTENT}->{STORAGES} } ) {
       next unless $hdd;
       next unless ($hdd->{TYPE} eq "disk");
+
+      if(! exists $hdd->{DISKSIZE}) {
+         # fallback to fdisk data if available
+         if(exists $ref->{fdisk}) {
+            $hdd->{DISKSIZE} = $fdisk->{"/dev/" . $hdd->{NAME}}->{size} / 1024 / 1024;
+            $self->app->log->debug("New Disksize: " . $hdd->{DISKSIZE});
+         }
+      }
 
       $self->app->log->debug("Adding new harddrive");
       my $new_hdd = $self->db->resultset("Harddrive")->create({

@@ -110,8 +110,15 @@ sub broker {
 #                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
 #                  uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
 #               );
+               my $hostname = $json->{info}->{CONTENT}->{HARDWARE}->{NAME};
+
+               if(exists $json->{info}->{use_mac} && $json->{info}->{use_mac}) {
+                  ($hostname) = grep { ! m/^00:00:00/ } @mac_addresses;
+                  $hostname =~ s/:/-/g;
+               }
+
                my $new_hw = $self->db->resultset("Hardware")->create({
-                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
+                  name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
                });
 
