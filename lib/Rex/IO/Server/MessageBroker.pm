@@ -25,13 +25,14 @@ sub broker {
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
    my $redis = Mojo::Redis->new(server => $self->config->{redis}->{monitor}->{server} . ":" . $self->config->{redis}->{monitor}->{port});
+   my $redis_deploy = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
 
    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
 
    #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
 
    $self->on(finish => sub {
-      warn "client disconnected\n";
+      $self->app->log->debug("client disconnected");
       my $new_clients = {};
 
       for my $cl (keys %$clients) {
@@ -123,6 +124,12 @@ sub broker {
                });
 
                $self->inventor($new_hw, $json->{info});
+
+               $redis_deploy->publish($self->config->{redis}->{deploy}->{queue} => Mojo::JSON->encode({
+                  cmd => "deploy",
+                  type => "newsystem",
+                  host => { $new_hw->get_columns },
+               }));
 
                return 1;
             } or do {

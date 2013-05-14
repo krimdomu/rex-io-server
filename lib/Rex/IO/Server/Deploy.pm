@@ -20,6 +20,9 @@ sub boot {
 
    my $client = $self->tx->remote_address;
 
+   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
+   my $channel = $self->config->{redis}->{deploy}->{queue};
+
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
    my $mac;
@@ -103,6 +106,12 @@ sub boot {
                state_id => 2
             });
 
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "start",
+               host => { $system->get_columns },
+            }));
+
             return $self->render_text($boot_commands);
          }
          elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
@@ -119,6 +128,12 @@ sub boot {
 
             $self->app->log->debug("Sending kickstart template:\n$template");
 
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "kickstart",
+               host => { $system->get_columns },
+            }));
+
             return $self->render(inline => $template);
          }
          elsif($system->state_id == 3 || $self->param("finished")) { # hook after installation, must be called from within the template
@@ -129,6 +144,12 @@ sub boot {
                state_id => 4,
                os_template_id => 1,
             });
+
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "finished",
+               host => { $system->get_columns },
+            }));
 
             return $self->render_json({ok => Mojo::JSON->true});
          }
