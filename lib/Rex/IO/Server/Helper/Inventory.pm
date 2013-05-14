@@ -14,8 +14,10 @@ use base qw(Exporter);
 use vars qw(@EXPORT);
 
 use Rex::IO::Server::Helper::IP;
+use Rex::IO::Server::Helper::Fdisk;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
+
 
 @EXPORT = qw(inventor);
 
@@ -177,6 +179,15 @@ sub inventor {
 
          if(! exists $hdd->{SERIALNUMBER}) {
             $hdd->{SERIALNUMBER} = md5_hex($hdd->{NAME} . "-" . $hdd->{DESCRIPTION} . "-" . $hdd->{MANUFACTURER} . "-" . $hdd->{TYPE});
+         }
+
+         if(! $hdd->{DISKSIZE}) {
+            # fallback to fdisk data if available
+            if(exists $ref->{fdisk}) {
+               my @lines = split(/\n/, $ref->{fdisk});
+               my $fdisk = read_fdisk(@lines);
+               $hdd->{DISKSIZE} = $fdisk->{"/dev/" . $hdd->{NAME}}->{size} / 1024 / 1024;
+            }
          }
 
          if($hdd_dev->serial eq $hdd->{SERIALNUMBER}) {
