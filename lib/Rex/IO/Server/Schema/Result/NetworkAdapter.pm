@@ -25,13 +25,11 @@ sub to_hashRef {
 
    my $data = { $self->get_columns };
 
-   if($data->{proto} eq "static") {
-      $data->{ip}        = int_to_ip($data->{ip})          if $data->{ip};
-      $data->{netmask}   = int_to_ip($data->{netmask})     if $data->{netmask};
-      $data->{broadcast} = int_to_ip($data->{broadcast})   if $data->{broadcast};
-      $data->{network}   = int_to_ip($data->{network})     if $data->{network};
-      $data->{gateway}   = int_to_ip($data->{gateway})     if $data->{gateway};
-   }
+   $data->{ip}        = int_to_ip($data->{ip})          if $data->{ip};
+   $data->{netmask}   = int_to_ip($data->{netmask})     if $data->{netmask};
+   $data->{broadcast} = int_to_ip($data->{broadcast})   if $data->{broadcast};
+   $data->{network}   = int_to_ip($data->{network})     if $data->{network};
+   $data->{gateway}   = int_to_ip($data->{gateway})     if $data->{gateway};
 
    return $data;
 
