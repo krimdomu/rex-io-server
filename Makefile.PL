@@ -8,6 +8,7 @@ my %deps = (
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
                   'DBIx::Class' => 0,
+                  'DBD::mysql' => 0,
                   'Digest::Bcrypt' => 0,
                   'Mojo::Redis' => 0,
                   'DBIx::Class::Tree::AdjacencyList' => 0,
