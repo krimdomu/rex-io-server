@@ -87,7 +87,7 @@ sub boot {
             }
 
             my $append = $boot_os->append;
-            my $hostname = $boot_os->name;
+            my $hostname = $system->name;
             #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
             my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
             my $eth = $boot_eth->dev;
@@ -110,6 +110,10 @@ sub boot {
                cmd => "deploy",
                type => "start",
                host => { $system->get_columns },
+               template => {
+                  id => $boot_os->id,
+                  name => $boot_os->name,
+               }
             }));
 
             return $self->render_text($boot_commands);
