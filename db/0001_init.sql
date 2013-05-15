@@ -262,7 +262,7 @@ INSERT INTO `os_template` VALUES (4,'Centos 6.4 (64bit)','http://192.168.7.1/boo
 
 INSERT INTO `os_template` VALUES (1,'Local','','','','','#!ipxe\nsanboot --no-describe --drive 0x80');
 
-INSERT INTO `os_template` VALUES (2,'Inventory','http://192.168.7.1/boot/grml/vmlinuz','http://192.168.7.1/boot/grml/initrd.img','REXIO_SERVER=ws://192.168.1.3:5000/messagebroker boot=live fetch=http://192.168.7.1/boot/grml/grml64-new.squashfs noeject ssh=test lang=de vga=791','','');
+INSERT INTO `os_template` VALUES (2,'Inventory','http://192.168.7.1/boot/grml/vmlinuz','http://192.168.7.1/boot/grml/initrd.img','REXIO_SERVER=192.168.7.1:5000 boot=live fetch=http://192.168.7.1/boot/grml/rexio.squashfs noeject ssh=test lang=de vga=791','','');
 
 /*!40000 ALTER TABLE `os_template` ENABLE KEYS */;
 UNLOCK TABLES;
