@@ -33,7 +33,7 @@ sub write {
    my $target_index = "logstash-" . strftime("%Y.%m.%d", localtime($data->{time}));
 
    # always use the same timezone on your hosts
-   $data->{'@timestamp'} = strftime("%Y-%m-%dT%H:%M%:%S%z", localtime($data->{time}));
+   $data->{'@timestamp'} = strftime("%Y-%m-%dT%H:%M:%S%z", localtime($data->{time}));
    $data->{tag} = $tag;
 
    my $index_type = $self->app->config->{logstream}->{output}->{index_type};
@@ -50,7 +50,6 @@ sub write {
    my $port   = $self->app->config->{logstream}->{output}->{port};
 
    $self->app->log->debug("Sending log data to elasticsearch:");
-   $self->app->log->debug(Dumper($message));
 
    $self->ua->post("http://$server:$port/_bulk", {}, join("\n", @{ $message }) . "\n", sub {
    });
@@ -67,8 +66,9 @@ sub search {
          bool => {
             must => [
                {
-                  wildcard => {
-                     "logs.host" => $opt{host},
+                  query_string => {
+                     default_field => "logs.host",
+                     query => $opt{host},
                   },
                },
             ],
@@ -82,6 +82,8 @@ sub search {
    my $target_index = "logstash-" . strftime("%Y.%m.%d", localtime(time));
    my $server = $self->app->config->{logstream}->{output}->{host};
    my $port   = $self->app->config->{logstream}->{output}->{port};
+
+   print STDERR Dumper($query);
 
    my $tx = $self->ua->post("http://$server:$port/$target_index/_search", {}, json => $query);
    if (my $res = $tx->success) {
