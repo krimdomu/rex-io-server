@@ -6,6 +6,8 @@ use Mojo::JSON;
 use Data::Dumper;
 use Mojo::Redis;
 
+# CALL: 
+# curl -X POST -d '{"task_name":"world","task_description":"Simple Hello World Task"}' http://localhost:5000/service/hello
 sub register {
    my ($self) = @_;
 
@@ -77,6 +79,11 @@ sub run_task_on_host {
 
    my $service = $task->service;
 
+   my $qj = $self->db->resultset("QueuedJob")->create({
+      hardware_id => $host_id,
+      task_id     => $task_id,
+   });
+
    Mojo::IOLoop->delay(
       sub {
          my ($delay) = @_;
@@ -85,6 +92,7 @@ sub run_task_on_host {
             cmd    => "Execute",
             script => $service->service_name,
             task   => $task->task_name,
+            qj_id  => $qj->id,
          };
          my $json = Mojo::JSON->new;
          $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode($ref), $delay->begin);
@@ -176,13 +184,22 @@ sub run_tasks {
 
       my $magic = $self->get_random(16, 'a' .. 'z');
 
-      push(@ref, {
-         host   => $host_o->name,
-         cmd    => "Execute",
-         script => $service_o->service_name,
-         task   => $task_o->task_name,
-         magic  => $magic,
+      my $qj = $self->db->resultset("QueuedJob")->create({
+         hardware_id => $host_o->id,
+         task_id     => $task_o->id,
       });
+
+      # this system is currenlty in inventory stage, so don't run the tasks now
+      if($host_o->state_id != 5) {
+         push(@ref, {
+            host   => $host_o->name,
+            cmd    => "Execute",
+            script => $service_o->service_name,
+            task   => $task_o->task_name,
+            magic  => $magic,
+            qj_id  => $qj->id,
+         });
+      }
    }
 
    my $redis = $self->redis;

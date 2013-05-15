@@ -66,7 +66,7 @@ sub boot {
       my $boot_os_r = $system->os_template;
       if(my $boot_os = $boot_os_r) {
 
-         if($system->state_id == 1 || $self->param("deploy")) { # first boot after service os / after registration
+         if($system->state_id == 1 || $system->state_id == 5 || $self->param("deploy")) { # first boot after service os / after registration
                                       # return os template to deploy os
 
             if($boot_os->id == 1) {
@@ -154,6 +154,61 @@ sub boot {
                type => "finished",
                host => { $system->get_columns },
             }));
+
+            # set wanted_* as default
+            my $wanted_hw = $self->db->resultset("NetworkAdapter")->search(
+               {
+                  "wanted_ip" => ip_to_int($client),
+               },
+            )->first;
+
+            if($wanted_hw) {
+               $wanted_hw->update({
+                  ip => $wanted_hw->wanted_ip,
+                  netmask => $wanted_hw->wanted_netmask,
+                  broadcast => $wanted_hw->wanted_broadcast,
+                  gateway => $wanted_hw->wanted_gateway,
+                  netmask => $wanted_hw->wanted_netmask,
+               });
+            }
+
+            # set os
+            my $os_hw = $self->db->resultset("Hardware")->search(
+               {
+                  "network_adapters.ip" => ip_to_int($client),
+               },
+               {
+                  join => "network_adapters",
+               }
+            )->first;
+
+            if($os_hw) {
+
+               # try to get os out of template, as long there is no relation
+               my $template_name = $os_hw->os_template->name;
+               ($template_name) = ($template_name =~ m/^([^\(]+)\(/);
+               $template_name =~ s/\s*$//;
+
+               $self->app->log->debug("Got Template-Name: $template_name");
+
+               my ($os_name, $os_version) = split(/ /, $template_name);
+
+               $self->app->log->debug("Got os_name: $os_name ($os_version)");
+
+               my $os = $self->db->resultset("Os")->search({
+                  name => $os_name,
+                  version => $os_version,
+               })->first;
+
+               if($os) {
+                  $os_hw->update({
+                     os_id => $os->id,
+                  });
+               }
+            }
+            else {
+               $self->app->log->debug("No hardware found.");
+            }
 
             return $self->render_json({ok => Mojo::JSON->true});
          }

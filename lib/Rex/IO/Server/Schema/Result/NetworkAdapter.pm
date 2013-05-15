@@ -14,7 +14,23 @@ use Rex::IO::Server::Helper::IP;
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("network_adapter");
-__PACKAGE__->add_columns(qw/id hardware_id dev proto ip netmask broadcast network gateway mac boot virtual/);
+__PACKAGE__->add_columns(qw/id
+                            hardware_id
+                            dev
+                            proto
+                            ip
+                            netmask
+                            broadcast
+                            network
+                            gateway
+                            wanted_ip
+                            wanted_netmask
+                            wanted_broadcast
+                            wanted_network
+                            wanted_gateway
+                            mac
+                            boot
+                            virtual/);
 
 __PACKAGE__->set_primary_key("id");
 
@@ -30,6 +46,14 @@ sub to_hashRef {
    $data->{broadcast} = int_to_ip($data->{broadcast})   if $data->{broadcast};
    $data->{network}   = int_to_ip($data->{network})     if $data->{network};
    $data->{gateway}   = int_to_ip($data->{gateway})     if $data->{gateway};
+
+   $data->{wanted_ip}        = int_to_ip($data->{wanted_ip})          if $data->{wanted_ip};
+   $data->{wanted_netmask}   = int_to_ip($data->{wanted_netmask})     if $data->{wanted_netmask};
+   $data->{wanted_broadcast} = int_to_ip($data->{wanted_broadcast})   if $data->{wanted_broadcast};
+   $data->{wanted_network}   = int_to_ip($data->{wanted_network})     if $data->{wanted_network};
+   $data->{wanted_gateway}   = int_to_ip($data->{wanted_gateway})     if $data->{wanted_gateway};
+
+
 
    return $data;
 

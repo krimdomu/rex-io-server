@@ -14,7 +14,7 @@ use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Inventory;
 use Rex::IO::Server::Calculator;
 
-my $clients = {};
+our $clients = {};
 
 sub broker {
    my ($self) = @_;
@@ -25,11 +25,29 @@ sub broker {
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
    my $redis = Mojo::Redis->new(server => $self->config->{redis}->{monitor}->{server} . ":" . $self->config->{redis}->{monitor}->{port});
+   $redis->timeout(0);
    my $redis_deploy = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
+   $redis_deploy->timeout(0);
+   my $redis_jobs = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
+   $redis_jobs->timeout(0);
 
-   Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
+   Mojo::IOLoop->stream($self->tx->connection)->timeout(0);
 
    #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
+
+   # monitor redis jobs queue
+   my $jobs_sub = $redis->subscribe($self->config->{redis}->{jobs}->{queue});
+
+   $jobs_sub->on(message => sub {
+      my ($sub, $message, $channel) = @_;
+
+      if($channel eq $self->config->{redis}->{jobs}->{queue}) {
+         my $ref = Mojo::JSON->decode($message);
+         if($ref->{cmd} eq "Answer") {
+            $self->app->log->debug("Got answer from job: " . $ref->{jq_id});
+         }
+      }
+   });
 
    $self->on(finish => sub {
       $self->app->log->debug("client disconnected");
@@ -69,8 +87,73 @@ sub broker {
          } @{ $clients->{$json->{to_ip}} };
       }
 
-      # hello action
+      # hello action, check if there are queued jobs for this host
       elsif(exists $json->{type} && $json->{type} eq "hello") {
+         $self->app->log->debug("Got 'hello' from $client_ip, looking for queued jobs");
+
+         my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client_ip);
+
+         my $mac;
+         if(my $res = $tx->success) {
+            $mac = $res->json->{mac};
+
+            $self->app->log->debug("GOT MAC: $mac");
+         }
+         else {
+            $self->app->log->debug("MAC not found!");
+         }
+
+         # get the host object out of db
+         my $host = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.mac" => $mac,
+            },
+            {
+               join => "network_adapters",
+            },
+         )->first;
+
+         if(! $host) {
+            # get the host object out of db
+            $host = $self->db->resultset("Hardware")->search(
+               {
+                  "network_adapters.ip" => ip_to_int($client_ip),
+               },
+               {
+                  join => "network_adapters",
+               },
+            )->first;
+         }
+
+         if($host) {
+            # found host
+            my @qjs = $host->queued_jobs();
+
+            my @ref;
+            for my $qj (@qjs) {
+               $self->app->log->debug("Found job: " . $qj->id);
+
+               my $task = $qj->task;
+               my $magic = $self->get_random(16, 'a' .. 'z');
+
+               push(@ref, {
+                  host   => $host->name,
+                  cmd    => "Execute",
+                  script => $task->service->service_name,
+                  task   => $task->task_name,
+                  magic  => $magic,
+                  qj_id  => $qj->id,
+               });
+
+               # delete job
+               $qj->delete;
+            }
+
+            $redis_jobs->publish($self->config->{redis}->{jobs}->{queue} => Mojo::JSON->encode(\@ref));
+         }
+      }
+
+      elsif(exists $json->{type} && $json->{type} eq "hello-service") {
 
          map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
 
@@ -121,6 +204,7 @@ sub broker {
                my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
+                  state_id => 5,
                });
 
                $self->inventor($new_hw, $json->{info});
@@ -138,6 +222,9 @@ sub broker {
          }
          else {
             $self->app->log->debug("Hardware already registered");
+            $hw->update({
+               state_id => 5,
+            });
          }
       }
 
@@ -289,6 +376,7 @@ sub is_online {
    my ($self) = @_;
 
    my $ip = $self->param("ip");
+
    if(exists $clients->{$ip}) {
       return $self->render_json({ok => Mojo::JSON->true});
    }
@@ -318,6 +406,22 @@ sub message_to_server {
       } @{ $clients->{$to} };
 
    $self->render_json({ok => Mojo::JSON->true});
+}
+
+sub _ua { return Mojo::UserAgent->new; }
+
+sub get_random {
+   my $self = shift;
+	my $count = shift;
+	my @chars = @_;
+	
+	srand();
+	my $ret = "";
+	for(1..$count) {
+		$ret .= $chars[int(rand(scalar(@chars)-1))];
+	}
+	
+	return $ret;
 }
 
 1;

@@ -19,6 +19,7 @@ __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to("service", "Rex::IO::Server::Schema::Result::Service", "service_id");
 __PACKAGE__->has_many("hardware_tasks", "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id");
+__PACKAGE__->has_many("queued_jobs", "Rex::IO::Server::Schema::Result::QueuedJob", "task_id");
 
 sub to_hashRef {
    my ($self) = @_;

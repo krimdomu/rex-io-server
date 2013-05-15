@@ -108,6 +108,9 @@ sub get {
    $self->render_json($ret);
 }
 
+# CALL:
+# curl -X POST -d '{"data":"1.2.3.4","type":"A"}' http://localhost:5000/dns/stage.rexify.org/fe01
+# curl -X POST -d '{"data":"fe01","type":"PTR"}' http://localhost:5000/dns/4.3.2.IN-ADDR.ARPA/1
 sub add_record {
    my ($self) = @_;
 

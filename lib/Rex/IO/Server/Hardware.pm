@@ -8,6 +8,7 @@ package Rex::IO::Server::Hardware;
    
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
+use Mojo::UserAgent;
 
 use Rex::IO::Server::Helper::IP;
 
@@ -87,7 +88,7 @@ sub update_network_adapter {
       #my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
       my $nw_a = $self->db->resultset("NetworkAdapter")->find($nwa_id);
 
-      my @calc_int = qw/ip netmask broadcast network gateway/;
+      my @calc_int = qw/wanted_ip wanted_netmask wanted_broadcast wanted_network wanted_gateway ip netmask broadcast network gateway/;
 
       for my $k (keys %{ $json }) {
          if(@calc_int ~~ m/$k/ && $json->{$k}) {
@@ -98,6 +99,14 @@ sub update_network_adapter {
       }
 
       $nw_a->update;
+
+      if($json->{boot} && $nw_a->wanted_ip) {
+         # if this is the boot device, register ip/mac in dhcp
+         $self->_ua->post($self->config->{dhcp}->{server} . "/" . $nw_a->mac, json => {
+            name => $nw_a->hardware->name,
+            ip   => int_to_ip($nw_a->wanted_ip),
+         });
+      }
 
       return $self->render_json({ok => Mojo::JSON->true});
    } or do {
@@ -125,5 +134,6 @@ sub purge {
 
 }
 
+sub _ua { return Mojo::UserAgent->new; }
 
 1;

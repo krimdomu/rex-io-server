@@ -33,6 +33,7 @@ __PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask"
 __PACKAGE__->has_many("performance_counters" => "Rex::IO::Server::Schema::Result::PerformanceCounter", "hardware_id");
 __PACKAGE__->has_many("performance_counter_values" => "Rex::IO::Server::Schema::Result::PerformanceCounterValue", "hardware_id");
 __PACKAGE__->has_many("alerts", "Rex::IO::Server::Schema::Result::CurrentAlert", "hardware_id");
+__PACKAGE__->has_many("queued_jobs", "Rex::IO::Server::Schema::Result::QueuedJob", "hardware_id");
 
 sub mac {
    my ($self) = @_;
