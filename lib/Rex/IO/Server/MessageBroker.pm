@@ -159,6 +159,8 @@ sub broker {
 
          my @mac_addresses = ();
          for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
+            next if($eth->{MACADDR} =~ m/^00:00:00/);
+
             push(@mac_addresses, $eth->{MACADDR});
          }
 

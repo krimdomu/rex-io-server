@@ -134,6 +134,108 @@ sub get_alerts_of_host {
    $self->render_json(\@ret);
 }
 
+sub list_templates {
+   my ($self) = @_;
+
+   my @ret;
+
+   my @tpl = $self->db->resultset("PerformanceCounterTemplate")->all;
+   for my $t (@tpl) {
+      push @ret, { $t->get_columns };
+   }
+
+   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+}
+
+sub delete_template {
+   my ($self)  = @_;
+
+   my $id = $self->param("id");
+   my $t = $self->db->resultset("PerformanceCounterTemplate")->find($id);
+   if($t) {
+      $t->delete;
+      return $self->render_json({ok => Mojo::JSON->true});
+   }
+
+   $self->render_json({ok => Mojo::JSON->false}, status => 404);
+}
+
+sub list_items_of_template {
+   my ($self) = @_;
+
+   my $t_id = $self->param("id");
+
+   my $t = $self->db->resultset("PerformanceCounterTemplate")->find($t_id);
+
+   if(! $t) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   my @ret;
+
+   for my $m ($t->items) {
+      push @ret, { $m->get_columns };
+   }
+
+   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+}
+
+sub del_item {
+   my ($self) = @_;
+
+   my $item_id = $self->param("itemid");
+   my $i = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
+
+   if(! $i) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   $i->delete;
+
+   $self->render_json({ok => Mojo::JSON->true});
+}
+
+sub get_template {
+   my ($self) = @_;
+   my $t_id = $self->param("id");
+   my $t = $self->db->resultset("PerformanceCounterTemplate")->find($t_id);
+
+   if(! $t) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   my $data = { $t->get_columns };
+   $self->render_json({ok => Mojo::JSON->true, data => $data});
+}
+
+sub get_item {
+   my ($self) = @_;
+
+   my $item_id = $self->param("item_id");
+   my $itm = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
+
+   if(! $itm) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   $self->render_json({ok => Mojo::JSON->true, data => { $itm->get_columns }});
+}
+
+sub save_item {
+   my ($self) = @_;
+
+   my $item_id = $self->param("item_id");
+   my $itm = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
+
+   if(! $itm) {
+      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   }
+
+   $itm->update($self->req->json);
+
+   $self->render_json({ok => Mojo::JSON->true});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
@@ -146,6 +248,15 @@ sub __register__ {
    $r->route("/monitor/alerts")->via("LIST")->to("monitor#get_alerts");
    $r->route("/monitor/alerts/:hostid")->via("LIST")->to("monitor#get_alerts_of_host");
 
+   $r->route("/monitor/template")->via("LIST")->to("monitor#list_templates");
+   $r->delete("/monitor/template/:id")->to("monitor#delete_template");
+
+   $r->route("/monitor/template/:id")->via("LIST")->to("monitor#list_items_of_template");
+   $r->delete("/monitor/template/:templateid/item/:itemid")->to("monitor#del_item");
+
+   $r->get("/monitor/template/:id")->to("monitor#get_template");
+   $r->get("/monitor/template/:id/item/:item_id")->to("monitor#get_item");
+   $r->post("/monitor/template/:id/item/:item_id")->to("monitor#save_item");
 }
 
 
