@@ -87,16 +87,17 @@ sub boot {
             }
 
             my $append = $boot_os->append;
-            my $hostname = $system->name;
+            my ($hostname, $domainname) = split(/\./, $system->name, 2);
             #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
             my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
             my $eth = $boot_eth->dev;
 
             $append =~ s/\%hostname/$hostname/g;
             $append =~ s/\%eth/$eth/g;
+            $append =~ s/\%domainname/$domainname/g;
 
             my $boot_commands = "#!ipxe\n"
-                              . "kernel " . $boot_os->kernel . " " . $boot_os->append .  "\n"
+                              . "kernel " . $boot_os->kernel . " " . $append .  "\n"
                               . "initrd " . $boot_os->initrd . "\n"
                               . "boot";
 

@@ -15,11 +15,11 @@ sub list_domain {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
-   my $ret = {};
+   my @ret;
 
    for my $rr ($self->_dns->axfr($domain)) {
       if($rr->type eq "A") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->address,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -27,7 +27,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "TXT") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->rdata,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -35,7 +35,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "CNAME") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->cname,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -43,7 +43,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "MX") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->exchange,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -51,7 +51,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "PTR") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->ptrdname,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -63,7 +63,7 @@ sub list_domain {
       }
    }
 
-   $self->render_json($ret);
+   $self->render_json(\@ret);
 }
 
 sub list_tlds {
@@ -140,7 +140,13 @@ sub add_record {
    # don't add it, if there is already an A record
    $update->push(prerequisite => nxrrset("$host.$domain. $record_type"));
 
-   $update->push(update => rr_add("$host.$domain.  $ttl  $record_type  $data"));
+   if($record_type eq "TXT") {
+      $data =~ s/\\/\\\\/gms;
+      $data =~ s/"/\\"/gms;
+      $data = "\"$data\"";
+   }
+
+   $update->push(update => rr_add("$host.$domain. $ttl $record_type $data"));
 
    $update->sign_tsig($self->config->{dns}->{key_name}, $self->config->{dns}->{key});
 
