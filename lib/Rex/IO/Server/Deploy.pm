@@ -23,6 +23,11 @@ sub boot {
    my $redis = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
    my $channel = $self->config->{redis}->{deploy}->{queue};
 
+   if($self->param("custom")) {
+      $self->app->log->debug("Got custom parameter: $client");
+      $client = $self->param("custom");
+   }
+
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
    my $mac;
@@ -46,8 +51,6 @@ sub boot {
    )->first;
 
    if($self->param("custom")) {
-      $client = $self->param("custom");
-      $self->app->log->debug("Got custom parameter: $client");
       #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
       $hw = $self->db->resultset("Hardware")->search(
          {
