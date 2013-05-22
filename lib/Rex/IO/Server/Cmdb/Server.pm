@@ -17,7 +17,7 @@ sub post {
 
    my $new_res = $self->cmdb->add_server($ref);
 
-   $self->render_json($new_res, status => 201);
+   $self->render(json => $new_res, status => 201);
 }
 
 sub delete {
@@ -26,10 +26,10 @@ sub delete {
    my $data = $self->cmdb->delete_server($self->stash("name"));
 
    if($data->{ok} == Mojo::JSON->false) {
-      $self->render_json($data, status => 404);
+      $self->render(json => $data, status => 404);
    }
    else {
-      $self->render_json($data);
+      $self->render(json => $data);
    }
 }
 
@@ -45,14 +45,14 @@ sub get {
    }
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub list {
@@ -66,14 +66,14 @@ sub list {
    }
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub link {
@@ -82,14 +82,14 @@ sub link {
    my $data = $self->cmdb->add_service_to_server($self->stash("name"), $self->req->json);
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub unlink {
@@ -98,14 +98,14 @@ sub unlink {
    my $data = $self->cmdb->remove_service_from_server($self->stash("name"), $self->req->json);
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub service_put {
@@ -114,14 +114,14 @@ sub service_put {
    my $data = $self->cmdb->configure_service_of_server($self->stash("name"), $self->stash("service"), $self->req->json);
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub section_put {
@@ -130,14 +130,14 @@ sub section_put {
    my $data = $self->cmdb->add_section_to_server($self->stash("name"), $self->stash("section"), $self->req->json);
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 
