@@ -21,7 +21,7 @@ sub list {
       push @ret, { $sg->get_columns };
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub add {
@@ -29,9 +29,9 @@ sub add {
 
    my $ret = eval {
       my $group = $self->db->resultset("ServerGroup")->create($self->req->json);
-      $self->render_json({ok => Mojo::JSON->true, id => $group->id});
+      $self->render(json => {ok => Mojo::JSON->true, id => $group->id});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
    };
 
    return $ret;
@@ -50,10 +50,10 @@ sub add_server_to_group {
       $srv->update({
          server_group_id => $group_id,
       });
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    }
    else {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 }
 
@@ -64,10 +64,10 @@ sub del_server_group {
    if($grp) { 
       $grp->delete;
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    }
 
-   return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 sub __register__ {

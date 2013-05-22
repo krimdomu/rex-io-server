@@ -26,7 +26,7 @@ sub list {
       push(@ret, $hw->to_hashRef);
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub search {
@@ -41,7 +41,7 @@ sub search {
       push(@ret, $hw->to_hashRef);
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub get {
@@ -49,7 +49,7 @@ sub get {
 
    #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
    my $hw = $self->db->resultset("Hardware")->find($self->param("id"));
-   $self->render_json($hw->to_hashRef);
+   $self->render(json => $hw->to_hashRef);
 }
 
 sub update {
@@ -68,13 +68,13 @@ sub update {
 
          $hw->update;
 
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       } or do {
-         return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+         return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
       };
    }
    else {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 }
 
@@ -108,9 +108,9 @@ sub update_network_adapter {
          });
       }
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    };
 }
 
@@ -123,13 +123,13 @@ sub purge {
    return eval {
       if(my $hw = $hw_i) {
          $hw->purge;
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+         return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
       }
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
    };
 
 }
