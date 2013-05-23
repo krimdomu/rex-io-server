@@ -21,10 +21,10 @@ sub add {
    my $inc = $self->db->resultset("Incident")->create($json);
 
    if($inc) {
-      return $self->render_json({ok => Mojo::JSON->true, id => $inc->id});
+      return $self->render(json => {ok => Mojo::JSON->true, id => $inc->id});
    }
 
-   return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+   return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
 }
 
 sub add_message {
@@ -46,7 +46,7 @@ sub add_message {
 
    my $inc = $self->db->resultset("Incident")->find($incident_id);
    if(! $inc) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
    }
 
    $json->{incident_id} = $incident_id;
@@ -56,7 +56,7 @@ sub add_message {
 
       my $msg = $self->db->resultset("IncidentMessage")->create($json);
 
-      return $self->render_json({ok => Mojo::JSON->true, id => $msg->id});
+      return $self->render(json => {ok => Mojo::JSON->true, id => $msg->id});
    }
 
 
@@ -74,10 +74,10 @@ sub add_message {
 
       $inc->update($data);
 
-      return $self->render_json({ok => Mojo::JSON->true, message => "status/assignee updated"});
+      return $self->render(json => {ok => Mojo::JSON->true, message => "status/assignee updated"});
    }
 
-   $self->render_json({ok => Mojo::JSON->false, message => "done nothing"});
+   $self->render(json => {ok => Mojo::JSON->false, message => "done nothing"});
 }
 
 sub update_status {
@@ -86,14 +86,14 @@ sub update_status {
    my $inc = $self->db->resultset("Incident")->find($self->param("incident_id"));
 
    if(! $inc) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
    }
 
    $inc->update({
       status_id => $self->json->{"status_id"},
    });
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub list {
@@ -115,7 +115,7 @@ sub list {
       push @ret, $data;
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub list_incident_messages {
@@ -125,7 +125,7 @@ sub list_incident_messages {
    my $inc = $self->db->resultset("Incident")->find($incident_id);
 
    if(! $inc) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Incident not found"}, status => 404);
    }
 
    my @messages;
@@ -134,7 +134,7 @@ sub list_incident_messages {
       push @messages, { $msg->get_columns };
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@messages});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@messages});
 }
 
 sub get {
@@ -143,7 +143,7 @@ sub get {
    my $inc = $self->db->resultset("Incident")->find($self->param("incident_id"));
 
    if(! $inc) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    my $data = { $inc->get_columns };
@@ -158,7 +158,7 @@ sub get {
       push @{$data->{messages}}, $msg_data;
    }
 
-   $self->render_json($data);
+   $self->render(json => $data);
 }
 
 sub list_status {
@@ -172,7 +172,7 @@ sub list_status {
       push @ret, { $st->get_columns };
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub __register__ {

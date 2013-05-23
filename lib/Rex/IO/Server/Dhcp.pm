@@ -18,14 +18,14 @@ sub new_lease {
 
    my $mac = $self->param("mac");
    unless($mac =~ m/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/i) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "No MAC given."}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "No MAC given."}, status => 500);
    }
 
    $mac =~ s/\-/:/g;
 
    my $res = $self->_ua->post_json($self->config->{dhcp}->{server} . "/" . "\L$mac", $json)->res;
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub list_leases {
@@ -34,10 +34,10 @@ sub list_leases {
    my $res = $self->_list("/")->res->json;
 
    if(! $res->{leases}) {
-      return $self->render_json({});
+      return $self->render(json => {});
    }
 
-   $self->render_json($res->{leases});
+   $self->render(json => $res->{leases});
 }
 
 sub __register__ {

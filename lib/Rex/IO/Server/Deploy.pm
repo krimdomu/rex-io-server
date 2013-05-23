@@ -214,7 +214,7 @@ sub boot {
                $self->app->log->debug("No hardware found.");
             }
 
-            return $self->render_json({ok => Mojo::JSON->true});
+            return $self->render(json => {ok => Mojo::JSON->true});
          }
          else { # default boot, if state == INSTALLED (state_id: 4)
             $self->app->log->debug("boot from local hard disk... state == INSTALLED");
@@ -268,15 +268,15 @@ sub deploy {
             state_id => 1,
          });
 
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
 
       else {
-         return $self->render_json({ok => Mojo::JSON->false, error => "OS not found"}, status => 404);
+         return $self->render(json => {ok => Mojo::JSON->false, error => "OS not found"}, status => 404);
       }
    }
 
-   $self->render_json({ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
+   $self->render(json => {ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
 }
 
 sub __register__ {

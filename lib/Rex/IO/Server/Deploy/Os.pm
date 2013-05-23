@@ -26,9 +26,9 @@ sub register {
       my $ot = $self->db->resultset("OsTemplate")->create($json);
       $ot->update;
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    };
 }
 
@@ -48,9 +48,9 @@ sub update {
 
       $ot->update;
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    };
 
 }
@@ -63,14 +63,14 @@ sub delete {
       my $ot = $self->db->resultset("OsTemplate")->search({ name => $self->stash("name") });
       if(my $t = $ot->first) {
          $t->delete;
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+         return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
       }
 
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
    };
 }
 
@@ -86,7 +86,7 @@ sub list {
       push(@ret, { $t->get_columns });
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 1;
