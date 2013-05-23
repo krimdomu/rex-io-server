@@ -29,7 +29,7 @@ sub register {
       task_description => $json->{task_description},
    });
 
-   $self->render_json({ok => Mojo::JSON->true, data => { service_id => $service->id, task_id => $task->id }});
+   $self->render(json => {ok => Mojo::JSON->true, data => { service_id => $service->id, task_id => $task->id }});
 }
 
 sub add_task_to_host {
@@ -43,11 +43,11 @@ sub add_task_to_host {
    my $task = $self->db->resultset("ServiceTask")->find($task_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
    }
 
    if(! $task) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
    }
 
    $self->db->resultset("HardwareTask")->create({
@@ -56,7 +56,7 @@ sub add_task_to_host {
       task_order  => $json->{task_order},
    });
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub run_task_on_host {
@@ -70,11 +70,11 @@ sub run_task_on_host {
    my $task = $self->db->resultset("ServiceTask")->find($task_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Can't find host."}, status => 401);
    }
 
    if(! $task) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Can't find task."}, status => 401);
    }
 
    my $service = $task->service;
@@ -98,7 +98,7 @@ sub run_task_on_host {
          $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode($ref), $delay->begin);
       },
       sub {
-         $self->render_json({ok => Mojo::JSON->true});
+         $self->render(json => {ok => Mojo::JSON->true});
       }
    );
 }
@@ -114,7 +114,7 @@ sub get_all {
       push(@ret, $service->to_hashRef);
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub get_service {
@@ -124,12 +124,12 @@ sub get_service {
    my $service = $self->db->resultset("Service")->find($service_id);
 
    if(! $service) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    my @tasks = $service->get_tasks;
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@tasks});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@tasks});
 }
 
 sub get_service_for_host {
@@ -139,12 +139,12 @@ sub get_service_for_host {
    my $host = $self->db->resultset("Hardware")->find($host_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Host not found."}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Host not found."}, status => 404);
    }
 
    my @tasks = $host->get_tasks;
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@tasks});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@tasks});
 }
 
 sub remove_all_tasks_from_host {
@@ -154,12 +154,12 @@ sub remove_all_tasks_from_host {
    my $host = $self->db->resultset("Hardware")->find($host_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    $host->remove_tasks;
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub run_tasks {
@@ -175,11 +175,11 @@ sub run_tasks {
       my $host_o = $self->db->resultset("Hardware")->find($task->{server_id});
 
       if(! $task_o) {
-         return $self->render_json({ok => Mojo::JSON->false}, status => 404, error => "Task not found");
+         return $self->render(json => {ok => Mojo::JSON->false}, status => 404, error => "Task not found");
       }
 
       if(! $host_o) {
-         return $self->render_json({ok => Mojo::JSON->false}, status => 404, error => "Host not found");
+         return $self->render(json => {ok => Mojo::JSON->false}, status => 404, error => "Host not found");
       }
 
       my $magic = $self->get_random(16, 'a' .. 'z');
@@ -210,11 +210,11 @@ sub run_tasks {
          $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode(\@ref), $delay->begin);
       },
       sub {
-         $self->render_json({ok => Mojo::JSON->true});
+         $self->render(json => {ok => Mojo::JSON->true});
       }
    );
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub __register__ {

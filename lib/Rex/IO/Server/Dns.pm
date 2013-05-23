@@ -63,7 +63,7 @@ sub list_domain {
       }
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub list_tlds {
@@ -83,7 +83,7 @@ sub list_tlds {
       }
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub get {
@@ -105,7 +105,7 @@ sub get {
       };
    }
 
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 # CALL:
@@ -130,11 +130,11 @@ sub add_record {
    }
 
    #if(! $self->_is_ip($ip)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
    #}
 
    #if(! $self->_is_hostname($host)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
    #}
 
    # don't add it, if there is already an A record
@@ -157,14 +157,14 @@ sub add_record {
       my $rcode = $reply->header->rcode;
 
       if($rcode eq "NOERROR") {
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false, code => $rcode});
+         return $self->render(json => {ok => Mojo::JSON->false, code => $rcode});
       }
    }
    else {
-      return $self->render_json(ok => Mojo::JSON->false, error => $res->errorstring);
+      return $self->render(json => ok => Mojo::JSON->false, error => $res->errorstring);
    }
 }
 
@@ -176,7 +176,7 @@ sub delete_record {
    my $type   = $self->param("type");
 
    #if(! $self->_is_hostname($host)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
    #}
 
    warn "Got $domain / $type / $host";
@@ -195,14 +195,14 @@ sub delete_record {
       my $rcode = $reply->header->rcode;
 
       if($rcode eq "NOERROR") {
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false, code => $rcode});
+         return $self->render(json => {ok => Mojo::JSON->false, code => $rcode});
       }
    }
    else {
-      return $self->render_json(ok => Mojo::JSON->false, error => $res->errorstring);
+      return $self->render(json => ok => Mojo::JSON->false, error => $res->errorstring);
    }
 
 }

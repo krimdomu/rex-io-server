@@ -21,9 +21,9 @@ sub add {
       my $new_t = $self->db->resultset("OsTemplate")->create($json);
       $new_t->update;
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    };
 }
 
@@ -38,7 +38,7 @@ sub list {
       push(@ret, { $os->get_columns });
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub search {
@@ -53,7 +53,7 @@ sub search {
       push(@ret, { $os->get_columns });
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub get {
@@ -61,7 +61,7 @@ sub get {
 
    #my $os = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == $self->param("id"))->next;
    my $os = $self->db->resultset("OsTemplate")->find($self->param("id"));
-   $self->render_json({ $os->get_columns });
+   $self->render(json => { $os->get_columns });
 }
 
 sub update {
@@ -80,13 +80,13 @@ sub update {
 
          $os->update;
 
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       } or do {
-         return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+         return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
       };
    }
    else {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 }
 

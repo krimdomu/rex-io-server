@@ -14,7 +14,7 @@ use Data::Dumper;
 sub list {
    my ($self) = @_;
 
-   $self->render_json($self->config->{"plugins"});
+   $self->render(json => $self->config->{"plugins"});
 }
 
 1;

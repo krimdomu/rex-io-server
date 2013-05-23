@@ -16,7 +16,7 @@ sub append {
 
    $self->app->log_writer->write($self->param("tag"), $self->req->json);
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub get_logs {
@@ -31,7 +31,7 @@ sub get_logs {
 
    my $ret = $self->app->log_writer->search(host => $server->name, %{ $json });
 
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub __register__ {
