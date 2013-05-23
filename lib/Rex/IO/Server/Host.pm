@@ -49,9 +49,9 @@ sub add {
 
       $nw_a->update;
 
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false, error => $@}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
    };
 }
 
@@ -66,7 +66,7 @@ sub list {
       push(@ret, $hw->to_hashRef);
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub get {
@@ -82,10 +82,10 @@ sub get {
       $ret->{state} = $state->name;
 
       $ret->{ok} = Mojo::JSON->true;
-      return $self->render_json($ret);
+      return $self->render(json => $ret);
    }
 
-   $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 sub count {
@@ -93,7 +93,7 @@ sub count {
 
    my $count = $self->db->resultset("Hardware")->search()->count;
 
-   $self->render_json({ok => Mojo::JSON->true, count => $count});
+   $self->render(json => {ok => Mojo::JSON->true, count => $count});
 }
 
 sub count_os {
@@ -108,7 +108,7 @@ sub count_os {
 
    my @oses = map { $_->os->name } grep { $_->os } @os;
 
-   $self->render_json({ok => Mojo::JSON->true, count => scalar @oses});
+   $self->render(json => {ok => Mojo::JSON->true, count => scalar @oses});
 }
 
 sub __register__ {
