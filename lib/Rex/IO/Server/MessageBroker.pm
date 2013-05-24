@@ -203,6 +203,12 @@ sub broker {
                   $hostname =~ s/:/-/g;
                }
 
+               if(ref $json->{info}->{CONTENT}->{HARDWARE}->{UUID}) {
+                  # no mainboard uuid
+                  my ($uuid_r) = grep { $_->{MACADDR} !~ m/^00:00:00/ } @{ $json->{info}->{CONTENT}->{NETWORKS} };
+                  $json->{info}->{CONTENT}->{HARDWARE}->{UUID} = $uuid_r->{MACADDR};
+               }
+
                my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
