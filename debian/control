@@ -1,17 +1,20 @@
-Source: rex
+Source: rex-io-server
 Section: admin
 Priority: optional
 Maintainer: Jan Gehring <jan.gehring@gmail.com>
 Build-Depends: debhelper (>= 7),
-                  libnet-ssh2-perl (>= 0.33),
-                  perl (>= 5.10.0),
+                  libmojolicious-perl (>= 3.9)
+                  libmojolicious-plugin-authentication-perl (>= 1.24)
+                  libdbix-class-tree-adjacencylist,
+                  libmojo-redis-perl,
+                  libdigest-bcrypt-perl,
+                  perl (>= 5.10.1),
                   libjson-xs-perl,
                   libxml-simple-perl,
                   libwww-perl,
-                  libdigest-hmac-perl,
-                  libexpect-perl,
-                  libdbi-perl,
-                  libyaml-perl
+                  libdbix-class,
+                  libnet-dns-perl,
+                  libdbi-perl
 Standards-Version: 3.9.1
 Homepage: http://rexify.org/
 
