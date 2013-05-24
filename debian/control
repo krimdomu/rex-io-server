@@ -18,7 +18,7 @@ Build-Depends: debhelper (>= 7),
 Standards-Version: 3.9.1
 Homepage: http://rexify.org/
 
-Package: rex
+Package: rex-io-server
 Architecture: all
 Depends: ${misc:Depends},
             ${perl:Depends},
