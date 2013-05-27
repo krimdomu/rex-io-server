@@ -13,12 +13,12 @@ sub template_new {
    my $ref = $self->req->json;
 
    if(! $ref->{name}) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "name missing"}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "name missing"}, status => 500);
    }
 
    my $template = $self->db->resultset("PerformanceCounterTemplate")->create($ref);
 
-   $self->render_json({ok => Mojo::JSON->true, template_id => $template->id});
+   $self->render(json => {ok => Mojo::JSON->true, template_id => $template->id});
 }
 
 sub item_new {
@@ -28,23 +28,23 @@ sub item_new {
    my $template = $self->db->resultset("PerformanceCounterTemplate")->find($template_id);
 
    if(! $template) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Template not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Template not found"}, status => 404);
    }
 
    my $ref = $self->req->json;
 
    if(! $ref->{name}) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "name missing"}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "name missing"}, status => 500);
    }
 
    if(! $ref->{check_key}) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "key missing"}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "key missing"}, status => 500);
    }
 
    $ref->{template_id} = $template_id;
    my $item = $self->db->resultset("PerformanceCounterTemplateItem")->create($ref);
 
-   $self->render_json({ok => Mojo::JSON->true, item_id => $item->id});
+   $self->render(json => {ok => Mojo::JSON->true, item_id => $item->id});
 }
 
 sub add_template_to_host {
@@ -56,13 +56,13 @@ sub add_template_to_host {
    my $template = $self->db->resultset("PerformanceCounterTemplate")->find($template_id);
 
    if(! $template) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Template not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Template not found"}, status => 404);
    }
 
    my $host = $self->db->resultset("Hardware")->find($host_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
    }
 
    my $pc = $self->db->resultset("PerformanceCounter")->create({
@@ -70,7 +70,7 @@ sub add_template_to_host {
       template_id => $template_id,
    });
 
-   $self->render_json({ok => Mojo::JSON->true, performance_counter_id => $pc->id});
+   $self->render(json => {ok => Mojo::JSON->true, performance_counter_id => $pc->id});
 }
 
 sub get_items_of_host {
@@ -81,10 +81,10 @@ sub get_items_of_host {
    my $host = $self->db->resultset("Hardware")->find($host_id);
 
    if(! $host) {
-      return $self->render_json({ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => [ $host->get_monitor_items ]});
+   $self->render(json => {ok => Mojo::JSON->true, data => [ $host->get_monitor_items ]});
 }
 
 sub get_alerts {
@@ -105,7 +105,7 @@ sub get_alerts {
       };
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub get_alerts_of_host {
@@ -131,7 +131,7 @@ sub get_alerts_of_host {
       };
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub list_templates {
@@ -144,7 +144,7 @@ sub list_templates {
       push @ret, { $t->get_columns };
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub delete_template {
@@ -154,10 +154,10 @@ sub delete_template {
    my $t = $self->db->resultset("PerformanceCounterTemplate")->find($id);
    if($t) {
       $t->delete;
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    }
 
-   $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 sub list_items_of_template {
@@ -168,7 +168,7 @@ sub list_items_of_template {
    my $t = $self->db->resultset("PerformanceCounterTemplate")->find($t_id);
 
    if(! $t) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    my @ret;
@@ -177,7 +177,7 @@ sub list_items_of_template {
       push @ret, { $m->get_columns };
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub del_item {
@@ -187,12 +187,12 @@ sub del_item {
    my $i = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
 
    if(! $i) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    $i->delete;
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub get_template {
@@ -201,11 +201,11 @@ sub get_template {
    my $t = $self->db->resultset("PerformanceCounterTemplate")->find($t_id);
 
    if(! $t) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    my $data = { $t->get_columns };
-   $self->render_json({ok => Mojo::JSON->true, data => $data});
+   $self->render(json => {ok => Mojo::JSON->true, data => $data});
 }
 
 sub get_item {
@@ -215,10 +215,10 @@ sub get_item {
    my $itm = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
 
    if(! $itm) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => { $itm->get_columns }});
+   $self->render(json => {ok => Mojo::JSON->true, data => { $itm->get_columns }});
 }
 
 sub save_item {
@@ -228,12 +228,12 @@ sub save_item {
    my $itm = $self->db->resultset("PerformanceCounterTemplateItem")->find($item_id);
 
    if(! $itm) {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 
    $itm->update($self->req->json);
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub __register__ {

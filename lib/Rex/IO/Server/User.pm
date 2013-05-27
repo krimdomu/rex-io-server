@@ -22,10 +22,10 @@ sub get {
          name => $user->name,
       };
 
-      return $self->render_json({ok => Mojo::JSON->true, data => $data});
+      return $self->render(json => {ok => Mojo::JSON->true, data => $data});
    }
 
-   return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 sub list {
@@ -41,7 +41,7 @@ sub list {
       push @ret, $data;
    }
 
-   $self->render_json({ok => Mojo::JSON->true, data => \@ret});
+   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub add {
@@ -67,10 +67,10 @@ sub add {
 
       my $user = $self->db->resultset("User")->create($data);
       if($user) {
-         return $self->render_json({ok => Mojo::JSON->true, id => $user->id});
+         return $self->render(json => {ok => Mojo::JSON->true, id => $user->id});
       }
    } or do {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    };
 }
 
@@ -82,10 +82,10 @@ sub delete {
    
    if($user) {
       $user->delete;
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    }
 
-   return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 

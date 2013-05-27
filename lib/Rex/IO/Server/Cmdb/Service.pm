@@ -17,7 +17,7 @@ sub post {
 
    my $new_res = $self->cmdb->add_service($ref);
 
-   $self->render_json($new_res, status => 201);
+   $self->render(json => $new_res, status => 201);
 }
 
 sub delete {
@@ -26,10 +26,10 @@ sub delete {
    my $data = $self->cmdb->delete_service($self->stash("name"));
 
    if($data->{ok} == Mojo::JSON->false) {
-      $self->render_json($data, status => 404);
+      $self->render(json => $data, status => 404);
    }
    else {
-      $self->render_json($data);
+      $self->render(json => $data);
    }
 }
 
@@ -40,14 +40,14 @@ sub get {
    my $data = $self->cmdb->get_service($server);
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 sub list {
@@ -56,14 +56,14 @@ sub list {
    my $data = $self->cmdb->get_service_list();
 
    if(! ref($data) ) {
-      $self->render_json({ok => Mojo::JSON->false}, status => $data);
+      $self->render(json => {ok => Mojo::JSON->false}, status => $data);
    }
 
    my $ret = {
       ok => Mojo::JSON->true,
       data => $data,
    };
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 1;

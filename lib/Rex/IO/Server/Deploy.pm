@@ -23,6 +23,11 @@ sub boot {
    my $redis = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
    my $channel = $self->config->{redis}->{deploy}->{queue};
 
+   if($self->param("custom")) {
+      $self->app->log->debug("Got custom parameter: $client");
+      $client = $self->param("custom");
+   }
+
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
 
    my $mac;
@@ -46,8 +51,6 @@ sub boot {
    )->first;
 
    if($self->param("custom")) {
-      $client = $self->param("custom");
-      $self->app->log->debug("Got custom parameter: $client");
       #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
       $hw = $self->db->resultset("Hardware")->search(
          {
@@ -87,16 +90,17 @@ sub boot {
             }
 
             my $append = $boot_os->append;
-            my $hostname = $system->name;
+            my ($hostname, $domainname) = split(/\./, $system->name, 2);
             #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
             my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
             my $eth = $boot_eth->dev;
 
             $append =~ s/\%hostname/$hostname/g;
             $append =~ s/\%eth/$eth/g;
+            $append =~ s/\%domainname/$domainname/g;
 
             my $boot_commands = "#!ipxe\n"
-                              . "kernel " . $boot_os->kernel . " " . $boot_os->append .  "\n"
+                              . "kernel " . $boot_os->kernel . " " . $append .  "\n"
                               . "initrd " . $boot_os->initrd . "\n"
                               . "boot";
 
@@ -210,7 +214,7 @@ sub boot {
                $self->app->log->debug("No hardware found.");
             }
 
-            return $self->render_json({ok => Mojo::JSON->true});
+            return $self->render(json => {ok => Mojo::JSON->true});
          }
          else { # default boot, if state == INSTALLED (state_id: 4)
             $self->app->log->debug("boot from local hard disk... state == INSTALLED");
@@ -264,15 +268,15 @@ sub deploy {
             state_id => 1,
          });
 
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
 
       else {
-         return $self->render_json({ok => Mojo::JSON->false, error => "OS not found"}, status => 404);
+         return $self->render(json => {ok => Mojo::JSON->false, error => "OS not found"}, status => 404);
       }
    }
 
-   $self->render_json({ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
+   $self->render(json => {ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
 }
 
 sub __register__ {

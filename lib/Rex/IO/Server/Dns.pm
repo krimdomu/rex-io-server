@@ -15,11 +15,11 @@ sub list_domain {
    my ($self) = @_;
 
    my $domain = $self->param("domain");
-   my $ret = {};
+   my @ret;
 
    for my $rr ($self->_dns->axfr($domain)) {
       if($rr->type eq "A") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->address,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -27,7 +27,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "TXT") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->rdata,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -35,7 +35,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "CNAME") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->cname,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -43,7 +43,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "MX") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->exchange,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -51,7 +51,7 @@ sub list_domain {
          };
       }
       elsif($rr->type eq "PTR") {
-         $ret->{ $rr->name } = {
+         push @ret, {
             data => $rr->ptrdname,
             ttl => $rr->ttl,
             type => $rr->type,
@@ -63,7 +63,7 @@ sub list_domain {
       }
    }
 
-   $self->render_json($ret);
+   $self->render(json => \@ret);
 }
 
 sub list_tlds {
@@ -83,7 +83,7 @@ sub list_tlds {
       }
    }
 
-   $self->render_json(\@ret);
+   $self->render(json => \@ret);
 }
 
 sub get {
@@ -105,7 +105,7 @@ sub get {
       };
    }
 
-   $self->render_json($ret);
+   $self->render(json => $ret);
 }
 
 # CALL:
@@ -130,17 +130,23 @@ sub add_record {
    }
 
    #if(! $self->_is_ip($ip)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid IPv4 given."}, status => 500);
    #}
 
    #if(! $self->_is_hostname($host)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
    #}
 
    # don't add it, if there is already an A record
    $update->push(prerequisite => nxrrset("$host.$domain. $record_type"));
 
-   $update->push(update => rr_add("$host.$domain.  $ttl  $record_type  $data"));
+   if($record_type eq "TXT") {
+      $data =~ s/\\/\\\\/gms;
+      $data =~ s/"/\\"/gms;
+      $data = "\"$data\"";
+   }
+
+   $update->push(update => rr_add("$host.$domain. $ttl $record_type $data"));
 
    $update->sign_tsig($self->config->{dns}->{key_name}, $self->config->{dns}->{key});
 
@@ -151,14 +157,14 @@ sub add_record {
       my $rcode = $reply->header->rcode;
 
       if($rcode eq "NOERROR") {
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false, code => $rcode});
+         return $self->render(json => {ok => Mojo::JSON->false, code => $rcode});
       }
    }
    else {
-      return $self->render_json(ok => Mojo::JSON->false, error => $res->errorstring);
+      return $self->render(json => ok => Mojo::JSON->false, error => $res->errorstring);
    }
 }
 
@@ -170,7 +176,7 @@ sub delete_record {
    my $type   = $self->param("type");
 
    #if(! $self->_is_hostname($host)) {
-   #   return $self->render_json({ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
+   #   return $self->render(json => {ok => Mojo::JSON->false, error => "Not a valid HOSTNAME given."}, status => 500);
    #}
 
    warn "Got $domain / $type / $host";
@@ -189,14 +195,14 @@ sub delete_record {
       my $rcode = $reply->header->rcode;
 
       if($rcode eq "NOERROR") {
-         return $self->render_json({ok => Mojo::JSON->true});
+         return $self->render(json => {ok => Mojo::JSON->true});
       }
       else {
-         return $self->render_json({ok => Mojo::JSON->false, code => $rcode});
+         return $self->render(json => {ok => Mojo::JSON->false, code => $rcode});
       }
    }
    else {
-      return $self->render_json(ok => Mojo::JSON->false, error => $res->errorstring);
+      return $self->render(json => ok => Mojo::JSON->false, error => $res->errorstring);
    }
 
 }

@@ -373,10 +373,10 @@ sub clients {
 
    if($self->param("only_ip")) {
       my @ips = keys %{ $clients };
-      return $self->render_json({ok => Mojo::JSON->true, data => \@ips});
+      return $self->render(json => {ok => Mojo::JSON->true, data => \@ips});
    }
    else {
-      return $self->render_json($clients);
+      return $self->render(json => $clients);
    }
 }
 
@@ -386,10 +386,10 @@ sub is_online {
    my $ip = $self->param("ip");
 
    if(exists $clients->{$ip}) {
-      return $self->render_json({ok => Mojo::JSON->true});
+      return $self->render(json => {ok => Mojo::JSON->true});
    }
    else {
-      return $self->render_json({ok => Mojo::JSON->false}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
    }
 }
 
@@ -413,7 +413,7 @@ sub message_to_server {
          $_->{tx}->send(Mojo::JSON->encode($json));
       } @{ $clients->{$to} };
 
-   $self->render_json({ok => Mojo::JSON->true});
+   $self->render(json => {ok => Mojo::JSON->true});
 }
 
 sub _ua { return Mojo::UserAgent->new; }

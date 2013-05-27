@@ -30,7 +30,7 @@ sub get_service {
       $self->render_data($data);
    }
    else {
-      $self->render_json({ok => Mojo::JSON->false}, status => 500);
+      $self->render(json => {ok => Mojo::JSON->false}, status => 500);
    }
 
    chdir($cwd);
@@ -42,7 +42,7 @@ sub catalog {
    my $hw = $self->_get_client;
    if(ref $hw) {
       my @services = $hw->services;
-      return $self->render_json({ok => Mojo::JSON->true, data => [ map { $_ = $_->service_name } @services ]});
+      return $self->render(json => {ok => Mojo::JSON->true, data => [ map { $_ = $_->service_name } @services ]});
    }
 
    return $hw;
@@ -92,14 +92,14 @@ sub _get_client {
       $client = ip_to_int($client);
    }
    else {
-      return $self->render_json({ok => Mojo::JSON->false, error => "$client is not a valid ipv4 address"}, status => 500);
+      return $self->render(json => {ok => Mojo::JSON->false, error => "$client is not a valid ipv4 address"}, status => 500);
    }
 
    my $nwa_r = $self->db->resultset("NetworkAdapter")->search({ ip => $client });
    my $nwa   = $nwa_r->first;
 
    if(! $nwa) {
-      return $self->render_json({ok => Mojo::JSON->false, error => int_to_ip($client) . " not found in database"}, status => 404);
+      return $self->render(json => {ok => Mojo::JSON->false, error => int_to_ip($client) . " not found in database"}, status => 404);
    }
 
    return $nwa->hardware;

@@ -15,7 +15,7 @@ use Data::Dumper;
 sub root {
    my ($self) = @_;
 
-   $self->render_json({ok => Mojo::JSON->false}, status => 404);
+   $self->render(json => {ok => Mojo::JSON->false}, status => 404);
 }
 
 

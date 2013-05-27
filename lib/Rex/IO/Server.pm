@@ -120,13 +120,13 @@ sub startup {
 
       if($app->authenticate($data->{user}, $data->{password})) {
          my $user = $app->current_user;
-         return $app->render_json({ok => Mojo::JSON->true, data => {
+         return $app->render(json => {ok => Mojo::JSON->true, data => {
                id   => $user->id,
                name => $user->name,
             }}, status => 200);
       }
       else {
-         return $app->render_json({ok => Mojo::JSON->false}, status => 401);
+         return $app->render(json => {ok => Mojo::JSON->false}, status => 401);
       }
    });
 
