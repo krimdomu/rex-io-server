@@ -3,16 +3,16 @@ Section: admin
 Priority: optional
 Maintainer: Jan Gehring <jan.gehring@gmail.com>
 Build-Depends: debhelper (>= 7),
-                  libmojolicious-perl (>= 3.9)
-                  libmojolicious-plugin-authentication-perl (>= 1.24)
-                  libdbix-class-tree-adjacencylist,
+                  libmojolicious-perl (>= 3.90),
+                  libmojolicious-plugin-authentication-perl (>= 1.24),
+                  libdbix-class-tree-perl,
                   libmojo-redis-perl,
                   libdigest-bcrypt-perl,
                   perl (>= 5.10.1),
                   libjson-xs-perl,
                   libxml-simple-perl,
                   libwww-perl,
-                  libdbix-class,
+                  libdbix-class-perl,
                   libnet-dns-perl,
                   libdbi-perl
 Standards-Version: 3.9.1
@@ -22,6 +22,13 @@ Package: rex-io-server
 Architecture: all
 Depends: ${misc:Depends},
             ${perl:Depends},
+            libmojolicious-perl,
+            libmojolicious-plugin-authentication-perl,
+            libmojo-redis-perl,
+            libdigest-bcrypt-perl,
+            libdbix-class-tree-perl,
+            libdbix-class-perl,
+            libnet-dns-perl,
             libnet-ssh2-perl (>= 0.33),
             libwww-perl,
             libxml-simple-perl,
@@ -30,8 +37,5 @@ Depends: ${misc:Depends},
             libjson-xs-perl,
             libyaml-perl,
             libdbi-perl
-Description: Remote Execution
- (R)?ex is a small script to ease the execution of remote commands. You can
- write small tasks in a file named Rexfile.
- .
- You can find examples and howtos on http://rexify.org/.
+Description: Rex.IO - Bare Metal Deploy
+ Middleware Component of Rex.IO Bare Metal Deployer.
