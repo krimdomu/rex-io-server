@@ -1,0 +1,85 @@
+#!/bin/bash
+
+if [ ! -e "/etc/init/rex-io-server.conf" ]; then
+   # is there upstart?
+
+cat >/etc/init/rex-io-server.conf<<EOF
+
+# rex-io-server - Rex.IO - Middleware
+#
+
+description "Rex.IO - Middleware"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+respawn limit 10 5
+umask 022
+
+pre-start script
+    test -e /etc/rex/io/server.conf || { stop; exit 1; }
+end script
+
+exec rex_ioserver daemon -l 'http://*:5000'
+
+EOF
+
+fi
+
+if [ ! -d "/etc/rex/io" ]; then
+   mkdir -p /etc/rex/io
+fi
+
+if [ ! -e "/etc/rex/io/server.conf" ]; then
+
+cat >/etc/rex/io/server.conf<<EOF
+
+{
+   # dhcp server agent
+   dhcp => {
+      server => "127.0.0.1:4000",
+   },
+
+   # plugins that should be loaded
+   plugins => [
+      "Host",
+      "ServerGroup",
+      "Deploy",
+      "Dhcp",
+      "FusionInventory",
+   ],
+
+   # database configuration
+   # currently only mysql is supported
+   database => {
+      host     => "localhost",
+      schema   => "rexio",
+      username => "rexio",
+      password => "rexio",
+   },
+
+   redis => {
+      deploy => {
+         server => "localhost",
+         port   => 6379,
+         queue  => "rex_io_deploy",
+      },
+   },
+
+   # see https://metacpan.org/module/Digest::Bcrypt for more information
+   auth => {
+      salt => 'qaywsxedcrfvtgbz', # 16 bytes long
+      cost => 1, # between 1 and 31
+   },
+
+   # session settings
+   session => {
+      key => 'Rex.IO.Server',
+   },
+}
+
+EOF
+
+fi
+
