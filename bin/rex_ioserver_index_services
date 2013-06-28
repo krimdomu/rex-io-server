@@ -1,0 +1,36 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use YAML;
+
+my $dir = $ARGV[0];
+if(! $dir) {
+   print "Usage: $0 <dir>\n";
+   exit 1;
+}
+
+my @dirs = ($dir);
+
+for my $d (@dirs) {
+   opendir(my $dh, $d) or die($!);
+   while(my $entry = readdir($dh)) {
+      if($entry =~ m/^\./) {
+         next;
+      }
+
+      if(-d "$d/$entry") {
+         push(@dirs, "$d/$entry");
+         next;
+      }
+
+      if($entry eq "meta.yml") {
+         my $content = eval { local(@ARGV, $/) = ("$d/$entry"); <>; };
+         $content .= "\n"; # sometimes people forget that
+
+         my $ref = Load($content);
+      }
+   }
+   closedir($dh);
+}

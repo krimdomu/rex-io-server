@@ -15,3 +15,10 @@ debian/*.log
 README
 *.yml
 *.json
+doc/dhcp
+doc/dns
+empty.sql
+scratch
+*.log
+rexio_server.sql
+*.pitahaya
