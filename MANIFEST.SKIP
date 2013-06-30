@@ -23,3 +23,7 @@ MANIFEST\..*
 .*\.tar\..*
 .*\.tar
 db
+empty.sql
+rexio_server.sql
+scratch
+.*\.pitahaya

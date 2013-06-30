@@ -36,6 +36,7 @@ Depends: ${misc:Depends},
             libexpect-perl,
             libjson-xs-perl,
             libyaml-perl,
-            libdbi-perl
+            libdbi-perl,
+            redis-server
 Description: Rex.IO - Bare Metal Deploy
  Middleware Component of Rex.IO Bare Metal Deployer.
