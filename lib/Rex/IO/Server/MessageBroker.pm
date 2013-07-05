@@ -13,6 +13,7 @@ use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Inventory;
 use Rex::IO::Server::Calculator;
+use Mojo::Redis;
 
 our $clients = {};
 
