@@ -117,10 +117,9 @@ sub update_network_adapter {
 sub purge {
    my ($self) = @_;
 
-   #my $hw_i = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
    my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
 
-   return eval {
+   eval {
       if(my $hw = $hw_i) {
          $hw->purge;
          return $self->render(json => {ok => Mojo::JSON->true});

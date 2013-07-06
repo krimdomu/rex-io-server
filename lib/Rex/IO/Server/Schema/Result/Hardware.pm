@@ -137,15 +137,7 @@ sub to_hashRef {
 # delete hardware completely
 sub purge {
    my ($self) = @_;
-
-   #for my $obj (qw/network_adapter bios harddrive memory processor/) {
-   #   my $devs = $self->$obj;
-   #   while(my $dev = $devs->next) {
-   #      $dev->delete;
-   #   }
-   #}
-
-   #$self->delete;
+   $self->delete;
 }
 
 sub get_tasks {

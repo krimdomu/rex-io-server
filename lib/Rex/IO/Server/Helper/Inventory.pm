@@ -375,6 +375,17 @@ sub inventor {
 
    $self->app->log->debug("hardware updated");
 
+   # plugin inventory
+   for my $plug (@{ $self->{defaults}->{config}->{plugins} }) {
+      my $s = "Rex::IO::Server::$plug";
+      eval "require $s";
+      eval {
+         $s->__inventor__($self->db, $ref);
+      };
+   }
+
+
+
 }
 
 1;
