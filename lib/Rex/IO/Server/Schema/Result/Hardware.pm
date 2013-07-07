@@ -11,6 +11,8 @@ use warnings;
 
 use Data::Dumper;
 
+use Rex::IO::Server::Helper::IP;
+
 use base qw(DBIx::Class::Core);
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
@@ -178,6 +180,21 @@ sub get_monitor_items {
    }
 
    return @ret;
+}
+
+sub primary_ip {
+   my ($self) = @_;
+
+   my @nw_r = $self->network_adapters;
+   my $nw_a = int_to_ip($nw_r[0]->ip);
+   for my $nw (@nw_r) {
+      if($nw->boot) {
+         $nw_a = int_to_ip($nw->ip);
+         last;
+      }
+   }
+
+   return $nw_a;
 }
 
 1;
