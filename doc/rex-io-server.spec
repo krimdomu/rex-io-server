@@ -1,6 +1,3 @@
-%define perl_vendorlib %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)
-%define perl_vendorarch %(eval "`%{__perl} -V:installvendorarch`"; echo $installvendorarch)
-
 Summary: Rex.IO - Middleware
 Name: rex-io-server
 Version: 0.0.12
@@ -26,7 +23,7 @@ Rex.IO is a Bare-Metal-Deployer and an infrastructure management tool.
 %{__rm} -rf %{buildroot}
 %{__mkdir} -p %{buildroot}/srv/rexio/middleware
 %{__mkdir} -p %{buildroot}/etc/init.d
-%{__cp} -R {bin,db,lib,t,vendor} %{buildroot}/srv/rexio/middleware
+%{__cp} -R {bin,db,lib,t,local} %{buildroot}/srv/rexio/middleware
 %{__cp} doc/rex-io-server.init %{buildroot}/etc/init.d/rex-io-server
 %{__chmod} 755 %{buildroot}/etc/init.d/rex-io-server
 
