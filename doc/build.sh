@@ -11,3 +11,4 @@ cp doc/rex-io-server.init rex-io-server-$VER/doc
 
 tar czf rex-io-server-$VER.tar.gz rex-io-server-$VER
 
+rm -rf rex-io-server-$VER
