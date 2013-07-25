@@ -1,0 +1,117 @@
+#! /bin/sh
+# Copyright (c) 2013 Jan Gehring
+#
+# Author: Jan Gehring <jfried@rexify.org>, 2013
+#
+# /etc/init.d/rex-io-server
+#
+# System startup script for Rex.IO Middleware
+#
+### BEGIN INIT INFO
+# Provides:       rex_io_server
+# Required-Start: $remote_fs $syslog $time
+# Should-Start:   $network smtp
+# Default-Start:  3 5
+# Default-Stop:   0 1 6
+# Short-Description: Rex.IO Middleware
+# Description:    Rex.IO Middleware
+### END INIT INFO
+
+PATH=/usr/lib/rexio/perl/bin:/srv/rexio/middleware/vendor/perl/bin:$PATH
+PERL5LIB=/srv/rexio/middleware/vendor/perl/lib/perl5
+REXIO_BIN=/srv/rexio/middleware/vendor/perl/bin/hypnotoad
+REXIO_SCRIPT=/srv/rexio/middleware/bin/rex_ioserver
+REXIO_LOG=/srv/rexio/middleware/log/stdout.log
+test -x $REXIO_BIN || exit 5
+test -d $(dirname $REXIO_LOG) || mkdir -p $(dirname $REXIO_LOG)
+chown rexio: $(dirname $REXIO_LOG)
+
+PIDFILE=/var/run/rex_io_server.pid
+
+# Shell functions sourced from /etc/rc.status:
+#      rc_check         check and set local and overall rc status
+#      rc_status        check and set local and overall rc status
+#      rc_status -v     ditto but be verbose in local rc status
+#      rc_status -v -r  ditto and clear the local rc status
+#      rc_failed        set local and overall rc status to failed
+#      rc_failed <num>  set local and overall rc status to <num><num>
+#      rc_reset         clear local rc status (overall remains)
+#      rc_exit          exit appropriate to overall rc status
+. /etc/rc.status
+
+# First reset status of this service
+rc_reset
+
+# Return values acc. to LSB for all commands but status:
+# 0 - success
+# 1 - generic or unspecified error
+# 2 - invalid or excess argument(s)
+# 3 - unimplemented feature (e.g. "reload")
+# 4 - insufficient privilege
+# 5 - program is not installed
+# 6 - program is not configured
+# 7 - program is not running
+# 
+case "$1" in
+    start)
+	echo -n "Starting Rex.IO Middleware daemon"
+	## Start daemon with startproc(8). If this fails
+	## the echo return value is set appropriate.
+
+	# NOTE: startproc return 0, even if service is 
+	# already running to match LSB spec.
+        start-stop-daemon -x $REXIO_BIN -p $PIDFILE -u rexio --start --  /srv/rexio/middleware/bin/rex_ioserver
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    stop)
+	echo -n "Shutting down Rex.IO Middleware daemon"
+	## Stop daemon with killproc(8) and if this fails
+	## set echo the echo return value.
+
+        start-stop-daemon -p $PIDFILE --stop
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    try-restart)
+	## Stop the service and if this succeeds (i.e. the 
+	## service was running before), start it again.
+	## Note: try-restart is not (yet) part of LSB (as of 0.7.5)
+	$0 status >/dev/null &&  $0 restart
+
+	# Remember status and be quiet
+	rc_status
+	;;
+    restart)
+	## Stop the service and regardless of whether it was
+	## running or not, start it again.
+	$0 stop
+	$0 start
+
+	# Remember status and be quiet
+	rc_status
+	;;
+    status)
+	echo -n "Checking for Rex.IO Middleware: "
+	## Check status with checkproc(8), if process is running
+	## checkproc will return with exit status 0.
+
+	# Status codes are slightly different for the status command:
+	# 0 - service running
+	# 1 - service dead, but /var/run/  pid  file exists
+	# 2 - service dead, but /var/lock/ lock file exists
+	# 3 - service not running
+
+	# NOTE: checkproc returns LSB compliant status values.
+	#checkproc $REXIO_BIN
+        test -f $PIDFILE
+	rc_status -v
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|restart}"
+	exit 1
+	;;
+esac
+rc_exit
