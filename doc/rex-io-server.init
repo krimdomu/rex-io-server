@@ -17,9 +17,9 @@
 # Description:    Rex.IO Middleware
 ### END INIT INFO
 
-PATH=/usr/lib/rexio/perl/bin:/srv/rexio/middleware/vendor/perl/bin:$PATH
-PERL5LIB=/srv/rexio/middleware/vendor/perl/lib/perl5
-REXIO_BIN=/srv/rexio/middleware/vendor/perl/bin/hypnotoad
+PATH=/usr/lib/rexio/perl/bin:/srv/rexio/middleware/local/bin:$PATH
+PERL5LIB=/srv/rexio/middleware/local/lib/perl5
+REXIO_BIN=/srv/rexio/middleware/local/bin/hypnotoad
 REXIO_SCRIPT=/srv/rexio/middleware/bin/rex_ioserver
 REXIO_LOG=/srv/rexio/middleware/log/stdout.log
 test -x $REXIO_BIN || exit 5
