@@ -2,6 +2,8 @@
 
 VER=$1
 
+carton install
+
 mkdir rex-io-server-$VER
 mkdir rex-io-server-$VER/doc
 cp -R {bin,db,lib,t} rex-io-server-$VER
