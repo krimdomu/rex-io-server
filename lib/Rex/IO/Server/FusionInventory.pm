@@ -22,7 +22,7 @@ sub post {
    my $ref = XMLin($data);
 
    if($ref->{QUERY} eq "PROLOG") {
-      $self->render_data(
+      $self->render(data => 
          compress(
             '<?xml version="1.0" encoding="UTF-8"?><REPLY><PROLOG_FREQ>60</PROLOG_FREQ><RESPONSE>SEND</RESPONSE></REPLY>'
          )
@@ -103,7 +103,7 @@ sub post {
 
          $self->app->log->debug("returning account_update");
 
-         return $self->render_data(
+         return $self->render( data =>
             compress(
                '<?xml version="1.0" encoding="UTF-8"?><REPLY>><RESPONSE>ACCOUNT_UPDATE</RESPONSE></REPLY>'
             )
@@ -112,7 +112,7 @@ sub post {
 
          $self->app->log->debug("Inventory failed: $@");
 
-         return $self->render_data(
+         return $self->render( data => 
             compress(
                '<?xml version="1.0" encoding="UTF-8"?><REPLY>ACCOUNT_NOT_UPDATED</REPLY>'
             ),

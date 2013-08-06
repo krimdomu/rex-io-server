@@ -27,7 +27,7 @@ sub get_service {
       }
       close($fh);
 
-      $self->render_data($data);
+      $self->render(data => $data);
    }
    else {
       $self->render(json => {ok => Mojo::JSON->false}, status => 500);
@@ -67,10 +67,10 @@ sub get_lib {
 
    if(-f $file) {
       my $content = eval { local(@ARGV, $/) = ($file); <>; };
-      return $self->render_data($content);
+      return $self->render(data => $content);
    }
 
-   return $self->render_data("die;", status => 404);
+   return $self->render(data => "die;", status => 404);
 }
 
 sub __register__ {

@@ -10,6 +10,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
 use Data::Dumper;
+use Mojo::Redis;
 
 sub wait {
    my ($self) = @_;
@@ -77,7 +78,7 @@ sub boot {
                $system->update({
                   state_id => 4
                });
-               return $self->render_text($boot_os->ipxe);
+               return $self->render(text => $boot_os->ipxe);
             }
 
             if($boot_os->ipxe) {
@@ -86,7 +87,7 @@ sub boot {
                $system->update({
                   state_id => 4
                });
-               return $self->render_text($boot_os->ipxe);
+               return $self->render(text => $boot_os->ipxe);
             }
 
             my $append = $boot_os->append;
@@ -120,7 +121,7 @@ sub boot {
                }
             }));
 
-            return $self->render_text($boot_commands);
+            return $self->render(text => $boot_commands);
          }
          elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
 
@@ -223,7 +224,7 @@ sub boot {
             my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
             my $boot_os = $boot_os_r;
 
-            return $self->render_text($boot_os->ipxe);
+            return $self->render(text => $boot_os->ipxe);
          }
       }
       else { # no boot method found, use localboot for safety
@@ -233,7 +234,7 @@ sub boot {
          #my $boot_os_r = Rex::IO::Server::Model::OsTemplate->all( Rex::IO::Server::Model::OsTemplate->id == 1 );
          my $boot_os_r = $self->db->resultset("OsTemplate")->find(1);
          my $boot_os = $boot_os_r;
-         return $self->render_text($boot_os->ipxe);
+         return $self->render(text => $boot_os->ipxe);
       }
    }
    else { # system unknown, boot service os
@@ -249,7 +250,7 @@ sub boot {
 
       $self->app->log->debug("Sending boot commands\n$boot_commands");
 
-      return $self->render_text($boot_commands);
+      return $self->render(text => $boot_commands);
    }
 
 }

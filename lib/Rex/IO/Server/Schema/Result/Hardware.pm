@@ -197,4 +197,20 @@ sub primary_ip {
    return $nw_a;
 }
 
+sub short_name {
+   my ($self) = @_;
+
+   my $name = $self->name;
+   my ($short_name) = split(/\./, $name);
+   return $short_name;
+}
+
+sub domain_name {
+   my ($self) = @_;
+
+   my $name = $self->name;
+   my ($short_name, $domain_name) = split(/\./, $name, 2);
+
+   return $domain_name;
+}
 1;
