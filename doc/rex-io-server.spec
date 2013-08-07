@@ -1,6 +1,6 @@
 Summary: Rex.IO - Middleware
 Name: rex-io-server
-Version: 0.0.12
+Version: 0.2.0
 Release: 1
 License: Apache 2.0
 Group: Utilities/System
@@ -52,6 +52,6 @@ fi
 
 %changelog
 
-* Thu Jul 25 2013 Jan Gehring <jan.gehring at, gmail.com> 0.0.12-1
+* Thu Jul 25 2013 Jan Gehring <jan.gehring at, gmail.com> 0.2.0-1
 - initial packaged
 
