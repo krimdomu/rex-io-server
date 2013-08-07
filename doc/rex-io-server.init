@@ -18,8 +18,8 @@
 ### END INIT INFO
 
 PATH=/usr/lib/rexio/perl/bin:/srv/rexio/middleware/local/bin:$PATH
-PERL5LIB=/srv/rexio/middleware/local/lib/perl5
-REXIO_BIN=/srv/rexio/middleware/local/bin/hypnotoad
+export PERL5LIB=/srv/rexio/middleware/local/lib/perl5
+REXIO_BIN=/usr/lib/rexio/perl/bin/perl
 REXIO_SCRIPT=/srv/rexio/middleware/bin/rex_ioserver
 REXIO_LOG=/srv/rexio/middleware/log/stdout.log
 test -x $REXIO_BIN || exit 5
@@ -60,7 +60,7 @@ case "$1" in
 
 	# NOTE: startproc return 0, even if service is 
 	# already running to match LSB spec.
-        start-stop-daemon -x $REXIO_BIN -p $PIDFILE -u rexio --start --  /srv/rexio/middleware/bin/rex_ioserver
+   startproc -p $PIDFILE -u rexio -g rexio $REXIO_BIN $REXIO_SCRIPT daemon -l 'http://*:5000' >/dev/null 2>&1
 
 	# Remember status and be verbose
 	rc_status -v
@@ -70,7 +70,9 @@ case "$1" in
 	## Stop daemon with killproc(8) and if this fails
 	## set echo the echo return value.
 
-        start-stop-daemon -p $PIDFILE --stop
+   #start-stop-daemon -p $PIDFILE --stop
+   _pid=$(ps -ef | grep $REXIO_SCRIPT | grep -v grep | awk ' { print $2 } ')
+   kill $_pid
 
 	# Remember status and be verbose
 	rc_status -v
@@ -106,7 +108,8 @@ case "$1" in
 
 	# NOTE: checkproc returns LSB compliant status values.
 	#checkproc $REXIO_BIN
-        test -f $PIDFILE
+   #test -f $PIDFILE
+   ps -ef | grep $REXIO_SCRIPT | grep -v grep >/dev/null 2>&1
 	rc_status -v
 	;;
     *)

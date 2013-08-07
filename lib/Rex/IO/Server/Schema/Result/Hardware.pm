@@ -182,6 +182,21 @@ sub get_monitor_items {
    return @ret;
 }
 
+sub primary_device {
+   my ($self) = @_;
+
+   my @nw_r = $self->network_adapters;
+   my $nw_a = $nw_r[0]->dev;
+   for my $nw (@nw_r) {
+      if($nw->boot) {
+         $nw_a = $nw->dev;
+         last;
+      }
+   }
+
+   return $nw_a;
+}
+
 sub primary_ip {
    my ($self) = @_;
 
@@ -195,6 +210,76 @@ sub primary_ip {
    }
 
    return $nw_a;
+}
+
+sub wanted_primary_netmask {
+   my ($self) = @_;
+
+   my @nw_r = $self->network_adapters;
+   my $nw_a = int_to_ip($nw_r[0]->wanted_netmask);
+   for my $nw (@nw_r) {
+      if($nw->wanted_netmask) {
+         $nw_a = int_to_ip($nw->wanted_netmask);
+         last;
+      }
+   }
+
+   return $nw_a;
+}
+
+sub primary_netmask {
+   my ($self) = @_;
+
+   my @nw_r = $self->network_adapters;
+   my $nw_a = int_to_ip($nw_r[0]->netmask);
+   for my $nw (@nw_r) {
+      if($nw->netmask) {
+         $nw_a = int_to_ip($nw->netmask);
+         last;
+      }
+   }
+
+   return $nw_a;
+}
+
+sub wanted_default_gateway {
+   my ($self) = @_;
+
+   my $dg_a;
+   my @nw_r = $self->network_adapters;
+   if($nw_r[0] && $nw_r[0]->wanted_gateway) {
+      $dg_a = int_to_ip($nw_r[0]->wanted_gateway);
+   }
+   for my $nw (@nw_r) {
+      if($nw->boot) {
+         if($nw->wanted_gateway) {
+            $dg_a = int_to_ip($nw->wanted_gateway);
+            last;
+         }
+      }
+   }
+
+   return $dg_a;
+}
+
+sub default_gateway {
+   my ($self) = @_;
+
+   my $dg_a;
+   my @nw_r = $self->network_adapters;
+   if($nw_r[0] && $nw_r[0]->gateway) {
+      $dg_a = int_to_ip($nw_r[0]->gateway);
+   }
+   for my $nw (@nw_r) {
+      if($nw->boot) {
+         if($nw->gateway) {
+            $dg_a = int_to_ip($nw->gateway);
+            last;
+         }
+      }
+   }
+
+   return $dg_a;
 }
 
 sub short_name {
