@@ -25,8 +25,8 @@ sub boot {
    my $channel = $self->config->{redis}->{deploy}->{queue};
 
    if($self->param("custom")) {
-      $self->app->log->debug("Got custom parameter: $client");
       $client = $self->param("custom");
+      $self->app->log->debug("Got custom parameter: $client");
    }
 
    my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client);
@@ -53,14 +53,26 @@ sub boot {
 
    if($self->param("custom")) {
       #$hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::NetworkAdapter->ip == ip_to_int($client) );
-      $hw = $self->db->resultset("Hardware")->search(
-         {
-            "network_adapters.ip" => ip_to_int($client),
-         },
-         {
-            join => "network_adapters",
-         }
-      )->first;
+      if($self->param("mac")) {
+         $hw = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.mac" => $self->param("mac"),
+            },
+            {
+               join => "network_adapters",
+            }
+         )->first;
+      }
+      else {
+         $hw = $self->db->resultset("Hardware")->search(
+            {
+               "network_adapters.ip" => ip_to_int($client),
+            },
+            {
+               join => "network_adapters",
+            }
+         )->first;
+      }
    }
 
    if(my $system = $hw) {
@@ -70,84 +82,10 @@ sub boot {
       my $boot_os_r = $system->os_template;
       if(my $boot_os = $boot_os_r) {
 
-         if($system->state_id == 1 || $system->state_id == 5 || $self->param("deploy")) { # first boot after service os / after registration
-                                      # return os template to deploy os
+         # for standard pxe boot, this must be at the TOP!
+         if($self->param("finished")) { # hook after installation, must be called from within the template
 
-            if($boot_os->id == 1) {
-               $self->app->log->debug("Booting local... Setting system->state_id = 4");
-               $system->update({
-                  state_id => 4
-               });
-               return $self->render(text => $boot_os->ipxe);
-            }
-
-            if($boot_os->ipxe) {
-               # if there are ipxe commands, use them
-               $self->app->log->debug("Booting ipxe commands... Setting system->state_id = 4");
-               $system->update({
-                  state_id => 4
-               });
-               return $self->render(text => $boot_os->ipxe);
-            }
-
-            my $append = $boot_os->append;
-            my ($hostname, $domainname) = split(/\./, $system->name, 2);
-            #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
-            my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
-            my $eth = $boot_eth->dev;
-
-            $append =~ s/\%hostname/$hostname/g;
-            $append =~ s/\%eth/$eth/g;
-            $append =~ s/\%domainname/$domainname/g;
-
-            my $boot_commands = "#!ipxe\n"
-                              . "kernel " . $boot_os->kernel . " " . $append .  "\n"
-                              . "initrd " . $boot_os->initrd . "\n"
-                              . "boot";
-
-            $self->app->log->debug("Sending boot command:\n$boot_commands");
-
-            $system->update({
-               state_id => 2
-            });
-
-            $redis->publish($channel => Mojo::JSON->encode({
-               cmd => "deploy",
-               type => "start",
-               host => { $system->get_columns },
-               template => {
-                  id => $boot_os->id,
-                  name => $boot_os->name,
-               }
-            }));
-
-            return $self->render(text => $boot_commands);
-         }
-         elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
-
-            $self->app->log->debug("rerturning kickstart template");
-
-            $system->update({
-               state_id => 3
-            });
-
-            $self->stash("hardware", $system);
-
-            my $template = $boot_os->template;
-
-            $self->app->log->debug("Sending kickstart template:\n$template");
-
-            $redis->publish($channel => Mojo::JSON->encode({
-               cmd => "deploy",
-               type => "kickstart",
-               host => { $system->get_columns },
-            }));
-
-            return $self->render(inline => $template);
-         }
-         elsif($system->state_id == 3 || $self->param("finished")) { # hook after installation, must be called from within the template
-
-            $self->app->log->debug("Installation finished, setting system state_id = 4");
+            $self->app->log->debug("Installation finished, setting system state_id = 4 (client: $client)");
 
             $system->update({
                state_id => 4,
@@ -216,6 +154,84 @@ sub boot {
             }
 
             return $self->render(json => {ok => Mojo::JSON->true});
+         }
+
+         #elsif($system->state_id == 1 || $system->state_id == 5 || $self->param("deploy")) { # first boot after service os / after registration
+         elsif($self->param("deploy")) { # first boot after service os / after registration
+                                      # return os template to deploy os
+
+            if($boot_os->id == 1) {
+               $self->app->log->debug("Booting local... Setting system->state_id = 4");
+               $system->update({
+                  state_id => 4
+               });
+               return $self->render(text => $boot_os->ipxe);
+            }
+
+            if($boot_os->ipxe) {
+               # if there are ipxe commands, use them
+               $self->app->log->debug("Booting ipxe commands... Setting system->state_id = 4");
+               $system->update({
+                  state_id => 4
+               });
+               return $self->render(text => $boot_os->ipxe);
+            }
+
+            my $append = $boot_os->append;
+            my ($hostname, $domainname) = split(/\./, $system->name, 2);
+            #my $boot_eth = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->mac eq $mac )->next;
+            my $boot_eth = $self->db->resultset("NetworkAdapter")->search({ mac => $mac })->first;
+            my $eth = $boot_eth->dev;
+
+            $append =~ s/\%hostname/$hostname/g;
+            $append =~ s/\%eth/$eth/g;
+            $append =~ s/\%domainname/$domainname/g;
+
+            my $boot_commands = "#!ipxe\n"
+                              . "kernel " . $boot_os->kernel . " " . $append .  "\n"
+                              . "initrd " . $boot_os->initrd . "\n"
+                              . "boot";
+
+            $self->app->log->debug("Sending boot command:\n$boot_commands");
+
+            $system->update({
+               state_id => 2
+            });
+
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "start",
+               host => { $system->get_columns },
+               template => {
+                  id => $boot_os->id,
+                  name => $boot_os->name,
+               }
+            }));
+
+            return $self->render(text => $boot_commands);
+         }
+         #elsif($system->state_id == 2 || $self->param("kickstart")) { # request of kickstart/preseed/... file
+         elsif($self->param("kickstart")) { # request of kickstart/preseed/... file
+
+            $self->app->log->debug("rerturning kickstart template");
+
+            $system->update({
+               state_id => 3
+            });
+
+            $self->stash("hardware", $system);
+
+            my $template = $boot_os->template;
+
+            $self->app->log->debug("Sending kickstart template:\n$template");
+
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "kickstart",
+               host => { $system->get_columns },
+            }));
+
+            return $self->render(inline => $template);
          }
          else { # default boot, if state == INSTALLED (state_id: 4)
             $self->app->log->debug("boot from local hard disk... state == INSTALLED");
