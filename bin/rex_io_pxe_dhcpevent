@@ -15,6 +15,7 @@ use IO::All;
 my $PXE_BOOT_TEMPLATE = "/etc/rex/io/pxe/boot.tpl";
 my $PXE_BOOT_LOCAL    = "/etc/rex/io/pxe/boot.local.tpl";
 my $TFTP_ROOT         = "/srv/tftpboot";
+my $REXIO_SERVER      = "http://localhost:5000";
 
 #
 # ------------------------------------------------------------------------------
@@ -36,14 +37,13 @@ sub write_pxe_file {
    my $ua = Mojo::UserAgent->new;
    my $mt = Mojo::Template->new;
 
-   my $url = "http://localhost:5000/deploy/boot?custom=$ip&deploy=1&mac=\L$mac";
+   my $url = "$REXIO_SERVER/deploy/boot?custom=$ip&deploy=1&mac=\L$mac";
 
-   open(my $log, ">>", "/tmp/dhcp.log");
-   print $log "\n--------------------------------------------------------------------------------\n";
+   open(my $log, ">>", "/var/log/pxe-dhcp.log");
+   print $log "\n\n--------------------------------------------------------------------------------\n\n";
    print $log "ARGV:  " . join(" - ", @ARGV) . "\n";
    print $log "URL: $url\n";
-   print $log "\n";
-
+   print $log "\n\n";
 
    my @res = split(/\n/, $ua->get($url)->res->body);
 
