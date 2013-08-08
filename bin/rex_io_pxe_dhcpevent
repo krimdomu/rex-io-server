@@ -1,0 +1,89 @@
+#!/home/jan/perl5/perlbrew/perls/perl-5.16.2/bin/perl
+
+use strict;
+use warnings;
+
+use Mojo::UserAgent;
+use Mojo::Template;
+use Data::Dumper;
+use IO::All;
+
+#
+# ------------------------------------------------------------------------------
+#
+
+my $PXE_BOOT_TEMPLATE = "/etc/rex/io/pxe/boot.tpl";
+my $PXE_BOOT_LOCAL    = "/etc/rex/io/pxe/boot.local.tpl";
+my $TFTP_ROOT         = "/srv/tftpboot";
+
+#
+# ------------------------------------------------------------------------------
+#
+
+my ($type, $ip, $mac) = @ARGV;
+
+if($type eq "commit") {
+   write_pxe_file($type, $ip, $mac);
+}
+
+sub write_pxe_file {
+   my ($type, $ip, $mac) = @_;
+
+   my @m = split(/:/, $mac);
+   map { $_ = sprintf "%02s", $_ } @m;
+   $mac = join(":", @m);
+
+   my $ua = Mojo::UserAgent->new;
+   my $mt = Mojo::Template->new;
+
+   my $url = "http://localhost:5000/deploy/boot?custom=$ip&deploy=1&mac=\L$mac";
+
+   open(my $log, ">>", "/tmp/dhcp.log");
+   print $log "\n--------------------------------------------------------------------------------\n";
+   print $log "ARGV:  " . join(" - ", @ARGV) . "\n";
+   print $log "URL: $url\n";
+   print $log "\n";
+
+
+   my @res = split(/\n/, $ua->get($url)->res->body);
+
+   print $log join("\n", @res);
+
+   my ($kernel_line) = grep { /^kernel/ } @res;
+   my ($sanboot_line) = grep { /^sanboot/ } @res;
+
+   if($kernel_line) {
+      my ($kernel, $append) = ($kernel_line =~ m/^kernel http:\/\/([^\s]+) (.*)$/);
+      $kernel =~ s/^[^\/]+//;
+
+      print "kernel> $kernel\n";
+      print "append> $append\n";
+
+      my ($initrd_line) = grep { /^initrd/ } @res;
+      my $initrd = "";
+       
+      if($initrd_line) {
+         ($initrd) = ($initrd_line =~ m/^initrd http:\/\/(.*)$/);
+         $initrd =~ s/^[^\/]+//;
+      }
+
+      print "initrd> $initrd\n";
+
+      my $t = $mt->render(io($PXE_BOOT_TEMPLATE)->all, $kernel, $initrd, $append);
+
+      $mac =~ s/:/-/g;
+
+      $t > io("$TFTP_ROOT/pxelinux.cfg/01-\L$mac");
+   }
+
+   elsif($sanboot_line) {
+      my $t = $mt->render(io($PXE_BOOT_LOCAL)->all);
+      $mac =~ s/:/-/g;
+      $t > io("$TFTP_ROOT/pxelinux.cfg/01-\L$mac");
+   }
+
+   print $log "--------------------------------------------------------------------------------\n";
+
+}
+
+
