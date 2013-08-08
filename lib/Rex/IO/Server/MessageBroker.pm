@@ -175,41 +175,45 @@ sub broker {
             }
          );
 
-         if(! $hw->first) {
+         # normalizing fusioninventory array
+         # convert to array if not array
+         if(ref($json->{info}->{CONTENT}->{STORAGES}) ne "ARRAY") {
+            $json->{info}->{CONTENT}->{STORAGES} = [ $json->{info}->{CONTENT}->{STORAGES} ];
+         }
+         if(ref($json->{info}->{CONTENT}->{NETWORKS}) ne "ARRAY") {
+            $json->{info}->{CONTENT}->{NETWORKS} = [ $json->{info}->{CONTENT}->{NETWORKS} ];
+         }
+         if(ref($json->{info}->{CONTENT}->{MEMORIES}) ne "ARRAY") {
+            $json->{info}->{CONTENT}->{MEMORIES} = [ $json->{info}->{CONTENT}->{MEMORIES} ];
+         }
+         if(ref($json->{info}->{CONTENT}->{CPUS}) ne "ARRAY") {
+            $json->{info}->{CONTENT}->{CPUS} = [ $json->{info}->{CONTENT}->{CPUS} ];
+         }
+
+         # getting hostname and looking for system uuid.
+         # if no uuid we're using mac addr for system idenification
+         my $hostname = $json->{info}->{CONTENT}->{HARDWARE}->{NAME};
+
+         if(exists $json->{info}->{use_mac} && $json->{info}->{use_mac}) {
+            ($hostname) = grep { ! m/^00:00:00/ } @mac_addresses;
+            $hostname =~ s/:/-/g;
+         }
+
+         if(ref $json->{info}->{CONTENT}->{HARDWARE}->{UUID}) {
+            # no mainboard uuid
+            my ($uuid_r) = grep { $_->{MACADDR} !~ m/^00:00:00/ } @{ $json->{info}->{CONTENT}->{NETWORKS} };
+            $json->{info}->{CONTENT}->{HARDWARE}->{UUID} = $uuid_r->{MACADDR};
+         }
+
+         my $hw_o = $hw->first;
+         if(! $hw_o) {
 
             eval {
-
-               # convert to array if not array
-               if(ref($json->{info}->{CONTENT}->{STORAGES}) ne "ARRAY") {
-                  $json->{info}->{CONTENT}->{STORAGES} = [ $json->{info}->{CONTENT}->{STORAGES} ];
-               }
-               if(ref($json->{info}->{CONTENT}->{NETWORKS}) ne "ARRAY") {
-                  $json->{info}->{CONTENT}->{NETWORKS} = [ $json->{info}->{CONTENT}->{NETWORKS} ];
-               }
-               if(ref($json->{info}->{CONTENT}->{MEMORIES}) ne "ARRAY") {
-                  $json->{info}->{CONTENT}->{MEMORIES} = [ $json->{info}->{CONTENT}->{MEMORIES} ];
-               }
-               if(ref($json->{info}->{CONTENT}->{CPUS}) ne "ARRAY") {
-                  $json->{info}->{CONTENT}->{CPUS} = [ $json->{info}->{CONTENT}->{CPUS} ];
-               }
 
 #               my $new_hw = Rex::IO::Server::Model::Hardware->new(
 #                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
 #                  uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
 #               );
-               my $hostname = $json->{info}->{CONTENT}->{HARDWARE}->{NAME};
-
-               if(exists $json->{info}->{use_mac} && $json->{info}->{use_mac}) {
-                  ($hostname) = grep { ! m/^00:00:00/ } @mac_addresses;
-                  $hostname =~ s/:/-/g;
-               }
-
-               if(ref $json->{info}->{CONTENT}->{HARDWARE}->{UUID}) {
-                  # no mainboard uuid
-                  my ($uuid_r) = grep { $_->{MACADDR} !~ m/^00:00:00/ } @{ $json->{info}->{CONTENT}->{NETWORKS} };
-                  $json->{info}->{CONTENT}->{HARDWARE}->{UUID} = $uuid_r->{MACADDR};
-               }
-
                my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
@@ -231,6 +235,9 @@ sub broker {
          }
          else {
             $self->app->log->debug("Hardware already registered");
+
+            $self->inventor($hw_o, $json->{info});
+
             $hw->update({
                state_id => 5,
             });
