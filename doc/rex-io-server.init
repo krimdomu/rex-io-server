@@ -28,6 +28,10 @@ chown rexio: $(dirname $REXIO_LOG)
 
 PIDFILE=/var/run/rex_io_server.pid
 
+if [ -f /etc/rex/io/env-server.sh ]; then
+   . /etc/rex/io/env-server.sh
+fi
+
 # Shell functions sourced from /etc/rc.status:
 #      rc_check         check and set local and overall rc status
 #      rc_status        check and set local and overall rc status
