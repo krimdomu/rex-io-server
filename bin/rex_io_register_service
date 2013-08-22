@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+my $service   = $ARGV[0];
+my $task_name = $ARGV[1];
+
+if(! $service) {
+   print "Usage: $0 service task\n";
+   exit 1;
+}
+
+if(! $task) {
+   print "Usage: $0 service task\n";
+   exit 2;
+}
+
+system("curl -X POST -d '{\"task_name\":\"$task_name\"}' http://localhost:5000/service/$service >/dev/null 2>&1");
+
+if($?) {
+   print "Error registering service: $service / $task_name";
+   exit $?;
+}
+
+print "Service registered.\n";
+
+exit 0;
+

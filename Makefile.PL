@@ -24,7 +24,7 @@ WriteMakefile1(
    NAME => 'Rex::IO::Server',
    VERSION_FROM => 'lib/Rex/IO/Server.pm',
    PREREQ_PM => \%deps,
-   EXE_FILES => ['bin/rex_ioserver', 'bin/rex_io_monitor_alert_scheduler', 'bin/rex_io_add_user', 'bin/rex_io_pxe_dhcpevent'],
+   EXE_FILES => ['bin/rex_ioserver', 'bin/rex_io_monitor_alert_scheduler', 'bin/rex_io_add_user', 'bin/rex_io_pxe_dhcpevent', 'bin/rex_io_register_service'],
    LICENSE => 'Apache License 2.0'
 );
 
