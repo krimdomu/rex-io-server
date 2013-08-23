@@ -11,7 +11,7 @@ if(! $service) {
    exit 1;
 }
 
-if(! $task) {
+if(! $task_name) {
    print "Usage: $0 service task\n";
    exit 2;
 }
