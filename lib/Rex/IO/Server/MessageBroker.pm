@@ -217,7 +217,7 @@ sub broker {
                my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
-                  state_id => (exists $json->{installed} && $json->{installed} ? 1 : 5),
+                  state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
                });
 
                $self->inventor($new_hw, $json->{info});
@@ -239,7 +239,7 @@ sub broker {
             $self->inventor($hw_o, $json->{info});
 
             $hw->update({
-               state_id => 5,
+               state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
             });
          }
       }
