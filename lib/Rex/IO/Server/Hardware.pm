@@ -119,6 +119,13 @@ sub purge {
 
    my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
 
+   # deregister hardware on dhcp
+   eval {
+      $self->_ua->delete($self->config->{dhcp}->{server} . "/" . $hw_i->name);
+   } or do {
+      $self->app->log->error("error deregistering " . $hw_i->name . " on dhcp server: $@");
+   };
+
    eval {
       if(my $hw = $hw_i) {
          $hw->purge;
