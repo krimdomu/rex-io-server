@@ -126,8 +126,18 @@ sub purge {
       $self->app->log->error("error deregistering " . $hw_i->name . " on dhcp server: $@");
    };
 
+
+
    eval {
       if(my $hw = $hw_i) {
+
+         # give plugins the possibility to clean up
+         for my $plug (@{ $self->config->{plugins} }) {
+            my $klass = "Rex::IO::Server::$plug";
+            eval "require $klass";
+            eval { $klass->__delete_hardware__($self, $hw); };
+         }
+
          $hw->purge;
          return $self->render(json => {ok => Mojo::JSON->true});
       }
