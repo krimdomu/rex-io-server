@@ -15,6 +15,8 @@ use Rex::IO::Server::Helper::IP;
 
 use base qw(DBIx::Class::Core);
 
+my $hooks = {};
+
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
 __PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id/);
@@ -132,6 +134,15 @@ sub to_hashRef {
       $data->{os} = { $os->get_columns };
    }
    delete $data->{os_id};
+
+   # execute the hooks
+   for my $key (keys %{ $hooks->{to_hashRef} }) {
+      my $got_data = $hooks->{to_hashRef}->{$key}->($self);
+
+      if($got_data) {
+         $data->{$key} = $got_data;
+      }
+   }
 
    return $data;
 }
@@ -298,4 +309,11 @@ sub domain_name {
 
    return $domain_name;
 }
+
+
+sub add_hook {
+   my ($class, $hook, $key, $code) = @_;
+   $hooks->{$hook}->{$key} = $code;
+}
+
 1;
