@@ -12,6 +12,15 @@ use Rex::IO::Server::Helper::IP;
 use Data::Dumper;
 use Mojo::Redis;
 
+my $hooks = {};
+
+# available hooks:
+# - installation_finished
+sub register_hook {
+   my ($class, $type, $hook) = @_;
+   push @{ $hooks->{$type} }, $hook;
+}
+
 sub wait {
    my ($self) = @_;
 }
@@ -86,6 +95,12 @@ sub boot {
          if($self->param("finished")) { # hook after installation, must be called from within the template
 
             $self->app->log->debug("Installation finished, setting system state_id = 4 (client: $client)");
+
+            if(exists $hooks->{installation_finished}) {
+               for my $code (@{ $hooks->{installation_finished} }) {
+                  $code->($self, hardware => $hw);
+               }
+            }
 
             $system->update({
                state_id => 4,
