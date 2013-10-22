@@ -1,8 +1,11 @@
 bin/rex_io_add_user
 bin/rex_io_generate_user
 bin/rex_io_monitor_alert_scheduler
+bin/rex_io_pxe_dhcpevent
+bin/rex_io_register_service
 bin/rex_ioserver
 bin/rex_ioserver_index_services
+cpanfile
 lib/Rex/IO/Server.pm
 lib/Rex/IO/Server/Auth/User.pm
 lib/Rex/IO/Server/Calculator.pm
