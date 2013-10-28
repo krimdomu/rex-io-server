@@ -17,6 +17,7 @@ use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Fdisk;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
+use List::MoreUtils qw/uniq/;
 
 
 @EXPORT = qw(inventor);
@@ -345,7 +346,14 @@ sub inventor {
                virtual => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}) ,
             });
 
-            $net = undef;
+            my (@to_undef) = grep { $_->{DESCRIPTION} eq $net_dev->dev } @{ $ref->{CONTENT}->{NETWORKS} };
+
+            for my $to_undef_net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+               if($to_undef_net->{DESCRIPTION} eq $net_dev->dev) {
+                  $to_undef_net = undef;
+               }
+            }
+
             next NETDEVS;
 
          }
@@ -354,9 +362,35 @@ sub inventor {
 
    }
 
-   for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
-      next unless $net;
-      next if (exists $net->{IPSUBNET6} && ! exists $net->{IPSUBNET});
+   if(scalar(@{ $ref->{CONTENT}->{NETWORKS} })) {
+
+   my @found_net_devs = uniq(map { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} } @{ $ref->{CONTENT}->{NETWORKS} });
+   my @already_created = ();
+
+   #for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
+   for my $dev ( @found_net_devs ) {
+
+      next unless($dev);
+      my $net;
+
+      my @all_conf = grep { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} eq $dev } @{ $ref->{CONTENT}->{NETWORKS} };
+
+      if(scalar(@all_conf) > 1) {
+         my ($with_ip_address) = grep { exists $_->{IPADDRESS} } @all_conf;
+
+         if($with_ip_address) {
+            $net = $with_ip_address;
+         }
+         else {
+            $net = $all_conf[0];
+         }
+      }
+      elsif(scalar(@all_conf) == 1) {
+         $net = $all_conf[0];
+      }
+      else {
+         next;
+      }
 
       my $new_hw = $self->db->resultset("NetworkAdapter")->create({
          hardware_id => $hw->id,
@@ -369,6 +403,8 @@ sub inventor {
          proto       => "static",
          mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
       });
+
+   }
    }
 
    $self->app->log->debug("Networkadapter updated");
