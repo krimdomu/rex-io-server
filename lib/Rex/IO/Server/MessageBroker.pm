@@ -25,7 +25,7 @@ sub broker {
 
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
-   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{monitor}->{server} . ":" . $self->config->{redis}->{monitor}->{port});
+   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
    $redis->timeout(0);
    my $redis_deploy = Mojo::Redis->new(server => $self->config->{redis}->{deploy}->{server} . ":" . $self->config->{redis}->{deploy}->{port});
    $redis_deploy->timeout(0);
