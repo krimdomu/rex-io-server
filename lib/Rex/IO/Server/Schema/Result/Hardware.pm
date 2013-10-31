@@ -160,6 +160,7 @@ sub get_tasks {
 
    for my $hw_task ($self->tasks) {
       my $task = $hw_task->task;
+      next if(! $task);
       my $task_ref = $task->to_hashRef;
       $task_ref->{task_order} = $hw_task->task_order;
       push(@ret, $task_ref);
