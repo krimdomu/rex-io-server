@@ -5,6 +5,7 @@ use Cwd qw(getcwd);
 use Mojo::JSON;
 use Data::Dumper;
 use Mojo::Redis;
+use Gearman::Client;
 
 # CALL: 
 # curl -X POST -d '{"task_name":"world","task_description":"Simple Hello World Task"}' http://localhost:5000/service/hello
@@ -79,23 +80,21 @@ sub run_task_on_host {
 
    my $service = $task->service;
 
-   my $qj = $self->db->resultset("QueuedJob")->create({
-      hardware_id => $host_id,
-      task_id     => $task_id,
-   });
+
+   my $client = Gearman::Client->new;
+   $client->job_servers(@{ $self->config->{gearman}->{job_servers} });
+    
+   my $arg = {
+      service => [{ service => $service->service_name, task => $task->task_name}],
+      host    => $host->name,
+   };
 
    Mojo::IOLoop->delay(
       sub {
          my ($delay) = @_;
-         my $ref = {
-            host   => $host->name,
-            cmd    => "Execute",
-            script => $service->service_name,
-            task   => $task->task_name,
-            qj_id  => $qj->id,
-         };
-         my $json = Mojo::JSON->new;
-         $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode($ref), $delay->begin);
+         my $arg_str = Mojo::JSON->encode($arg);
+         $client->dispatch_background("run_job", $arg_str);
+         $redis->publish($self->config->{redis}->{jobs}->{queue} => $arg_str, $delay->begin);
       },
       sub {
          $self->render(json => {ok => Mojo::JSON->true});
@@ -169,6 +168,12 @@ sub run_tasks {
 
    my @ref;
 
+   my $client = Gearman::Client->new;
+   $client->job_servers(@{ $self->config->{gearman}->{job_servers} });
+    
+
+   my $tasks_to_run = {};
+
    for my $task (@tasks) {
       my $task_o = $self->db->resultset("ServiceTask")->find($task->{task_id});
       my $service_o = $task_o->service;
@@ -182,37 +187,31 @@ sub run_tasks {
          return $self->render(json => {ok => Mojo::JSON->false}, status => 404, error => "Host not found");
       }
 
-      my $magic = $self->get_random(16, 'a' .. 'z');
-
-      my $qj = $self->db->resultset("QueuedJob")->create({
-         hardware_id => $host_o->id,
-         task_id     => $task_o->id,
-      });
-
       # this system is currenlty in inventory stage, so don't run the tasks now
+      my @service_tasks = ();
       if($host_o->state_id != 5) {
-         push(@ref, {
-            host   => $host_o->name,
-            cmd    => "Execute",
-            script => $service_o->service_name,
-            task   => $task_o->task_name,
-            magic  => $magic,
-            qj_id  => $qj->id,
-         });
+         push @{ $tasks_to_run->{$host_o->name} }, {
+            service => $service_o->service_name,
+            task    => $task_o->task_name
+         };
       }
    }
 
    my $redis = $self->redis;
-   Mojo::IOLoop->delay(
-      sub {
-         my ($delay) = @_;
-         my $json = Mojo::JSON->new;
-         $redis->publish($self->config->{redis}->{jobs}->{queue} => $json->encode(\@ref), $delay->begin);
-      },
-      sub {
-         $self->render(json => {ok => Mojo::JSON->true});
-      }
-   );
+
+   for my $host (keys %{ $tasks_to_run }) {
+      my $arg = {
+         service => $tasks_to_run->{$host},
+         host    => $host,
+      };
+
+      my $arg_str = Mojo::JSON->encode($arg);
+
+      $self->app->log->debug("Sending Jobs to $host: $arg_str");
+
+      $client->dispatch_background("run_job", $arg_str);
+      $redis->publish($self->config->{redis}->{jobs}->{queue} => $arg_str);
+   }
 
    $self->render(json => {ok => Mojo::JSON->true});
 }
