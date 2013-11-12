@@ -23,7 +23,7 @@ use List::MoreUtils qw/uniq/;
 @EXPORT = qw(inventor);
 
 sub inventor {
-   my ($self, $hw, $ref, $update) = @_;
+   my ($self, $hw, $ref) = @_;
 
    $hw->discard_changes; # get new infos from db (needed for relations)
 
