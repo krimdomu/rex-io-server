@@ -58,6 +58,8 @@ sub update {
    #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
    my $hw_r = $self->db->resultset("Hardware")->find($self->param("id"));
 
+   $self->send_flush_cache();
+
    if(my $hw = $hw_r) {
       return eval {
          my $json = $self->req->json;
@@ -83,6 +85,8 @@ sub update_network_adapter {
 
    my $nwa_id = $self->param("id");
    my $json = $self->req->json;
+
+   $self->send_flush_cache();
 
    return eval {
       #my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
@@ -118,6 +122,8 @@ sub purge {
    my ($self) = @_;
 
    my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
+
+   $self->send_flush_cache();
 
    # deregister hardware on dhcp
    eval {

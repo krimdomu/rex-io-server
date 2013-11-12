@@ -228,6 +228,7 @@ sub broker {
                   host => { $new_hw->get_columns },
                }));
 
+               $self->send_flush_cache();
                return 1;
             } or do {
                $self->app->log->error("Error saving new system in db.\n$@");
@@ -241,6 +242,7 @@ sub broker {
             $hw->update({
                state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
             });
+            $self->send_flush_cache();
          }
       }
 

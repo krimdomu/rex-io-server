@@ -49,6 +49,7 @@ sub add {
 
       $nw_a->update;
 
+      $self->send_flush_cache();
       return $self->render(json => {ok => Mojo::JSON->true});
    } or do {
       return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);

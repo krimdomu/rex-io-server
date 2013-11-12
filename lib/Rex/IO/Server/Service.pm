@@ -30,6 +30,7 @@ sub register {
       task_description => $json->{task_description},
    });
 
+   $self->send_flush_cache();
    $self->render(json => {ok => Mojo::JSON->true, data => { service_id => $service->id, task_id => $task->id }});
 }
 
@@ -57,6 +58,7 @@ sub add_task_to_host {
       task_order  => $json->{task_order},
    });
 
+   $self->send_flush_cache();
    $self->render(json => {ok => Mojo::JSON->true});
 }
 
@@ -158,6 +160,7 @@ sub remove_all_tasks_from_host {
 
    $host->remove_tasks;
 
+   $self->send_flush_cache();
    $self->render(json => {ok => Mojo::JSON->true});
 }
 

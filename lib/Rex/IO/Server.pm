@@ -54,7 +54,7 @@ has log_writer => sub {
    $self->{log_writer} = Rex::IO::Server::Log::Output->create($self->config->{logstream}->{output}->{type}, app => $self);
 };
 
-our $VERSION = "0.2.14";
+our $VERSION = "0.2.15";
 
 # This method will run once at server start
 sub startup {
@@ -64,6 +64,11 @@ sub startup {
    # Define some custom helpers
    #######################################################################
    $self->helper(db => sub { $self->app->schema });
+   $self->helper(send_flush_cache => sub {
+      my ($self) = @_;
+      my $redis = Mojo::Redis->new(server => "localhost:6379");
+      $redis->publish("rex_io_cluster", '{"cmd": "flush_cache"}');
+   });
 
    #######################################################################
    # Load configuration
