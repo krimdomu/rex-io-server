@@ -59,7 +59,14 @@ sub add {
 sub list {
    my ($self) = @_;
 
-   my @all_hw = $self->db->resultset('Hardware')->all;
+   my @all_hw;
+   
+   if($self->param("group_id")) {
+      @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") });
+   }
+   else {
+      @all_hw = $self->db->resultset('Hardware')->all;
+   }
 
    my @ret;
 
