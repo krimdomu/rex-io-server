@@ -23,7 +23,7 @@ use List::MoreUtils qw/uniq/;
 @EXPORT = qw(inventor);
 
 sub inventor {
-   my ($self, $hw, $ref) = @_;
+   my ($self, $hw, $ref, $update) = @_;
 
    $hw->discard_changes; # get new infos from db (needed for relations)
 
@@ -338,10 +338,16 @@ sub inventor {
             $self->app->log->debug("Updating existing network adapter: " . $net_dev->id);
 
             $net_dev->update({
-               ip => ip_to_int($net->{IPADDRESS} || 0),
+               ip      => ip_to_int($net->{IPADDRESS} || 0),
                netmask => ip_to_int($net->{IPMASK} || 0),
                network => ip_to_int($net->{IPSUBNET} || 0),
                gateway => ip_to_int($net->{IPGATEWAY} || 0),
+
+               wanted_ip      => ip_to_int($net->{IPADDRESS} || 0),
+               wanted_netmask => ip_to_int($net->{IPMASK} || 0),
+               wanted_network => ip_to_int($net->{IPSUBNET} || 0),
+               wanted_gateway => ip_to_int($net->{IPGATEWAY} || 0),
+
                mac => $net->{MACADDR} || "",
                virtual => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}) ,
             });

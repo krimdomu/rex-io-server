@@ -237,10 +237,11 @@ sub broker {
          else {
             $self->app->log->debug("Hardware already registered");
 
-            $self->inventor($hw_o, $json->{info});
+            $self->inventor($hw_o, $json->{info}, $update);
 
             $hw->update({
                state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
+               name     => (exists $json->{info}->{CONTENT}->{HARDWARE}->{NAME} ? $json->{info}->{CONTENT}->{HARDWARE}->{NAME} : $hostname),
             });
             $self->send_flush_cache();
          }
