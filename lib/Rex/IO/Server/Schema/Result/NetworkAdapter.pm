@@ -30,7 +30,8 @@ __PACKAGE__->add_columns(qw/id
                             wanted_gateway
                             mac
                             boot
-                            virtual/);
+                            virtual
+                            network_bridge_id/);
 
 __PACKAGE__->set_primary_key("id");
 

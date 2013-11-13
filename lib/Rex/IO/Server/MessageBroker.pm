@@ -23,6 +23,8 @@ sub broker {
    my $client_ip = $self->tx->remote_address;
    $self->app->log->debug("messagebroker / client connected: $client_ip");
 
+   $self->send_flush_cache();
+
    push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
    my $redis = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
@@ -52,6 +54,7 @@ sub broker {
 
    $self->on(finish => sub {
       $self->app->log->debug("client disconnected");
+      $self->send_flush_cache();
       my $new_clients = {};
 
       for my $cl (keys %$clients) {

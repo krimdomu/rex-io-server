@@ -29,6 +29,7 @@ __PACKAGE__->belongs_to("os" => "Rex::IO::Server::Schema::Result::Os", "os_id");
 __PACKAGE__->belongs_to("server_group" => "Rex::IO::Server::Schema::Result::ServerGroup", "server_group_id");
 
 __PACKAGE__->has_many("network_adapters" => "Rex::IO::Server::Schema::Result::NetworkAdapter", "hardware_id");
+__PACKAGE__->has_many("network_bridges" => "Rex::IO::Server::Schema::Result::NetworkBridge", "hardware_id");
 __PACKAGE__->has_one("bios" => "Rex::IO::Server::Schema::Result::Bios", "hardware_id");
 __PACKAGE__->has_many("harddrives" => "Rex::IO::Server::Schema::Result::Harddrive", "hardware_id");
 __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "hardware_id");
