@@ -36,6 +36,7 @@ __PACKAGE__->add_columns(qw/id
 __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to("hardware", "Rex::IO::Server::Schema::Result::Hardware", "hardware_id");
+__PACKAGE__->belongs_to("bridge", "Rex::IO::Server::Schema::Result::NetworkBridge", "network_bridge_id");
 
 sub to_hashRef {
    my ($self) = @_;
@@ -77,6 +78,11 @@ sub to_hashRef {
    $data->{wanted_broadcast} = $wanted_broadcast   || "";
    $data->{wanted_network}   = $wanted_network     || "";
    $data->{wanted_gateway}   = $wanted_gateway     || "";
+
+   my $bridge = $self->bridge;
+   if($bridge) {
+      $data->{bridge} = $self->bridge->to_hashRef();
+   }
 
    return $data;
 
