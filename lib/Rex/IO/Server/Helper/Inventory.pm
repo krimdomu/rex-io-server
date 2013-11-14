@@ -319,6 +319,44 @@ sub inventor {
    $self->app->log->debug("Updated OS information");
 
 #################################################################################
+# update bridges
+#################################################################################
+   $self->app->log->debug("Updating briges");
+   $self->app->log->debug(Dumper($ref->{bridge}));
+
+   my @hw_bridges = $hw->network_bridges;
+
+   my $bridge_names = {};
+
+   for my $br (keys %{ $ref->{bridge} }) {
+      my $br_data = $ref->{bridge}->{$br};
+      my ($br_dev) = grep { $_->name eq $br } @hw_bridges;
+
+
+      if($br_dev) {
+         # update bridge
+         $br_dev->spanning_tree($br_data->{stp} eq "0" ? 0 : 1);
+         $br_dev->ip(ip_to_int($br_data->{configuration}->{ip}))                if(exists $br_data->{configuration}->{ip});
+         $br_dev->netmask(ip_to_int($br_data->{configuration}->{netmask}))      if(exists $br_data->{configuration}->{netmask});
+         $br_dev->broadcast(ip_to_int($br_data->{configuration}->{broadcast}))  if(exists $br_data->{configuration}->{broadcast});
+
+         $br_dev->update;
+      }
+      else {
+         $br_dev = $self->db->resultset("NetworkBridge")->create({
+            name => $br,
+            spanning_tree => ($br_data->{stp} eq "0" ? 0 : 1),
+            ip => (exists $br_data->{configuration}->{ip} && $br_data->{configuration}->{ip} ? ip_to_int($br_data->{configuration}->{ip}) : 0),
+            netmask => (exists $br_data->{configuration}->{netmask} && $br_data->{configuration}->{netmask} ? ip_to_int($br_data->{configuration}->{netmask}) : 0),
+            broadcast => (exists $br_data->{configuration}->{broadcast} && $br_data->{configuration}->{broadcast} ? ip_to_int($br_data->{configuration}->{broadcast}) : 0),
+            hardware_id => $hw->id,
+         });
+      }
+
+      $bridge_names->{$br} = $br_dev->id;
+   }
+
+#################################################################################
 # update network devices
 #################################################################################
 
@@ -333,9 +371,21 @@ sub inventor {
       INVNET: for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
 
          next INVNET unless $net;
+         next INVNET unless exists $net->{DESCRIPTION};
+
+         if(exists $bridge_names->{$net->{DESCRIPTION}}) {
+            $self->app->log->debug("found $net->{DESCRIPTION} in bridge devices... skipping.");
+            next INVNET;
+         }
 
          if($net_dev->dev eq $net->{DESCRIPTION}) {
             $self->app->log->debug("Updating existing network adapter: " . $net_dev->id);
+
+            my $br_name = _is_on_bridge($net->{DESCRIPTION}, $ref->{bridge});
+            my $br_id;
+            if($br_name) {
+               $br_id = $bridge_names->{$br_name};
+            }
 
             $net_dev->update({
                ip      => ip_to_int($net->{IPADDRESS} || 0),
@@ -350,12 +400,13 @@ sub inventor {
 
                mac => $net->{MACADDR} || "",
                virtual => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}) ,
+               network_bridge_id => $br_id,
             });
 
-            my (@to_undef) = grep { $_->{DESCRIPTION} eq $net_dev->dev } @{ $ref->{CONTENT}->{NETWORKS} };
+            my (@to_undef) = grep { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} eq $net_dev->dev } @{ $ref->{CONTENT}->{NETWORKS} };
 
             for my $to_undef_net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
-               if($to_undef_net->{DESCRIPTION} eq $net_dev->dev) {
+               if(exists $to_undef_net->{DESCRIPTION} && $to_undef_net->{DESCRIPTION} eq $net_dev->dev) {
                   $to_undef_net = undef;
                }
             }
@@ -370,47 +421,61 @@ sub inventor {
 
    if(scalar(@{ $ref->{CONTENT}->{NETWORKS} })) {
 
-   my @found_net_devs = uniq(map { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} } @{ $ref->{CONTENT}->{NETWORKS} });
-   my @already_created = ();
+      my @found_net_devs = uniq(map { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} } @{ $ref->{CONTENT}->{NETWORKS} });
+      my @already_created = ();
 
-   #for my $net ( @{ $ref->{CONTENT}->{NETWORKS} } ) {
-   for my $dev ( @found_net_devs ) {
+      for my $dev ( @found_net_devs ) {
 
-      next unless($dev);
-      my $net;
+         next unless($dev);
 
-      my @all_conf = grep { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} eq $dev } @{ $ref->{CONTENT}->{NETWORKS} };
 
-      if(scalar(@all_conf) > 1) {
-         my ($with_ip_address) = grep { exists $_->{IPADDRESS} } @all_conf;
 
-         if($with_ip_address) {
-            $net = $with_ip_address;
+         my $net;
+
+         my @all_conf = grep { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} eq $dev } @{ $ref->{CONTENT}->{NETWORKS} };
+
+         if(scalar(@all_conf) > 1) {
+            my ($with_ip_address) = grep { exists $_->{IPADDRESS} } @all_conf;
+
+            if($with_ip_address) {
+               $net = $with_ip_address;
+            }
+            else {
+               $net = $all_conf[0];
+            }
          }
-         else {
+         elsif(scalar(@all_conf) == 1) {
             $net = $all_conf[0];
          }
-      }
-      elsif(scalar(@all_conf) == 1) {
-         $net = $all_conf[0];
-      }
-      else {
-         next;
-      }
+         else {
+            next;
+         }
 
-      my $new_hw = $self->db->resultset("NetworkAdapter")->create({
-         hardware_id => $hw->id,
-         dev         => $net->{DESCRIPTION},
-         ip          => ip_to_int($net->{IPADDRESS} || 0),
-         netmask     => ip_to_int($net->{IPMASK}    || 0),
-         network     => ip_to_int($net->{IPSUBNET}  || 0),
-         gateway     => ip_to_int($net->{IPGATEWAY} || 0),
-         virtual     => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}),
-         proto       => "static",
-         mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
-      });
+         if(exists $bridge_names->{$net->{DESCRIPTION}}) {
+            $self->app->log->debug("found $net->{DESCRIPTION} in bridge devices... skipping.");
+            next;
+         }
 
-   }
+         my $br_name = _is_on_bridge($net->{DESCRIPTION}, $ref->{bridge});
+         my $br_id;
+         if($br_name) {
+            $br_id = $bridge_names->{$br_name};
+         }
+
+         my $new_hw = $self->db->resultset("NetworkAdapter")->create({
+            hardware_id => $hw->id,
+            dev         => $net->{DESCRIPTION},
+            ip          => ip_to_int($net->{IPADDRESS} || 0),
+            netmask     => ip_to_int($net->{IPMASK}    || 0),
+            network     => ip_to_int($net->{IPSUBNET}  || 0),
+            gateway     => ip_to_int($net->{IPGATEWAY} || 0),
+            virtual     => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}),
+            proto       => "static",
+            mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
+            network_bridge_id => $br_id,
+         });
+
+      }
    }
 
    $self->app->log->debug("Networkadapter updated");
@@ -427,7 +492,22 @@ sub inventor {
    }
 
 
+   $self->send_flush_cache();
 
+
+}
+
+sub _is_on_bridge {
+   my ($dev, $haystack) = @_;
+
+   for my $br (keys %{ $haystack }) {
+      my ($dev) = grep { $_ eq $dev } @{ $haystack->{$br}->{devices} };
+      if($dev) {
+         return $br;
+      }
+   }
+
+   return undef;
 }
 
 1;
