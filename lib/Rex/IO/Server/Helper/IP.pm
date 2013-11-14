@@ -23,6 +23,7 @@ sub ip_to_int {
 }
 
 sub int_to_ip {
+   return 0 unless($_[0]);
    return inet_ntoa(pack ("N", $_[0]));
 }
 

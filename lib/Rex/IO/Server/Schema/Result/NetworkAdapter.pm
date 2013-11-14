@@ -42,19 +42,41 @@ sub to_hashRef {
 
    my $data = { $self->get_columns };
 
-   $data->{ip}        = int_to_ip($data->{ip})          if $data->{ip};
-   $data->{netmask}   = int_to_ip($data->{netmask})     if $data->{netmask};
-   $data->{broadcast} = int_to_ip($data->{broadcast})   if $data->{broadcast};
-   $data->{network}   = int_to_ip($data->{network})     if $data->{network};
-   $data->{gateway}   = int_to_ip($data->{gateway})     if $data->{gateway};
+   my $ip         = int_to_ip $self->ip;
+   my $netmask    = int_to_ip $self->netmask;
+   my $broadcast  = int_to_ip $self->broadcast;
+   my $network    = int_to_ip $self->network;
+   my $gateway    = int_to_ip $self->gateway;
 
-   $data->{wanted_ip}        = int_to_ip($data->{wanted_ip})          if $data->{wanted_ip};
-   $data->{wanted_netmask}   = int_to_ip($data->{wanted_netmask})     if $data->{wanted_netmask};
-   $data->{wanted_broadcast} = int_to_ip($data->{wanted_broadcast})   if $data->{wanted_broadcast};
-   $data->{wanted_network}   = int_to_ip($data->{wanted_network})     if $data->{wanted_network};
-   $data->{wanted_gateway}   = int_to_ip($data->{wanted_gateway})     if $data->{wanted_gateway};
+   if($ip        eq "0.0.0.0")   { $ip        = ""; }
+   if($netmask   eq "0.0.0.0")   { $netmask   = ""; }
+   if($network   eq "0.0.0.0")   { $network   = ""; }
+   if($broadcast eq "0.0.0.0")   { $broadcast = ""; }
+   if($gateway   eq "0.0.0.0")   { $gateway   = ""; }
 
+   my $wanted_ip         = int_to_ip $self->wanted_ip;
+   my $wanted_netmask    = int_to_ip $self->wanted_netmask;
+   my $wanted_broadcast  = int_to_ip $self->wanted_broadcast;
+   my $wanted_network    = int_to_ip $self->wanted_network;
+   my $wanted_gateway    = int_to_ip $self->wanted_gateway;
 
+   if($wanted_ip        eq "0.0.0.0")   { $wanted_ip        = ""; }
+   if($wanted_netmask   eq "0.0.0.0")   { $wanted_netmask   = ""; }
+   if($wanted_network   eq "0.0.0.0")   { $wanted_network   = ""; }
+   if($wanted_broadcast eq "0.0.0.0")   { $wanted_broadcast = ""; }
+   if($wanted_gateway   eq "0.0.0.0")   { $wanted_gateway   = ""; }
+
+   $data->{ip}        = $ip         || "";
+   $data->{netmask}   = $netmask    || "";
+   $data->{broadcast} = $broadcast  || "";
+   $data->{network}   = $network    || "";
+   $data->{gateway}   = $gateway    || "";
+
+   $data->{wanted_ip}        = $wanted_ip          || "";
+   $data->{wanted_netmask}   = $wanted_netmask     || "";
+   $data->{wanted_broadcast} = $wanted_broadcast   || "";
+   $data->{wanted_network}   = $wanted_network     || "";
+   $data->{wanted_gateway}   = $wanted_gateway     || "";
 
    return $data;
 

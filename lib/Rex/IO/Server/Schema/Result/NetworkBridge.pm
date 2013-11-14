@@ -24,27 +24,41 @@ __PACKAGE__->has_many("network_adapters", "Rex::IO::Server::Schema::Result::Netw
 sub to_hashRef {
    my ($self) = @_;
 
-   my @devices = [];
+   my @devices = ();
    for my $na ($self->network_adapters) {
       push @devices, $na->dev;
    }
 
-   return {
+   my $ip         = int_to_ip $self->ip;
+   my $netmask    = int_to_ip $self->netmask;
+   my $broadcast  = int_to_ip $self->broadcast;
+   my $network    = int_to_ip $self->network;
+   my $gateway    = int_to_ip $self->gateway;
+
+   if($ip        eq "0.0.0.0")   { $ip        = ""; }
+   if($netmask   eq "0.0.0.0")   { $netmask   = ""; }
+   if($network   eq "0.0.0.0")   { $network   = ""; }
+   if($broadcast eq "0.0.0.0")   { $broadcast = ""; }
+   if($gateway   eq "0.0.0.0")   { $gateway   = ""; }
+
+   my $ret = {
       id                => $self->id,
       hardware_id       => $self->hardware_id,
       name              => $self->name,
       spanning_tree     => $self->spanning_tree,
       wait_port         => $self->wait_port,
       forwarding_delay  => $self->forwarding_delay,
-      ip                => int_to_ip $self->ip,
-      network           => int_to_ip $self->network,
-      netmask           => int_to_ip $self->netmask,
-      broadcast         => int_to_ip $self->broadcast,
-      gateway           => int_to_ip $self->gateway,
+      ip                => $ip         || "",
+      network           => $network    || "",
+      netmask           => $netmask    || "",
+      broadcast         => $broadcast  || "",
+      gateway           => $gateway    || "",
       boot              => $self->boot,
       proto             => $self->proto,
       devices           => [ @devices ],
    };
+
+   return $ret;
 }
 
 1;
