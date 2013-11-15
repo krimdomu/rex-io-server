@@ -130,32 +130,6 @@ sub broker {
             )->first;
          }
 
-         if($host) {
-            # found host
-            my @qjs = $host->queued_jobs();
-
-            my @ref;
-            for my $qj (@qjs) {
-               $self->app->log->debug("Found job: " . $qj->id);
-
-               my $task = $qj->task;
-               my $magic = $self->get_random(16, 'a' .. 'z');
-
-               push(@ref, {
-                  host   => $host->name,
-                  cmd    => "Execute",
-                  script => $task->service->service_name,
-                  task   => $task->task_name,
-                  magic  => $magic,
-                  qj_id  => $qj->id,
-               });
-
-               # delete job
-               $qj->delete;
-            }
-
-            $redis_jobs->publish($self->config->{redis}->{jobs}->{queue} => Mojo::JSON->encode(\@ref));
-         }
       }
 
       elsif(exists $json->{type} && $json->{type} eq "hello-service") {
