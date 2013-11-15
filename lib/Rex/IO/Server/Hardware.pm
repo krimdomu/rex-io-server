@@ -80,44 +80,6 @@ sub update {
    }
 }
 
-sub update_network_adapter {
-   my ($self) = @_;
-
-   my $nwa_id = $self->param("id");
-   my $json = $self->req->json;
-
-   $self->send_flush_cache();
-
-   return eval {
-      #my $nw_a = Rex::IO::Server::Model::NetworkAdapter->all( Rex::IO::Server::Model::NetworkAdapter->id == $nwa_id )->next;
-      my $nw_a = $self->db->resultset("NetworkAdapter")->find($nwa_id);
-
-      my @calc_int = qw/wanted_ip wanted_netmask wanted_broadcast wanted_network wanted_gateway ip netmask broadcast network gateway/;
-
-      for my $k (keys %{ $json }) {
-         if(@calc_int ~~ m/$k/ && $json->{$k}) {
-            $json->{$k} = ip_to_int($json->{$k});
-         }
-
-         $nw_a->$k($json->{$k});
-      }
-
-      $nw_a->update;
-
-      if($json->{boot} && $nw_a->wanted_ip) {
-         # if this is the boot device, register ip/mac in dhcp
-         $self->_ua->post($self->config->{dhcp}->{server} . "/" . $nw_a->mac, json => {
-            name => $nw_a->hardware->name,
-            ip   => int_to_ip($nw_a->wanted_ip),
-         });
-      }
-
-      return $self->render(json => {ok => Mojo::JSON->true});
-   } or do {
-      return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
-   };
-}
-
 sub purge {
    my ($self) = @_;
 

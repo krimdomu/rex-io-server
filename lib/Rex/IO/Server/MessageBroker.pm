@@ -14,6 +14,7 @@ use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Inventory;
 use Rex::IO::Server::Calculator;
 use Mojo::Redis;
+use Gearman::Client;
 
 our $clients = {};
 
@@ -202,6 +203,10 @@ sub broker {
             $hostname =~ s/:/-/g;
          }
 
+         if(exists $json->{info}->{sysinfo} && exists $json->{info}->{sysinfo}->{hostname}) {
+            $hostname = $json->{info}->{sysinfo}->{hostname};
+         }
+
          if(ref $json->{info}->{CONTENT}->{HARDWARE}->{UUID}) {
             # no mainboard uuid
             my ($uuid_r) = grep { $_->{MACADDR} !~ m/^00:00:00/ } @{ $json->{info}->{CONTENT}->{NETWORKS} };
@@ -242,11 +247,29 @@ sub broker {
 
             $self->inventor($hw_o, $json->{info});
 
-            $hw->update({
+            $hw_o->update({
                state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
-               name     => (exists $json->{info}->{CONTENT}->{HARDWARE}->{NAME} ? $json->{info}->{CONTENT}->{HARDWARE}->{NAME} : $hostname),
+               name     => $hostname,
             });
             $self->send_flush_cache();
+         }
+
+         if(exists $self->config->{deploy} 
+            && exists $self->config->{deploy}->{run_services_after_install}
+            && $self->config->{deploy}->{run_services_after_install}) {
+            # schedule services
+            $self->app->log->debug("Scheduling services for: " . $hw_o->name);
+            for my $task ($hw_o->tasks) {
+               my $client = Gearman::Client->new;
+               $client->job_servers(@{ $self->config->{gearman}->{job_servers} });
+               my $arg = {
+                  service => [{ service => $task->task->service->service_name, task => $task->task->task_name}],
+                  host    => $hw_o->name,
+               };
+               my $arg_str = Mojo::JSON->encode($arg);
+
+               $client->dispatch_background("run_job", $arg_str);
+            }
          }
       }
 

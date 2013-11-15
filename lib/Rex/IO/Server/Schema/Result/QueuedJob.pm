@@ -17,7 +17,6 @@ __PACKAGE__->add_columns(qw/id hardware_id task_id task_order/);
 
 __PACKAGE__->set_primary_key("id");
 
-__PACKAGE__->belongs_to("hardware", "Rex::IO::Server::Schema::Result::Hardware", "hardware_id");
 __PACKAGE__->belongs_to("task", "Rex::IO::Server::Schema::Result::ServiceTask", "task_id");
 
 1;

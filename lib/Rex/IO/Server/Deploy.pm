@@ -92,7 +92,16 @@ sub boot {
       if(my $boot_os = $boot_os_r) {
 
          # for standard pxe boot, this must be at the TOP!
-         if($self->param("finished")) { # hook after installation, must be called from within the template
+         if($self->param("send_finished")) {
+
+            $redis->publish($channel => Mojo::JSON->encode({
+               cmd => "deploy",
+               type => "finished",
+               host => { $system->get_columns },
+            }));
+
+         }
+         elsif($self->param("finished")) { # hook after installation, must be called from within the template
 
             $self->app->log->debug("Installation finished, setting system state_id = 4 (client: $client)");
             $self->send_flush_cache();
@@ -107,12 +116,6 @@ sub boot {
                state_id => 4,
                os_template_id => 1,
             });
-
-            $redis->publish($channel => Mojo::JSON->encode({
-               cmd => "deploy",
-               type => "finished",
-               host => { $system->get_columns },
-            }));
 
             # set wanted_* as default
             my $wanted_hw = $self->db->resultset("NetworkAdapter")->search(
@@ -231,21 +234,23 @@ sub boot {
 
             $self->app->log->debug("rerturning kickstart template");
 
-            $system->update({
-               state_id => 3
-            });
-
             $self->stash("hardware", $system);
 
             my $template = $boot_os->template;
 
             $self->app->log->debug("Sending kickstart template:\n$template");
 
-            $redis->publish($channel => Mojo::JSON->encode({
-               cmd => "deploy",
-               type => "kickstart",
-               host => { $system->get_columns },
-            }));
+            if($system->state_id != 3) {
+               $redis->publish($channel => Mojo::JSON->encode({
+                  cmd => "deploy",
+                  type => "kickstart",
+                  host => { $system->get_columns },
+               }));
+            }
+
+            $system->update({
+               state_id => 3
+            });
 
             return $self->render(inline => $template);
          }
