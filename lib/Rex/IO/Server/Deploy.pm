@@ -100,6 +100,7 @@ sub boot {
                host => { $system->get_columns },
             }));
 
+            return $self->render(json => {ok => Mojo::JSON->true});
          }
          elsif($self->param("finished")) { # hook after installation, must be called from within the template
 
@@ -213,19 +214,21 @@ sub boot {
 
             $self->app->log->debug("Sending boot command:\n$boot_commands");
 
+            if($system->state_id != 2) {
+               $redis->publish($channel => Mojo::JSON->encode({
+                  cmd => "deploy",
+                  type => "start",
+                  host => { $system->get_columns },
+                  template => {
+                     id => $boot_os->id,
+                     name => $boot_os->name,
+                  }
+               }));
+            }
+
             $system->update({
                state_id => 2
             });
-
-            $redis->publish($channel => Mojo::JSON->encode({
-               cmd => "deploy",
-               type => "start",
-               host => { $system->get_columns },
-               template => {
-                  id => $boot_os->id,
-                  name => $boot_os->name,
-               }
-            }));
 
             return $self->render(text => $boot_commands);
          }
