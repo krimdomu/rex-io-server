@@ -12,7 +12,7 @@ use warnings;
 use Data::Dumper;
 
 use Rex::IO::Server::Helper::IP;
-use Mojo::JSON;
+use JSON::XS;
 
 use base qw(DBIx::Class::Core);
 
@@ -85,7 +85,7 @@ sub to_hashRef {
          return $cache;
       }
       
-      return Mojo::JSON->decode($cache);
+      return decode_json($cache);
    }
 
    my $data = { $self->get_columns };
@@ -189,7 +189,7 @@ sub to_hashRef {
       }
    }
 
-   my $_cache = Mojo::JSON->encode($data);
+   my $_cache = encode_json($data);
    $self->update({cache => $_cache});
    
    if($raw) {
