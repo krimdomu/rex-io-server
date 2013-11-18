@@ -66,6 +66,7 @@ sub update {
    }
    elsif(defined $update_data) {
       $update_data->{cache} = "";
+      return $self->SUPER::update($update_data);
    }
    else {
       $self->cache("");
@@ -130,7 +131,7 @@ sub to_hashRef {
    $data->{network_adapters} = \@nw_a;
 
    #### bridge adapters
-   my @br_r = $self->network_bridge;
+   my @br_r = $self->network_bridges;
    my @br_a = ();
    for my $br (@br_r) {
       push(@br_a, $br->to_hashRef);
