@@ -71,10 +71,14 @@ sub list {
    my @ret;
 
    for my $hw (@all_hw) {
-      push(@ret, $hw->to_hashRef);
+      push(@ret, $hw->to_hashRef(1));
    }
 
-   $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
+   # faster...
+   my $text = '{"ok": true, "data": [' . join(",", @ret) . ']}';
+
+   #$self->render(json => {ok => Mojo::JSON->true, data => \@ret});
+   $self->render(text => $text);
 }
 
 sub get {

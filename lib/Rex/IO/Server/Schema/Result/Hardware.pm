@@ -12,6 +12,7 @@ use warnings;
 use Data::Dumper;
 
 use Rex::IO::Server::Helper::IP;
+use Mojo::JSON;
 
 use base qw(DBIx::Class::Core);
 
@@ -19,7 +20,7 @@ my $hooks = {};
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
-__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id/);
+__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id cache/);
 
 __PACKAGE__->set_primary_key("id");
 
@@ -50,8 +51,42 @@ sub mac {
    return "undef";
 }
 
+sub create {
+   my $self = shift;
+   $self->SUPER::create(@_);
+   $self->to_hashRef;
+}
+
+sub update {
+   my $self = shift;
+   my $update_data = shift;
+
+   if(defined $update_data && exists $update_data->{cache}) {
+      return $self->SUPER::update($update_data);
+   }
+   elsif(defined $update_data) {
+      $update_data->{cache} = "";
+   }
+   else {
+      $self->cache("");
+   }
+
+   $self->SUPER::update();
+   $self->to_hashRef;
+}
+
 sub to_hashRef {
-   my ($self) = @_;
+   my ($self, $raw) = @_;
+
+   # $self->update({cache => 'foo'});
+   my $cache = $self->cache;
+   if($cache) {
+      if($raw) {
+         return $cache;
+      }
+      
+      return Mojo::JSON->decode($cache);
+   }
 
    my $data = { $self->get_columns };
 
@@ -93,6 +128,16 @@ sub to_hashRef {
    }
 
    $data->{network_adapters} = \@nw_a;
+
+   #### bridge adapters
+   my @br_r = $self->network_bridge;
+   my @br_a = ();
+   for my $br (@br_r) {
+      push(@br_a, $br->to_hashRef);
+   }
+
+   $data->{network_bridges} = \@br_a;
+
 
    #### bios
    if(my $bios = $self->bios) {
@@ -142,6 +187,13 @@ sub to_hashRef {
       if($got_data) {
          $data->{$key} = $got_data;
       }
+   }
+
+   my $_cache = Mojo::JSON->encode($data);
+   $self->update({cache => $_cache});
+   
+   if($raw) {
+      return $_cache;
    }
 
    return $data;

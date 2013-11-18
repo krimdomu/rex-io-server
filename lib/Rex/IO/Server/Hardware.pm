@@ -23,10 +23,10 @@ sub list {
    my @ret;
 
    for my $hw (@all_hw) {
-      push(@ret, $hw->to_hashRef);
+      push(@ret, $hw->to_hashRef(1));
    }
 
-   $self->render(json => \@ret);
+   $self->render(text => '[' . join(",", @ret) . ']');
 }
 
 sub search {
@@ -38,10 +38,10 @@ sub search {
    my @ret = ();
 
    for my $hw (@hw_r) {
-      push(@ret, $hw->to_hashRef);
+      push(@ret, $hw->to_hashRef(1));
    }
 
-   $self->render(json => \@ret);
+   $self->render(text => '[' . join(",", @ret) . ']');
 }
 
 sub get {
@@ -49,7 +49,7 @@ sub get {
 
    #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
    my $hw = $self->db->resultset("Hardware")->find($self->param("id"));
-   $self->render(json => $hw->to_hashRef);
+   $self->render(text => $hw->to_hashRef(1));
 }
 
 sub update {
