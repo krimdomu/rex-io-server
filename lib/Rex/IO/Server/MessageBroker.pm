@@ -139,6 +139,7 @@ sub broker {
          my @mac_addresses = ();
          for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
             next if($eth->{MACADDR} =~ m/^00:00:00/);
+            next if($eth->{MACADDR} eq "fe:ff:ff:ff:ff:ff"); # skip xen things...
 
             push(@mac_addresses, $eth->{MACADDR});
          }
