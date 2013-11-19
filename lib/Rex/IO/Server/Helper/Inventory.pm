@@ -321,7 +321,7 @@ sub inventor {
 #################################################################################
 # update bridges
 #################################################################################
-   $self->app->log->debug("Updating briges");
+   $self->app->log->debug("Updating bridges");
    $self->app->log->debug(Dumper($ref->{bridge}));
 
    my @hw_bridges = $hw->network_bridges;
@@ -387,14 +387,20 @@ sub inventor {
                $br_id = $bridge_names->{$br_name};
             }
 
+            my ($ip, $netmask) = ($net->{IPADDRESS}, $net->{IPMASK});
+            if(exists $ref->{bridge}->{$br_name}->{configuration}->{mac} && $ref->{bridge}->{$br_name}->{configuration}->{mac}) {
+               $ip      = $ref->{bridge}->{$br_name}->{configuration}->{ip};
+               $netmask = $ref->{bridge}->{$br_name}->{configuration}->{netmask};
+            }
+
             $net_dev->update({
-               ip      => ip_to_int($net->{IPADDRESS} || 0),
-               netmask => ip_to_int($net->{IPMASK} || 0),
+               ip      => ip_to_int($ip || 0),
+               netmask => ip_to_int($netmask || 0),
                network => ip_to_int($net->{IPSUBNET} || 0),
                gateway => ip_to_int($net->{IPGATEWAY} || 0),
 
-               wanted_ip      => ip_to_int($net->{IPADDRESS} || 0),
-               wanted_netmask => ip_to_int($net->{IPMASK} || 0),
+               wanted_ip      => ip_to_int($ip || 0),
+               wanted_netmask => ip_to_int($netmask || 0),
                wanted_network => ip_to_int($net->{IPSUBNET} || 0),
                wanted_gateway => ip_to_int($net->{IPGATEWAY} || 0),
 
@@ -462,11 +468,17 @@ sub inventor {
             $br_id = $bridge_names->{$br_name};
          }
 
+         my ($ip, $netmask) = ($net->{IPADDRESS}, $net->{IPSUBNET});
+         if(exists $ref->{bridge}->{$br_name}->{configuration}->{mac} && $ref->{bridge}->{$br_name}->{configuration}->{mac}) {
+            $ip      = $ref->{bridge}->{$br_name}->{configuration}->{ip};
+            $netmask = $ref->{bridge}->{$br_name}->{configuration}->{netmask};
+         }
+
          my $new_hw = $self->db->resultset("NetworkAdapter")->create({
             hardware_id => $hw->id,
             dev         => $net->{DESCRIPTION},
-            ip          => ip_to_int($net->{IPADDRESS} || 0),
-            netmask     => ip_to_int($net->{IPMASK}    || 0),
+            ip          => ip_to_int($ip || 0),
+            netmask     => ip_to_int($netmask    || 0),
             network     => ip_to_int($net->{IPSUBNET}  || 0),
             gateway     => ip_to_int($net->{IPGATEWAY} || 0),
             virtual     => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}),
