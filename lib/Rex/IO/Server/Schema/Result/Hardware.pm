@@ -35,7 +35,7 @@ __PACKAGE__->has_one("bios" => "Rex::IO::Server::Schema::Result::Bios", "hardwar
 __PACKAGE__->has_many("harddrives" => "Rex::IO::Server::Schema::Result::Harddrive", "hardware_id");
 __PACKAGE__->has_many("memories" => "Rex::IO::Server::Schema::Result::Memory", "hardware_id");
 __PACKAGE__->has_many("processors" => "Rex::IO::Server::Schema::Result::Processor", "hardware_id");
-__PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id");
+__PACKAGE__->has_many("tasks" => "Rex::IO::Server::Schema::Result::HardwareTask", "hardware_id", { order_by => { -asc => 'task_order'} });
 __PACKAGE__->has_many("performance_counters" => "Rex::IO::Server::Schema::Result::PerformanceCounter", "hardware_id");
 __PACKAGE__->has_many("performance_counter_values" => "Rex::IO::Server::Schema::Result::PerformanceCounterValue", "hardware_id");
 __PACKAGE__->has_many("alerts", "Rex::IO::Server::Schema::Result::CurrentAlert", "hardware_id");
@@ -62,18 +62,22 @@ sub update {
    my $update_data = shift;
 
    if(defined $update_data && exists $update_data->{cache}) {
-      return $self->SUPER::update($update_data);
+      $self->SUPER::update($update_data);
    }
    elsif(defined $update_data) {
       $update_data->{cache} = "";
-      return $self->SUPER::update($update_data);
+      $self->SUPER::update($update_data);
    }
    else {
       $self->cache("");
+
+      $self->SUPER::update();
    }
 
-   $self->SUPER::update();
-   $self->to_hashRef;
+   # execute the hooks
+   for my $key (keys %{ $hooks->{update} }) {
+      $hooks->{update}->{$key}->($self);
+   }
 }
 
 sub to_hashRef {
