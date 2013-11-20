@@ -365,6 +365,26 @@ sub update_bridge {
 }
 
 ################################################################################
+# cache functions
+################################################################################
+sub clear_hardware_cache {
+   my ($self) = @_;
+
+   eval {
+      $self->app->log->debug("Clearing hardware cache...");
+      $self->db->resultset("Hardware")->search()->update({cache => ""});
+      $self->app->log->debug("... done clearing hardware cache.");
+      1;
+   } or do {
+      $self->app->log->error("Clearing hardware cache: $@");
+      return $self->render(json => { ok => Mojo::JSON->false, error => $@ }, status => 500); 
+   };
+
+   $self->render(json => { ok => Mojo::JSON->true }); 
+}
+
+
+################################################################################
 # internal functions
 ################################################################################
 sub _ua { return Mojo::UserAgent->new; }
@@ -391,6 +411,8 @@ sub __register__ {
    $r->post("/1.0/hardware/hardware/:hardware_id/network_adapter/:network_adapter_id")->over(authenticated => 1)->to("hardware#update_network_adapter");
    $r->route("/1.0/hardware/hardware/:hardware_id/network_adapter")->via("LIST")->over(authenticated => 1)->to("hardware#list_network_adapter");
    $r->delete("/1.0/hardware/hardware/:hardware_id/network_adapter/:network_adapter_id")->over(authenticated => 1)->to("hardware#del_network_adapter");
+
+   $r->post("/1.0/hardware/clear/cache")->over(authenticated => 1)->to("hardware#clear_hardware_cache");
 }
 
 
