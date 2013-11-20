@@ -54,7 +54,7 @@ has log_writer => sub {
    $self->{log_writer} = Rex::IO::Server::Log::Output->create($self->config->{logstream}->{output}->{type}, app => $self);
 };
 
-our $VERSION = "0.2.21";
+our $VERSION = "0.2.22";
 
 # This method will run once at server start
 sub startup {
