@@ -393,6 +393,12 @@ sub inventor {
                $netmask = $ref->{bridge}->{$br_name}->{configuration}->{netmask};
             }
 
+            my $boot = 0;
+            if(exists $ref->{bootdevice}->{default_device}
+                  && $ref->{bootdevice}->{default_device} eq $net->{DESCRIPTION}) {
+                  $boot = 1;
+            }
+
             $net_dev->update({
                ip      => ip_to_int($ip || 0),
                netmask => ip_to_int($netmask || 0),
@@ -407,6 +413,8 @@ sub inventor {
                mac => $net->{MACADDR} || "",
                virtual => (ref $net->{VIRTUALDEV} ? 0 : $net->{VIRTUALDEV}) ,
                network_bridge_id => $br_id,
+
+               boot => $boot,
             });
 
             my (@to_undef) = grep { exists $_->{DESCRIPTION} && $_->{DESCRIPTION} eq $net_dev->dev } @{ $ref->{CONTENT}->{NETWORKS} };
@@ -474,6 +482,12 @@ sub inventor {
             $netmask = $ref->{bridge}->{$br_name}->{configuration}->{netmask};
          }
 
+         my $boot = 0;
+         if(exists $ref->{bootdevice}->{default_device}
+               && $ref->{bootdevice}->{default_device} eq $net->{DESCRIPTION}) {
+               $boot = 1;
+         }
+
          my $new_hw = $self->db->resultset("NetworkAdapter")->create({
             hardware_id => $hw->id,
             dev         => $net->{DESCRIPTION},
@@ -485,6 +499,7 @@ sub inventor {
             proto       => "static",
             mac         => (ref $net->{MACADDR} ? "" : $net->{MACADDR}),
             network_bridge_id => $br_id,
+            boot        => $boot,
          });
 
       }

@@ -62,10 +62,10 @@ sub list {
    my @all_hw;
    
    if($self->param("group_id")) {
-      @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") });
+      @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") }, {order_by => 'name'});
    }
    else {
-      @all_hw = $self->db->resultset('Hardware')->all;
+      @all_hw = $self->db->resultset('Hardware')->search({}, {order_by => 'name'});
    }
 
    my @ret;

@@ -35,7 +35,7 @@ sub broker {
    my $redis_jobs = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
    $redis_jobs->timeout(0);
 
-   Mojo::IOLoop->stream($self->tx->connection)->timeout(0);
+   Mojo::IOLoop->stream($self->tx->connection)->timeout(120);
 
    #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
 
@@ -201,6 +201,7 @@ sub broker {
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
                   state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
+                  os_template_id => ($self->config->{defaults}->{new_system}->{os_template} || 1),
                });
 
                $self->inventor($new_hw, $json->{info});
