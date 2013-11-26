@@ -60,13 +60,52 @@ sub list {
    my ($self) = @_;
 
    my @all_hw;
+
+   #
+   # hardware=name
+   # hardware=os
+   # hardware_name=foo01
+   # hardware_os=SLES
+   #
+   # table=os
+   # table=hardware
+   # os.name=SLES
+   # hardware.name=foo01
+   #
    
-   if($self->param("group_id")) {
-      @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") }, {order_by => 'name'});
+   #if($self->param("group_id")) {
+   #   @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") }, {order_by => 'name'});
+   #}
+   #else {
+   #   @all_hw = $self->db->resultset('Hardware')->search({}, {order_by => 'name'});
+   #}
+
+   my @tables = $self->param("table");
+
+   my @all_params = $self->param;
+   my $query_param = {};
+   for my $t (@tables) {
+      for my $p (@all_params) {
+         if($p =~ m/^$t\.(.*)$/) {
+            my $key = $p;
+            $key =~ s/^hardware\./me./;
+            $query_param->{$key} = $self->param($p);
+         }
+      }
    }
-   else {
-      @all_hw = $self->db->resultset('Hardware')->search({}, {order_by => 'name'});
-   }
+
+   print STDERR Dumper($query_param);
+
+   @tables = grep { $_ ne "hardware" } @tables;
+
+   print STDERR Dumper(\@tables);
+
+   @all_hw = $self->db->resultset('Hardware')->search(
+      $query_param,
+      {
+         join => [@tables],
+      },
+   );
 
    my @ret;
 
