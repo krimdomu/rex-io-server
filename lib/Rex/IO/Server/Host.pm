@@ -62,11 +62,6 @@ sub list {
    my @all_hw;
 
    #
-   # hardware=name
-   # hardware=os
-   # hardware_name=foo01
-   # hardware_os=SLES
-   #
    # table=os
    # table=hardware
    # os.name=SLES
