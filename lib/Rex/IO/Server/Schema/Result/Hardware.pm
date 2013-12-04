@@ -80,6 +80,11 @@ sub update {
    }
 }
 
+sub clear_cache {
+   my ($self) = @_;
+   $self->update({cache => ""});
+}
+
 sub to_hashRef {
    my ($self, $raw) = @_;
 

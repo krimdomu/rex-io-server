@@ -28,7 +28,6 @@ sub add {
 
       my $hw = $self->db->resultset("Hardware")->create({
          name => $name,
-         uuid => $json->{uuid},
          state_id => 1,
       });
 
