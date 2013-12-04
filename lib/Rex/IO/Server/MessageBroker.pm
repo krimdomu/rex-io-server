@@ -35,7 +35,7 @@ sub broker {
    my $redis_jobs = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
    $redis_jobs->timeout(0);
 
-   Mojo::IOLoop->stream($self->tx->connection)->timeout(120);
+   Mojo::IOLoop->stream($self->tx->connection)->timeout(0);
 
    #$self->send(Mojo::JSON->encode({type => "welcome", welcome => "Welcome to the real world."}));
 
@@ -92,44 +92,11 @@ sub broker {
          } @{ $clients->{$json->{to_ip}} };
       }
 
-      # hello action, check if there are queued jobs for this host
+      # hello action, this is a keepalive
       elsif(exists $json->{type} && $json->{type} eq "hello") {
-         $self->app->log->debug("Got 'hello' from $client_ip, looking for queued jobs");
+         $self->app->log->debug("Got 'hello' from $client_ip");
 
-         my $tx = $self->_ua->get($self->config->{dhcp}->{server} . "/mac/" . $client_ip);
-
-         my $mac;
-         if(my $res = $tx->success) {
-            $mac = $res->json->{mac};
-
-            $self->app->log->debug("GOT MAC: $mac");
-         }
-         else {
-            $self->app->log->debug("MAC not found!");
-         }
-
-         # get the host object out of db
-         my $host = $self->db->resultset("Hardware")->search(
-            {
-               "network_adapters.mac" => $mac,
-            },
-            {
-               join => "network_adapters",
-            },
-         )->first;
-
-         if(! $host) {
-            # get the host object out of db
-            $host = $self->db->resultset("Hardware")->search(
-               {
-                  "network_adapters.ip" => ip_to_int($client_ip),
-               },
-               {
-                  join => "network_adapters",
-               },
-            )->first;
-         }
-
+         
       }
 
       elsif(exists $json->{type} && $json->{type} eq "hello-service") {
@@ -346,7 +313,13 @@ sub broker {
       # ping action
       elsif(exists $json->{type} && $json->{type} eq "ping") {
          $self->app->log->debug("Got ping event from: $client_ip");
-         $self->send(Mojo::JSON->encode({type => "ping_answer", ping_answer => "Welcome to the real world."}));
+
+         # update online status, and set expire so that if the host went offline we realize it after a specific timeout
+         $redis->set("status:$client_ip:online", 1);
+         $redis->expireat("status:$client_ip:online", time + ($self->config->{agent}->{keep_alive_timeout} * $self->config->{agent}->{keep_alive_flap}));
+
+         $self->send(Mojo::JSON->encode({type => "ping_answer", ping_answer => "Welcome to the real world.", interval => $self->config->{agent}->{keep_alive_timeout}}));
+
       }
 
       # log action
@@ -398,12 +371,18 @@ sub is_online {
 
    my $ip = $self->param("ip");
 
-   if(exists $clients->{$ip}) {
-      return $self->render(json => {ok => Mojo::JSON->true});
-   }
-   else {
-      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
-   }
+   $self->render_later;
+
+   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
+   $redis->get("status:$ip:online", sub {
+      my ($redis, $res) = @_;
+      if($res) {
+         $self->render(json => {ok => Mojo::JSON->true});
+      }
+      else {
+         $self->render(json => {ok => Mojo::JSON->false}, status => 404);
+      }
+   });
 }
 
 sub message_to_server {
