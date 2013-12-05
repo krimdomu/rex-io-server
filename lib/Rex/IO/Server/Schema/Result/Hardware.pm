@@ -17,6 +17,7 @@ use JSON::XS;
 use base qw(DBIx::Class::Core);
 
 my $hooks = {};
+our $USE_CACHE = 1;
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
@@ -90,7 +91,7 @@ sub to_hashRef {
 
    # $self->update({cache => 'foo'});
    my $cache = $self->cache;
-   if($cache) {
+   if($cache && $USE_CACHE) {
       if($raw) {
          return $cache;
       }
@@ -198,12 +199,15 @@ sub to_hashRef {
          $data->{$key} = $got_data;
       }
    }
-
-   my $_cache = encode_json($data);
-   $self->update({cache => $_cache});
    
    if($raw) {
+      my $_cache = encode_json($data);
+      $self->update({cache => $_cache}) if($USE_CACHE);
       return $_cache;
+   }
+   elsif($USE_CACHE) {
+      my $_cache = encode_json($data);
+      $self->update({cache => $_cache});
    }
 
    return $data;

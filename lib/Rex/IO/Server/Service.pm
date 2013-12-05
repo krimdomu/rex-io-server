@@ -219,9 +219,24 @@ sub run_tasks {
    $self->render(json => {ok => Mojo::JSON->true});
 }
 
+sub monitor {
+   my ($self) = @_;
+
+   my $out = qx{ps -ef | grep -v grep | grep /usr/lib/rexio/perl/bin/rex-io-worker-rex | wc -l};
+   chomp $out;
+
+   if($out > 0) {
+      return $self->render(json => {ok => Mojo::JSON->true, count => $out});
+   }
+
+   $self->render(json => {ok => Mojo::JSON->false});
+}
+
 sub __register__ {
    my ($self, $app) = @_;
    my $r = $app->routes;
+
+   $r->get("/1.0/service/monitor")->to("service#monitor");
 
    $r->post("/service/:name")->to("service#register");
    $r->post("/service/host/:hostid/task/:taskid")->to("service#add_task_to_host");
