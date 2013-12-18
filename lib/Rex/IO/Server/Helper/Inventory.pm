@@ -507,6 +507,28 @@ sub inventor {
 
    $self->app->log->debug("Networkadapter updated");
 
+   $self->app->log->debug("Checking for custom network configuration");
+   if(exists $ref->{internal_primary_eth_addr}) {
+      $self->app->log->debug("custom network configuration found...");
+      $self->app->log->debug(Dumper($ref->{internal_primary_eth_addr}));
+
+      my $dev = $ref->{internal_primary_eth_addr}->{dev};
+      my $mac = $ref->{internal_primary_eth_addr}->{mac};
+
+      # get dev from db to update values
+      my $db_dev = $self->db->resultset("NetworkAdapter")->search({
+            mac => $mac,
+            dev => $dev,
+         })->first;
+
+      $db_dev->update({
+         ip        => ip_to_int($ref->{internal_primary_eth_addr}->{ip}),
+         netmask   => ip_to_int($ref->{internal_primary_eth_addr}->{netmask}),
+         broadcast => ip_to_int($ref->{internal_primary_eth_addr}->{broadcast}),
+         network   => 0,
+      });
+   }
+
    $self->app->log->debug("hardware updated");
 
    # plugin inventory
