@@ -1,10 +1,10 @@
 Summary: Rex.IO - Middleware
 Name: rex-io-server
-Version: 0.2.24
+Version: 0.2.25
 Release: 1
 License: Apache 2.0
 Group: Utilities/System
-Source: http://rex.io/downloads/rex-io-server-0.2.24.tar.gz
+Source: http://rex.io/downloads/rex-io-server-0.2.25.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 AutoReqProv: no
 
@@ -53,6 +53,6 @@ fi
 
 %changelog
 
-* Thu Jul 25 2013 Jan Gehring <jan.gehring at, gmail.com> 0.2.24-1
+* Thu Jul 25 2013 Jan Gehring <jan.gehring at, gmail.com> 0.2.25-1
 - initial packaged
 
