@@ -301,9 +301,35 @@ sub inventor {
 
    if(my $op = $op_r) {
       $self->app->log->debug("updating os");
-      $hw->update({
-         os_id => $os->id,
-      });
+      eval {
+         $hw->update({
+            os_id => $os->id,
+         });
+         1;
+      } or do {
+         $self->app->log->debug("Unknown OS >>$os_name<< and version >>$os_version<<");
+         $self->db->resultset("Os")->create({
+             name => $os_name,
+             version => $os_version,
+         });
+
+         my $_os_r = $self->db->resultset("Os")->search(
+            {
+               version => $os_version,
+               name    => $os_name,
+            },
+         );
+
+         my $_os = $os_r->next;
+
+         eval {
+            $hw->update({
+               os_id => $_os->id,
+            });
+            1;
+         };
+
+      }
    }
    elsif($os) {
       $self->app->log->debug("Registering new OS");
