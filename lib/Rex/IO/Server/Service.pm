@@ -91,6 +91,15 @@ sub run_task_on_host {
       host    => $host->name,
    };
 
+   for my $plug (@{ $self->config->{plugins} }) {
+      my $s = "Rex::IO::Server::$plug";
+      eval {
+         $s->__run_service__($self, service => $service->service_name, task => $task->task_name, host => $host->name);
+      } or do {
+         $self->app->log->info("Can't run __run_service__ for $plug: $@");
+      };
+   }
+
    Mojo::IOLoop->delay(
       sub {
          my ($delay) = @_;
@@ -209,6 +218,21 @@ sub run_tasks {
       };
 
       my $arg_str = Mojo::JSON->encode($arg);
+
+      for my $plug (@{ $self->config->{plugins} }) {
+         my $s = "Rex::IO::Server::$plug";
+         eval {
+            for my $x (@{ $tasks_to_run->{$host} }) {
+               $s->__run_service__($self,
+                  service => $x->{service},
+                  task => $x->{task},
+                  host => $host);
+            }
+            1;
+         } or do {
+            $self->app->log->info("Can't run __run_service__ for $plug: $@");
+         };
+      }
 
       $self->app->log->debug("Sending Jobs to $host: $arg_str");
 
