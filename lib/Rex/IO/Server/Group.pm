@@ -7,7 +7,7 @@
 package Rex::IO::Server::Group;
 
 use Mojo::Base 'Mojolicious::Controller';
-use Mojo::JSON;
+use Mojo::JSON "j";
 
 sub get {
    my ($self) = @_;

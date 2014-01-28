@@ -7,7 +7,7 @@
 package Rex::IO::Server::Plugin;
    
 use Mojo::Base 'Mojolicious::Controller';
-use Mojo::JSON;
+use Mojo::JSON "j";
 
 use Data::Dumper;
 

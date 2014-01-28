@@ -2,7 +2,7 @@ package Rex::IO::Server::Monitor;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Cwd qw(getcwd);
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Data::Dumper;
 use Mojo::Redis;
 use POSIX;

@@ -8,7 +8,7 @@ package Rex::IO::Server::MessageBroker;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
 use Rex::IO::Server::Helper::Inventory;
@@ -46,7 +46,7 @@ sub broker {
       my ($sub, $message, $channel) = @_;
 
       if($channel eq $self->config->{redis}->{jobs}->{queue}) {
-         my $ref = Mojo::JSON->decode($message);
+         my $ref = j($message);
          if($ref->{cmd} eq "Answer") {
             $self->app->log->debug("Got answer from job: " . $ref->{jq_id});
          }
@@ -72,7 +72,7 @@ sub broker {
    $self->on(message => sub {
       my ($tx, $message) = @_;
 
-      my $json = Mojo::JSON->decode($message);
+      my $json = j($message);
 
       # @todo needs to split out into modules
       # send message to server

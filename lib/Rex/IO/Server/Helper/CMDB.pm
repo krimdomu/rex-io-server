@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Mojo::UserAgent;
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Data::Dumper;
 
 

@@ -7,7 +7,7 @@
 package Rex::IO::Server::Incident;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Mojo::UserAgent;
 use Data::Dumper;
 

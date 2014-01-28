@@ -2,7 +2,7 @@ package Rex::IO::Server::Repository;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Cwd qw(getcwd);
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Data::Dumper;
 use Rex::IO::Server::Helper::IP;
 

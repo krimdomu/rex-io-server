@@ -12,7 +12,7 @@ use warnings;
 use Mojo::Base 'Mojolicious';
 use Mojo::IOLoop;
 use Mojo::Log;
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Mojo::Redis;
 use Data::Dumper;
 use POSIX;

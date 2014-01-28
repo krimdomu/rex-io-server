@@ -7,7 +7,7 @@
 package Rex::IO::Server::Hardware;
    
 use Mojo::Base 'Mojolicious::Controller';
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Mojo::UserAgent;
 
 use Rex::IO::Server::Helper::IP;

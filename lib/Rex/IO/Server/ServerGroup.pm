@@ -9,7 +9,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Net::DNS;
 use Data::Dumper;
-use Mojo::JSON;
+use Mojo::JSON "j";
 
 sub list {
    my ($self) = @_;

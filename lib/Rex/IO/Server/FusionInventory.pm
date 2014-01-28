@@ -7,7 +7,7 @@
 package Rex::IO::Server::FusionInventory;
    
 use Mojo::Base 'Mojolicious::Controller';
-use Mojo::JSON;
+use Mojo::JSON "j";
 use XML::Simple;
 use Compress::Zlib;
 

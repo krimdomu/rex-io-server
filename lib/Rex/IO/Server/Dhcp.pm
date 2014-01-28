@@ -7,7 +7,7 @@
 package Rex::IO::Server::Dhcp;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Mojo::JSON;
+use Mojo::JSON "j";
 use Mojo::UserAgent;
 use Data::Dumper;
 

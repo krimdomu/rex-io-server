@@ -7,7 +7,7 @@
 package Rex::IO::Server::Cmdb::Server;
    
 use Mojo::Base 'Mojolicious::Controller';
-use Mojo::JSON;
+use Mojo::JSON "j";
 
 use Data::Dumper;
 
