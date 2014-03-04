@@ -13,6 +13,7 @@ my %deps = (
                   'Mojo::Redis' => 0,
                   'DBIx::Class::Tree::AdjacencyList' => 0,
                   'Net::DNS' => 0,
+                  'JSON::XS' => 0,
 );
 
 WriteMakefile1(
