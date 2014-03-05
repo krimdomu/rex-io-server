@@ -5,7 +5,8 @@ requires 'XML::Simple';
 requires 'DBIx::Class';
 requires 'DBD::mysql';
 requires 'Digest::Bcrypt';
-requires 'Mojo::Redis';
+requires 'Mojo::Redis', 0.9903;
 requires 'DBIx::Class::Tree::AdjacencyList';
 requires 'Net::DNS';
-
+requires 'JSON::XS';
+requires 'Gearman::Client';
