@@ -1,11 +1,11 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
-   
+
 package Rex::IO::Server::Helper::Inventory;
-   
+
 use strict;
 use warnings;
 
@@ -61,7 +61,7 @@ sub inventor {
          biosdate     => (ref $bios_data->{BDATE} ? "" : $bios_data->{BDATE}),
          version      => (ref $bios_data->{BVERSION} ? "" : $bios_data->{BVERSION}),
          ssn          => (ref $bios_data->{SSN} ? "" : $bios_data->{SSN}),
-         manufacturer => (ref $bios_data->{MANUFACTURER} ? 
+         manufacturer => (ref $bios_data->{MANUFACTURER} ?
                                  (
                                     ref $bios_data->{BMANUFACTURER} ?
                                        (
@@ -69,7 +69,7 @@ sub inventor {
                                              ""
                                           : $bios_data->{SMANUFACTURER}
                                        )
-                                    : $bios_data->{BMANUFACTURER} 
+                                    : $bios_data->{BMANUFACTURER}
                                  )
                               : $bios_data->{MANUFACTURER}),
          model        => (ref $bios_data->{SMODEL} ? "" : $bios_data->{SMODEL}),
@@ -235,7 +235,7 @@ sub inventor {
          size        => $hdd->{DISKSIZE},
          vendor      => (ref $hdd->{MANUFACTURER} ? "" : $hdd->{MANUFACTURER}),
          devname     => (ref $hdd->{NAME} ? "" : $hdd->{NAME}),
-         serial      => (ref $hdd->{SERIALNUMBER} ? 
+         serial      => (ref $hdd->{SERIALNUMBER} ?
                            md5_hex($hdd->{NAME} . "-" . $hdd->{DESCRIPTION} . "-" . $hdd->{MANUFACTURER} . "-" . $hdd->{TYPE})
                          : $hdd->{SERIALNUMBER}),
       });
@@ -264,8 +264,8 @@ sub inventor {
       },
    );
 
-   #my $os_r = Rex::IO::Server::Model::Os->all( 
-   #               (Rex::IO::Server::Model::Os->version eq $os_version) 
+   #my $os_r = Rex::IO::Server::Model::Os->all(
+   #               (Rex::IO::Server::Model::Os->version eq $os_version)
    #             & (Rex::IO::Server::Model::Os->name eq $os_name)
    #           );
    my $os = $os_r->next;
@@ -340,6 +340,13 @@ sub inventor {
    }
    else {
       $self->app->log->debug("Unknown OS >>$os_name<< and version >>$os_version<<");
+      my $new_os = $self->db->resultset("Os")->create({
+         version => $os_version,
+         name    => $os_name,
+      });
+      $hw->update({
+         os_id => $new_os->id,
+      });
    }
 
    $self->app->log->debug("Updated OS information");
