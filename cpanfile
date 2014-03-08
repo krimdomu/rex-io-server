@@ -10,3 +10,4 @@ requires 'DBIx::Class::Tree::AdjacencyList';
 requires 'Net::DNS';
 requires 'JSON::XS';
 requires 'Gearman::Client';
+requires 'DateTime';

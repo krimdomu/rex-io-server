@@ -15,6 +15,7 @@ my %deps = (
                   'Net::DNS' => 0,
                   'JSON::XS' => 0,
                   'Gearman::Client' => 0,
+                  'DateTime' => 0,
 );
 
 WriteMakefile1(
@@ -53,4 +54,3 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
 
    WriteMakefile(%params);
 }
-
