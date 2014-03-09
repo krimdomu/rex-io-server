@@ -1,5 +1,3 @@
-# copied from Rex
-
 use ExtUtils::MakeMaker;
 
 my %deps = (
