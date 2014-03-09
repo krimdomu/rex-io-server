@@ -3,7 +3,7 @@
 # 
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
-   
+  
 package Rex::IO::Server::Schema::Result::ServiceTask;
 
 use strict;
@@ -22,12 +22,12 @@ __PACKAGE__->has_many("hardware_tasks", "Rex::IO::Server::Schema::Result::Hardwa
 __PACKAGE__->has_many("queued_jobs", "Rex::IO::Server::Schema::Result::QueuedJob", "task_id");
 
 sub to_hashRef {
-   my ($self) = @_;
-   my $data = { $self->get_columns };
+  my ($self) = @_;
+  my $data = { $self->get_columns };
 
-   $data->{service} = { $self->service->get_columns };
+  $data->{service} = { $self->service->get_columns };
 
-   return $data;
+  return $data;
 }
 
 1;

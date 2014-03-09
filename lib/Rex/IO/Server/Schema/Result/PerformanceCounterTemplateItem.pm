@@ -3,7 +3,7 @@
 # 
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
-   
+  
 package Rex::IO::Server::Schema::Result::PerformanceCounterTemplateItem;
 
 use strict;
@@ -22,8 +22,8 @@ __PACKAGE__->has_many("performance_counter_values", "Rex::IO::Server::Schema::Re
 __PACKAGE__->has_many("alerts", "Rex::IO::Server::Schema::Result::CurrentAlert", "template_item_id");
 
 sub to_hashRef {
-   my ($self) = @_;
-   return { $self->get_columns };
+  my ($self) = @_;
+  return { $self->get_columns };
 }
 
 1;

@@ -5,7 +5,7 @@
 # vim: set expandtab:
 
 package Rex::IO::Server::Mojolicious::Plugin::CHI;
-   
+  
 use strict;
 use warnings;
 
@@ -16,17 +16,17 @@ use base 'Mojolicious::Plugin';
 my $cache;
 
 sub register {
-   my ( $plugin, $app ) = @_;
+  my ( $plugin, $app ) = @_;
 
-   $app->helper(
-      chi => sub {
-         my $self = shift;
-         if(!$cache) {
-            $cache = CHI->new(driver => "Memory", global => 1);
-         }
-         return $cache;
+  $app->helper(
+    chi => sub {
+      my $self = shift;
+      if(!$cache) {
+        $cache = CHI->new(driver => "Memory", global => 1);
       }
-   );
+      return $cache;
+    }
+  );
 }
 
 1;

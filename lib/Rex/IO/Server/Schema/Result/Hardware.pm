@@ -3,7 +3,7 @@
 # 
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
-   
+  
 package Rex::IO::Server::Schema::Result::Hardware;
 
 use strict;
@@ -42,345 +42,345 @@ __PACKAGE__->has_many("performance_counter_values" => "Rex::IO::Server::Schema::
 __PACKAGE__->has_many("alerts", "Rex::IO::Server::Schema::Result::CurrentAlert", "hardware_id");
 
 sub mac {
-   my ($self) = @_;
+  my ($self) = @_;
 
-#   my $hw_net_boot = Rex::IO::Server::Model::NetworkAdapter->all( (Rex::IO::Server::Model::NetworkAdapter->hardware_id == $self->id) & (Rex::IO::Server::Model::NetworkAdapter->boot == 1) )->next;
+#  my $hw_net_boot = Rex::IO::Server::Model::NetworkAdapter->all( (Rex::IO::Server::Model::NetworkAdapter->hardware_id == $self->id) & (Rex::IO::Server::Model::NetworkAdapter->boot == 1) )->next;
 #
-#   if($hw_net_boot) {
-#      return $hw_net_boot->mac;
-#   }
-   return "undef";
+#  if($hw_net_boot) {
+#    return $hw_net_boot->mac;
+#  }
+  return "undef";
 }
 
 sub create {
-   my $self = shift;
-   $self->SUPER::create(@_);
-   $self->to_hashRef;
+  my $self = shift;
+  $self->SUPER::create(@_);
+  $self->to_hashRef;
 }
 
 sub update {
-   my $self = shift;
-   my $update_data = shift;
+  my $self = shift;
+  my $update_data = shift;
 
-   if(defined $update_data && exists $update_data->{cache}) {
-      $self->SUPER::update($update_data);
-   }
-   elsif(defined $update_data) {
-      $update_data->{cache} = "";
-      $self->SUPER::update($update_data);
-   }
-   else {
-      $self->cache("");
+  if(defined $update_data && exists $update_data->{cache}) {
+    $self->SUPER::update($update_data);
+  }
+  elsif(defined $update_data) {
+    $update_data->{cache} = "";
+    $self->SUPER::update($update_data);
+  }
+  else {
+    $self->cache("");
 
-      $self->SUPER::update();
-   }
+    $self->SUPER::update();
+  }
 
-   # execute the hooks
-   for my $key (keys %{ $hooks->{update} }) {
-      $hooks->{update}->{$key}->($self);
-   }
+  # execute the hooks
+  for my $key (keys %{ $hooks->{update} }) {
+    $hooks->{update}->{$key}->($self);
+  }
 }
 
 sub clear_cache {
-   my ($self) = @_;
-   $self->update({cache => ""});
+  my ($self) = @_;
+  $self->update({cache => ""});
 }
 
 sub to_hashRef {
-   my ($self, $raw) = @_;
+  my ($self, $raw) = @_;
 
-   # $self->update({cache => 'foo'});
-   my $cache = $self->cache;
-   if($cache && $USE_CACHE) {
-      if($raw) {
-         return $cache;
-      }
-      
-      return decode_json($cache);
-   }
+  # $self->update({cache => 'foo'});
+  my $cache = $self->cache;
+  if($cache && $USE_CACHE) {
+    if($raw) {
+      return $cache;
+    }
+    
+    return decode_json($cache);
+  }
 
-   my $data = { $self->get_columns };
+  my $data = { $self->get_columns };
 
-   my $state = $self->state;
-   delete $data->{state_id};
+  my $state = $self->state;
+  delete $data->{state_id};
 
-   if($state) {
-      $data->{state} = $state->name;
-   }
-   else {
-      $data->{state} = "UNKNOWN";
-   }
+  if($state) {
+    $data->{state} = $state->name;
+  }
+  else {
+    $data->{state} = "UNKNOWN";
+  }
 
-   my $os_template = $self->os_template;
-   delete $data->{os_template_id};
+  my $os_template = $self->os_template;
+  delete $data->{os_template_id};
 
-   if($os_template) {
-      $data->{os_template} = {
-         id => $os_template->id,
-         name => $os_template->name,
-      };
-   }
-   else {
-      $data->{os_template} = {
-         id => 0,
-         name => "UNKNWON",
-      };
-   }
+  if($os_template) {
+    $data->{os_template} = {
+      id => $os_template->id,
+      name => $os_template->name,
+    };
+  }
+  else {
+    $data->{os_template} = {
+      id => 0,
+      name => "UNKNWON",
+    };
+  }
 
-   #### network adapters
-   my @nw_r = $self->network_adapters;
-   my @nw_a = ();
-   for my $nw (@nw_r) {
-      push(@nw_a, $nw->to_hashRef);
+  #### network adapters
+  my @nw_r = $self->network_adapters;
+  my @nw_a = ();
+  for my $nw (@nw_r) {
+    push(@nw_a, $nw->to_hashRef);
 
-      if($nw->boot) {
-         $data->{mac} = $nw->mac;
-      }
-   }
+    if($nw->boot) {
+      $data->{mac} = $nw->mac;
+    }
+  }
 
-   $data->{network_adapters} = \@nw_a;
+  $data->{network_adapters} = \@nw_a;
 
-   #### bridge adapters
-   my @br_r = $self->network_bridges;
-   my @br_a = ();
-   for my $br (@br_r) {
-      push(@br_a, $br->to_hashRef);
-   }
+  #### bridge adapters
+  my @br_r = $self->network_bridges;
+  my @br_a = ();
+  for my $br (@br_r) {
+    push(@br_a, $br->to_hashRef);
+  }
 
-   $data->{network_bridges} = \@br_a;
+  $data->{network_bridges} = \@br_a;
 
 
-   #### bios
-   if(my $bios = $self->bios) {
-      $data->{bios} = { $bios->get_columns };
-   }
+  #### bios
+  if(my $bios = $self->bios) {
+    $data->{bios} = { $bios->get_columns };
+  }
 
-   #### harddrives
-   my @hd_r = $self->harddrives;
-   my @hd_a = ();
+  #### harddrives
+  my @hd_r = $self->harddrives;
+  my @hd_a = ();
 
-   for my $hd (@hd_r) {
-      push(@hd_a, { $hd->get_columns });
-   }
+  for my $hd (@hd_r) {
+    push(@hd_a, { $hd->get_columns });
+  }
 
-   $data->{harddrives} = \@hd_a;
+  $data->{harddrives} = \@hd_a;
 
-   #### memory
-   my @mem_r = $self->memories;
-   my @mem_a = ();
+  #### memory
+  my @mem_r = $self->memories;
+  my @mem_a = ();
 
-   for my $mem (@mem_r) {
-      push(@mem_a, { $mem->get_columns });
-   }
+  for my $mem (@mem_r) {
+    push(@mem_a, { $mem->get_columns });
+  }
 
-   $data->{memories} = \@mem_a;
+  $data->{memories} = \@mem_a;
 
-   #### processor
-   my @cpu_r = $self->processors;
-   my @cpu_a = ();
+  #### processor
+  my @cpu_r = $self->processors;
+  my @cpu_a = ();
 
-   for my $cpu (@cpu_r) {
-      push(@cpu_a, { $cpu->get_columns });
-   }
+  for my $cpu (@cpu_r) {
+    push(@cpu_a, { $cpu->get_columns });
+  }
 
-   $data->{processors} = \@cpu_a;
+  $data->{processors} = \@cpu_a;
 
-   #### os
-   if(my $os = $self->os) {
-      $data->{os} = { $os->get_columns };
-   }
-   delete $data->{os_id};
+  #### os
+  if(my $os = $self->os) {
+    $data->{os} = { $os->get_columns };
+  }
+  delete $data->{os_id};
 
-   # execute the hooks
-   for my $key (keys %{ $hooks->{to_hashRef} }) {
-      my $got_data = $hooks->{to_hashRef}->{$key}->($self);
+  # execute the hooks
+  for my $key (keys %{ $hooks->{to_hashRef} }) {
+    my $got_data = $hooks->{to_hashRef}->{$key}->($self);
 
-      if($got_data) {
-         $data->{$key} = $got_data;
-      }
-   }
-   
-   if($raw) {
-      my $_cache = encode_json($data);
-      $self->update({cache => $_cache}) if($USE_CACHE);
-      return $_cache;
-   }
-   elsif($USE_CACHE) {
-      my $_cache = encode_json($data);
-      $self->update({cache => $_cache});
-   }
+    if($got_data) {
+      $data->{$key} = $got_data;
+    }
+  }
+  
+  if($raw) {
+    my $_cache = encode_json($data);
+    $self->update({cache => $_cache}) if($USE_CACHE);
+    return $_cache;
+  }
+  elsif($USE_CACHE) {
+    my $_cache = encode_json($data);
+    $self->update({cache => $_cache});
+  }
 
-   return $data;
+  return $data;
 }
 
 # delete hardware completely
 sub purge {
-   my ($self) = @_;
-   $self->delete;
+  my ($self) = @_;
+  $self->delete;
 }
 
 sub get_tasks {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @ret;
+  my @ret;
 
-   for my $hw_task ($self->tasks) {
-      my $task = $hw_task->task;
-      next if(! $task);
-      my $task_ref = $task->to_hashRef;
-      $task_ref->{task_order} = $hw_task->task_order;
-      push(@ret, $task_ref);
-   }
+  for my $hw_task ($self->tasks) {
+    my $task = $hw_task->task;
+    next if(! $task);
+    my $task_ref = $task->to_hashRef;
+    $task_ref->{task_order} = $hw_task->task_order;
+    push(@ret, $task_ref);
+  }
 
-   return @ret;
+  return @ret;
 }
 
 sub remove_tasks {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   for my $hw_task ($self->tasks) {
-      $hw_task->delete;
-   }
+  for my $hw_task ($self->tasks) {
+    $hw_task->delete;
+  }
 }
 
 sub get_monitor_items {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @ret = ();
+  my @ret = ();
 
-   for my $pc ($self->performance_counters) {
-      my $template = $pc->template;
-      for my $template_item ($template->items) {
-         my $ref = $template_item->to_hashRef;
-         $ref->{performance_counter_id} = $pc->id;
-         push(@ret, $ref);
-      }
-   }
+  for my $pc ($self->performance_counters) {
+    my $template = $pc->template;
+    for my $template_item ($template->items) {
+      my $ref = $template_item->to_hashRef;
+      $ref->{performance_counter_id} = $pc->id;
+      push(@ret, $ref);
+    }
+  }
 
-   return @ret;
+  return @ret;
 }
 
 sub primary_device {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @nw_r = $self->network_adapters;
-   my $nw_a = $nw_r[0]->dev;
-   for my $nw (@nw_r) {
-      if($nw->boot) {
-         $nw_a = $nw->dev;
-         last;
-      }
-   }
+  my @nw_r = $self->network_adapters;
+  my $nw_a = $nw_r[0]->dev;
+  for my $nw (@nw_r) {
+    if($nw->boot) {
+      $nw_a = $nw->dev;
+      last;
+    }
+  }
 
-   return $nw_a;
+  return $nw_a;
 }
 
 sub primary_ip {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @nw_r = $self->network_adapters;
-   my $nw_a = int_to_ip($nw_r[0]->ip);
-   for my $nw (@nw_r) {
-      if($nw->boot) {
-         $nw_a = int_to_ip($nw->ip);
-         last;
-      }
-   }
+  my @nw_r = $self->network_adapters;
+  my $nw_a = int_to_ip($nw_r[0]->ip);
+  for my $nw (@nw_r) {
+    if($nw->boot) {
+      $nw_a = int_to_ip($nw->ip);
+      last;
+    }
+  }
 
-   return $nw_a;
+  return $nw_a;
 }
 
 sub wanted_primary_netmask {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @nw_r = $self->network_adapters;
-   my $nw_a = int_to_ip($nw_r[0]->wanted_netmask);
-   for my $nw (@nw_r) {
-      if($nw->wanted_netmask) {
-         $nw_a = int_to_ip($nw->wanted_netmask);
-         last;
-      }
-   }
+  my @nw_r = $self->network_adapters;
+  my $nw_a = int_to_ip($nw_r[0]->wanted_netmask);
+  for my $nw (@nw_r) {
+    if($nw->wanted_netmask) {
+      $nw_a = int_to_ip($nw->wanted_netmask);
+      last;
+    }
+  }
 
-   return $nw_a;
+  return $nw_a;
 }
 
 sub primary_netmask {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my @nw_r = $self->network_adapters;
-   my $nw_a = int_to_ip($nw_r[0]->netmask);
-   for my $nw (@nw_r) {
-      if($nw->netmask) {
-         $nw_a = int_to_ip($nw->netmask);
-         last;
-      }
-   }
+  my @nw_r = $self->network_adapters;
+  my $nw_a = int_to_ip($nw_r[0]->netmask);
+  for my $nw (@nw_r) {
+    if($nw->netmask) {
+      $nw_a = int_to_ip($nw->netmask);
+      last;
+    }
+  }
 
-   return $nw_a;
+  return $nw_a;
 }
 
 sub wanted_default_gateway {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my $dg_a;
-   my @nw_r = $self->network_adapters;
-   if($nw_r[0] && $nw_r[0]->wanted_gateway) {
-      $dg_a = int_to_ip($nw_r[0]->wanted_gateway);
-   }
-   for my $nw (@nw_r) {
-      if($nw->boot) {
-         if($nw->wanted_gateway) {
-            $dg_a = int_to_ip($nw->wanted_gateway);
-            last;
-         }
+  my $dg_a;
+  my @nw_r = $self->network_adapters;
+  if($nw_r[0] && $nw_r[0]->wanted_gateway) {
+    $dg_a = int_to_ip($nw_r[0]->wanted_gateway);
+  }
+  for my $nw (@nw_r) {
+    if($nw->boot) {
+      if($nw->wanted_gateway) {
+        $dg_a = int_to_ip($nw->wanted_gateway);
+        last;
       }
-   }
+    }
+  }
 
-   return $dg_a;
+  return $dg_a;
 }
 
 sub default_gateway {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my $dg_a;
-   my @nw_r = $self->network_adapters;
-   if($nw_r[0] && $nw_r[0]->gateway) {
-      $dg_a = int_to_ip($nw_r[0]->gateway);
-   }
-   for my $nw (@nw_r) {
-      if($nw->boot) {
-         if($nw->gateway) {
-            $dg_a = int_to_ip($nw->gateway);
-            last;
-         }
+  my $dg_a;
+  my @nw_r = $self->network_adapters;
+  if($nw_r[0] && $nw_r[0]->gateway) {
+    $dg_a = int_to_ip($nw_r[0]->gateway);
+  }
+  for my $nw (@nw_r) {
+    if($nw->boot) {
+      if($nw->gateway) {
+        $dg_a = int_to_ip($nw->gateway);
+        last;
       }
-   }
+    }
+  }
 
-   return $dg_a;
+  return $dg_a;
 }
 
 sub short_name {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my $name = $self->name;
-   my ($short_name) = split(/\./, $name);
-   return $short_name;
+  my $name = $self->name;
+  my ($short_name) = split(/\./, $name);
+  return $short_name;
 }
 
 sub domain_name {
-   my ($self) = @_;
+  my ($self) = @_;
 
-   my $name = $self->name;
-   my ($short_name, $domain_name) = split(/\./, $name, 2);
+  my $name = $self->name;
+  my ($short_name, $domain_name) = split(/\./, $name, 2);
 
-   return $domain_name;
+  return $domain_name;
 }
 
 
 sub add_hook {
-   my ($class, $hook, $key, $code) = @_;
-   $hooks->{$hook}->{$key} = $code;
+  my ($class, $hook, $key, $code) = @_;
+  $hooks->{$hook}->{$key} = $code;
 }
 
 1;
