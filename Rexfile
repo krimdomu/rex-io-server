@@ -1,33 +1,32 @@
-use strict;
-use warnings;
+use Rex -feature => ['0.44'];
+use Rex::FS::Watch;
 
-use Rex::Bundle;
+group dev => '172.16.120.143';
 
-install_to 'vendor/perl';
+user "root";
+password "box";
 
-task deps => sub {
-
-   if(! is_dir("vendor/perl")) { mkdir "vendor/perl"; }
-   
-   mod "DBIx::ORMapper", url => "git://github.com/krimdomu/dbix-ormapper.git";
-   mod "DBIx::ORMapper::Adapter::MySQL", url => "git://github.com/krimdomu/dbix-ormapper-adapter-mysql.git";
-   mod "DBIx::ORMapper::Migration", url => "git://github.com/krimdomu/dbix-ormapper-migration.git";
-
-   mod "Mojolicious";
-
-   mod "Devel::StackTrace";
-   mod "Exception::Class";
-
-   mod "DBI";
-   mod "DBD::mysql";
-   mod "Net::DNS";
-
-   mod "XML::Simple";
+task "watch", sub {
+  watch { directory => '.', task => 'upload', latency => 2 };
 };
 
-task s => sub {
+task "upload", group => "dev", sub {
+  my $param = shift;
+  my $project_dir = "/opt/rex.io/software/rex-io-server";
 
-   perl "bin/rex_ioserver daemon";
+  for my $event (@{ $param->{changed} }) {
+    print ">> $event->{relative_path} ($event->{event})\n";
+    if($event->{event} eq 'deleted') {
+      rm "$project_dir/$event->{relative_path}"    if($event->{type} eq 'file');
+      rmdir "$project_dir/$event->{relative_path}" if($event->{type} eq 'dir');
+    }
+    else {
+      file "$project_dir/$event->{relative_path}",
+        source =>  $event->{path}                  if($event->{type} eq "file");
 
+      mkdir "$project_dir/$event->{relative_path}" if($event->{type} eq "dir");
+    }
+  }
+
+  service "rex-io-server" => "restart";
 };
-
