@@ -334,7 +334,6 @@ sub inventor {
    elsif($os) {
       $self->app->log->debug("Registering new OS");
       $hw->update({
-         state_id => 4,
          os_id    => $os->id,
       });
    }

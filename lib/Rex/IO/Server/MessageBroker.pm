@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
-   
+
 package Rex::IO::Server::MessageBroker;
 use Mojo::Base 'Mojolicious::Controller';
 
@@ -81,7 +81,7 @@ sub broker {
                #warn "Sending message to client...\n";
                #warn Mojo::JSON->encode($json) . "\n";
                $self->app->log->debug("Sending message to client: " . $json->{to_ip} .  " => " . Mojo::JSON->encode($json));
-               
+
                if(! exists $_->{sequences}) {
                   $_->{sequences} = [];
                }
@@ -96,12 +96,14 @@ sub broker {
       elsif(exists $json->{type} && $json->{type} eq "hello") {
          $self->app->log->debug("Got 'hello' from $client_ip");
 
-         
+
       }
 
       elsif(exists $json->{type} && $json->{type} eq "hello-service") {
 
          map { $_->{info} = $json } @{ $clients->{$self->tx->remote_address} };
+
+         $self->app->log->debug(Dumper($json));
 
          my @mac_addresses = ();
          for my $eth (@{ $json->{info}->{CONTENT}->{NETWORKS} }) {
@@ -155,19 +157,21 @@ sub broker {
             $json->{info}->{CONTENT}->{HARDWARE}->{UUID} = $uuid_r->{MACADDR};
          }
 
+         if(! exists $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || ! $json->{info}->{CONTENT}->{HARDWARE}->{UUID}) {
+            # no mainboard uuid
+            my ($uuid_r) = grep { $_->{MACADDR} !~ m/^00:00:00/ } @{ $json->{info}->{CONTENT}->{NETWORKS} };
+            $json->{info}->{CONTENT}->{HARDWARE}->{UUID} = $uuid_r->{MACADDR};
+         }
+
          my $hw_o = $hw->first;
          if(! $hw_o) {
 
             eval {
 
-#               my $new_hw = Rex::IO::Server::Model::Hardware->new(
-#                  name => $json->{info}->{CONTENT}->{HARDWARE}->{NAME},
-#                  uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
-#               );
                my $new_hw = $self->db->resultset("Hardware")->create({
                   name => $hostname,
                   uuid => $json->{info}->{CONTENT}->{HARDWARE}->{UUID} || '',
-                  state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
+                  state_id => (exists $json->{info}->{inventory} && $json->{info}->{inventory}->{state} eq "inventory" ? 5 : 4),
                   os_template_id => ($self->config->{defaults}->{new_system}->{os_template} || 1),
                });
 
@@ -191,13 +195,13 @@ sub broker {
             $self->inventor($hw_o, $json->{info});
 
             $hw_o->update({
-               state_id => (exists $json->{info}->{installed} && $json->{info}->{installed} ? 4 : 5),
+               state_id => (exists $json->{info}->{inventory} && $json->{info}->{inventory}->{state} eq "inventory" ? 5 : 4),
                name     => $hostname,
             });
             $self->send_flush_cache();
          }
 
-         if(exists $self->config->{deploy} 
+         if(exists $self->config->{deploy}
             && exists $self->config->{deploy}->{run_services_after_install}
             && $self->config->{deploy}->{run_services_after_install}) {
             # schedule services
@@ -395,7 +399,7 @@ sub message_to_server {
          #warn "Sending message to client...\n";
          #warn Mojo::JSON->encode($json) . "\n";
          $self->app->log->debug("Sending message to client: " . $to .  " => " . Mojo::JSON->encode($json));
-         
+
          if(! exists $_->{sequences}) {
             $_->{sequences} = [];
          }
@@ -414,13 +418,13 @@ sub get_random {
    my $self = shift;
 	my $count = shift;
 	my @chars = @_;
-	
+
 	srand();
 	my $ret = "";
 	for(1..$count) {
 		$ret .= $chars[int(rand(scalar(@chars)-1))];
 	}
-	
+
 	return $ret;
 }
 
