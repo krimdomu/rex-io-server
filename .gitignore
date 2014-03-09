@@ -22,3 +22,6 @@ scratch
 *.log
 rexio_server.sql
 *.pitahaya
+Rexfile.lock
+vars.db
+vars.db.lock
