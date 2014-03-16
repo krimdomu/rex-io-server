@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 package Rex::IO::Server::Deploy;
 use Mojo::Base 'Mojolicious::Controller';
 
@@ -11,6 +11,7 @@ use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
 use Data::Dumper;
 use Mojo::Redis;
+use IO::All;
 
 my $hooks = {};
 
@@ -297,7 +298,7 @@ sub boot {
 
 sub deploy {
   my ($self) = @_;
-  
+
   #my $system_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name eq $self->stash("server") );
   my $system_r = $self->db->resultset("Hardware")->search({ name => $self->stash("server") });
   if(my $system = $system_r->first) {
@@ -320,12 +321,19 @@ sub deploy {
   $self->render(json => {ok => Mojo::JSON->false, error => "Host not found"}, status => 404);
 }
 
+sub agent_config {
+  my ($self) = @_;
+  my $template = io("/etc/rex/io/server/service-daemon.conf.tpl")->slurp;
+  return $self->render(inline => $template);
+}
+
 sub __register__ {
   my ($self, $app) = @_;
   my $r = $app->routes;
 
   $r->get("/deploy/wait/:name")->to("deploy#wait");
   $r->get("/deploy/boot")->to("deploy#boot");
+  $r->get("/deploy/agent-config")->to("deploy#agent_config");
 
   # write new boot info, needs auth
   $r->post("/deploy/:server/:os")->over(authenticated => 1)->to("deploy#deploy");
