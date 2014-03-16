@@ -14,6 +14,7 @@ my %deps = (
                   'JSON::XS' => 0,
                   'Gearman::Client' => 0,
                   'DateTime' => 0,
+                  'IO::All'  => 0,
 );
 
 WriteMakefile1(

@@ -25,3 +25,5 @@ rexio_server.sql
 Rexfile.lock
 vars.db
 vars.db.lock
+.carton/
+local

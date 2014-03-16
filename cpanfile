@@ -11,3 +11,4 @@ requires 'Net::DNS';
 requires 'JSON::XS';
 requires 'Gearman::Client';
 requires 'DateTime';
+require 'IO::All';
