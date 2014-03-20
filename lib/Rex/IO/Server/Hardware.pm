@@ -1,11 +1,11 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 package Rex::IO::Server::Hardware;
-  
+
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON "j";
 use Mojo::UserAgent;
@@ -23,10 +23,10 @@ sub list {
   my @ret;
 
   for my $hw (@all_hw) {
-    push(@ret, $hw->to_hashRef(1));
+    push(@ret, $hw->to_hashRef);
   }
 
-  $self->render(text => '[' . join(",", @ret) . ']');
+  $self->render(json => \@ret);
 }
 
 sub search {
@@ -38,10 +38,10 @@ sub search {
   my @ret = ();
 
   for my $hw (@hw_r) {
-    push(@ret, $hw->to_hashRef(1));
+    push(@ret, $hw->to_hashRef);
   }
 
-  $self->render(text => '[' . join(",", @ret) . ']');
+  $self->render(json => \@ret);
 }
 
 sub get {
@@ -49,7 +49,7 @@ sub get {
 
   #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
   my $hw = $self->db->resultset("Hardware")->find($self->param("id"));
-  $self->render(text => $hw->to_hashRef(1));
+  $self->render(json => $hw->to_hashRef);
 }
 
 sub update {
@@ -57,8 +57,6 @@ sub update {
 
   #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
   my $hw_r = $self->db->resultset("Hardware")->find($self->param("id"));
-
-  $self->send_flush_cache();
 
   if(my $hw = $hw_r) {
     return eval {
@@ -84,8 +82,6 @@ sub purge {
   my ($self) = @_;
 
   my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
-
-  $self->send_flush_cache();
 
   # deregister hardware on dhcp
   eval {
@@ -154,8 +150,6 @@ sub add_network_adapter {
   }
 
 
-  $self->send_flush_cache();
-
   my $nwa = $self->db->resultset("NetworkAdapter")->create($ref);
 
   $self->render(json => { ok => Mojo::JSON->true, data => $nwa->to_hashRef() });
@@ -176,8 +170,6 @@ sub del_network_adapter {
   if(! $nwa) {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Network Adapter not found."}, status => 404);
   }
-
-  $self->send_flush_cache();
 
   $nwa->delete;
 
@@ -200,7 +192,7 @@ sub get_network_adapter {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Network Adapter not found."}, status => 404);
   }
 
-  $self->render(json => { ok => Mojo::JSON->true, data => $nwa->to_hashRef() }); 
+  $self->render(json => { ok => Mojo::JSON->true, data => $nwa->to_hashRef() });
 }
 
 sub update_network_adapter {
@@ -219,8 +211,6 @@ sub update_network_adapter {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Network Adapter not found."}, status => 404);
   }
 
-  $self->send_flush_cache();
-
   eval {
     $self->app->log->debug("Updating network adapter: " . $nwa->id);
     $self->app->log->debug(Dumper($self->req->json));
@@ -236,10 +226,10 @@ sub update_network_adapter {
     1;
   } or do {
     $self->app->log->error("Error updating network adapter: $@");
-    return $self->render(json => { ok => Mojo::JSON->false, error => "Error: $@" }, error => 500); 
+    return $self->render(json => { ok => Mojo::JSON->false, error => "Error: $@" }, error => 500);
   };
 
-  $self->render(json => { ok => Mojo::JSON->true, data => $nwa->to_hashRef() }); 
+  $self->render(json => { ok => Mojo::JSON->true, data => $nwa->to_hashRef() });
 }
 
 ################################################################################
@@ -262,8 +252,6 @@ sub add_bridge {
   for my $k (qw/ip netmask network gateway broadcast/) {
     $ref->{$k} = ip_to_int $ref->{$k} if(exists $ref->{$k} && $ref->{$k});    # beachten: nicht im inventory state
   }
-
-  $self->send_flush_cache();
 
   my $bridge = $self->db->resultset("NetworkBridge")->create($ref);
 
@@ -301,7 +289,6 @@ sub del_bridge {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Bridge not found."}, status => 404);
   }
 
-  $self->send_flush_cache();
   $br->delete;
 
   $self->render(json => { ok => Mojo::JSON->true });
@@ -323,7 +310,7 @@ sub get_bridge {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Bridge not found."}, status => 404);
   }
 
-  $self->render(json => { ok => Mojo::JSON->true, data => $br->to_hashRef() }); 
+  $self->render(json => { ok => Mojo::JSON->true, data => $br->to_hashRef() });
 }
 
 sub update_bridge {
@@ -342,8 +329,6 @@ sub update_bridge {
     return $self->render(json => { ok => Mojo::JSON->false, error => "Bridge not found."}, status => 404);
   }
 
-  $self->send_flush_cache();
-
   eval {
     $self->app->log->debug("Updating bridge: " . $br->id);
     $self->app->log->debug(Dumper($self->req->json));
@@ -358,31 +343,11 @@ sub update_bridge {
     1;
   } or do {
     $self->app->log->error("Error updating bridge: $@");
-    return $self->render(json => { ok => Mojo::JSON->false, error => "Error: $@" }, error => 500); 
+    return $self->render(json => { ok => Mojo::JSON->false, error => "Error: $@" }, error => 500);
   };
 
-  $self->render(json => { ok => Mojo::JSON->true, data => $br->to_hashRef() }); 
+  $self->render(json => { ok => Mojo::JSON->true, data => $br->to_hashRef() });
 }
-
-################################################################################
-# cache functions
-################################################################################
-sub clear_hardware_cache {
-  my ($self) = @_;
-
-  eval {
-    $self->app->log->debug("Clearing hardware cache...");
-    $self->db->resultset("Hardware")->search()->update({cache => ""});
-    $self->app->log->debug("... done clearing hardware cache.");
-    1;
-  } or do {
-    $self->app->log->error("Clearing hardware cache: $@");
-    return $self->render(json => { ok => Mojo::JSON->false, error => $@ }, status => 500); 
-  };
-
-  $self->render(json => { ok => Mojo::JSON->true }); 
-}
-
 
 ################################################################################
 # internal functions
@@ -411,8 +376,6 @@ sub __register__ {
   $r->post("/1.0/hardware/hardware/:hardware_id/network_adapter/:network_adapter_id")->over(authenticated => 1)->to("hardware#update_network_adapter");
   $r->route("/1.0/hardware/hardware/:hardware_id/network_adapter")->via("LIST")->over(authenticated => 1)->to("hardware#list_network_adapter");
   $r->delete("/1.0/hardware/hardware/:hardware_id/network_adapter/:network_adapter_id")->over(authenticated => 1)->to("hardware#del_network_adapter");
-
-  $r->post("/1.0/hardware/clear/cache")->over(authenticated => 1)->to("hardware#clear_hardware_cache");
 }
 
 

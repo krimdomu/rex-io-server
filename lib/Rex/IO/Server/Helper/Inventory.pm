@@ -543,9 +543,6 @@ sub inventor {
   }
 
 
-  $self->send_flush_cache();
-
-
 }
 
 sub _is_on_bridge {

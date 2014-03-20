@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 =head1 NAME
 
 Rex::IO::Server - The webservice component of Rex.IO
@@ -37,8 +37,8 @@ has schema => sub {
   my $dsn = "DBI:mysql:"
         . "database=". $self->config->{database}->{schema} . ";"
         . "host="   . $self->config->{database}->{host};
-        
-  return Rex::IO::Server::Schema->connect($dsn, 
+
+  return Rex::IO::Server::Schema->connect($dsn,
     $self->config->{database}->{username},
     $self->config->{database}->{password},
     { mysql_enable_utf8 => 1 });
@@ -64,11 +64,6 @@ sub startup {
   # Define some custom helpers
   #######################################################################
   $self->helper(db => sub { $self->app->schema });
-  $self->helper(send_flush_cache => sub {
-    my ($self) = @_;
-    my $redis = Mojo::Redis->new(server => "localhost:6379");
-    $redis->publish("rex_io_cluster", '{"cmd": "flush_cache"}');
-  });
 
   #######################################################################
   # Load configuration

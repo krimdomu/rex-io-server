@@ -106,7 +106,6 @@ sub boot {
       elsif($self->param("finished")) { # hook after installation, must be called from within the template
 
         $self->app->log->debug("Installation finished, setting system state_id = 4 (client: $client)");
-        $self->send_flush_cache();
 
         if(exists $hooks->{installation_finished}) {
           for my $code (@{ $hooks->{installation_finished} }) {

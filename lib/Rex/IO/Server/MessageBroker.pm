@@ -24,8 +24,6 @@ sub broker {
   my $client_ip = $self->tx->remote_address;
   $self->app->log->debug("messagebroker / client connected: $client_ip");
 
-  $self->send_flush_cache();
-
   push(@{ $clients->{$self->tx->remote_address} }, { tx => $self->tx, tx_id => sprintf("%s", $self->tx) });
 
   my $redis = Mojo::Redis->new(server => $self->config->{redis}->{jobs}->{server} . ":" . $self->config->{redis}->{jobs}->{port});
@@ -55,7 +53,6 @@ sub broker {
 
   $self->on(finish => sub {
     $self->app->log->debug("client disconnected");
-    $self->send_flush_cache();
     my $new_clients = {};
 
     for my $cl (keys %$clients) {
@@ -183,7 +180,6 @@ sub broker {
             host => { $new_hw->get_columns },
           }));
 
-          $self->send_flush_cache();
           return 1;
         } or do {
           $self->app->log->error("Error saving new system in db.\n$@");
@@ -198,7 +194,6 @@ sub broker {
           state_id => (exists $json->{info}->{inventory} && $json->{info}->{inventory}->{state} eq "inventory" ? 5 : 4),
           name    => $hostname,
         });
-        $self->send_flush_cache();
       }
 
       if(exists $self->config->{deploy}

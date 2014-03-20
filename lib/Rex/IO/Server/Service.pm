@@ -7,7 +7,7 @@ use Data::Dumper;
 use Mojo::Redis;
 use Gearman::Client;
 
-# CALL: 
+# CALL:
 # curl -X POST -d '{"task_name":"world","task_description":"Simple Hello World Task"}' http://localhost:5000/service/hello
 sub register {
   my ($self) = @_;
@@ -30,7 +30,6 @@ sub register {
     task_description => $json->{task_description},
   });
 
-  $self->send_flush_cache();
   $self->render(json => {ok => Mojo::JSON->true, data => { service_id => $service->id, task_id => $task->id }});
 }
 
@@ -58,7 +57,6 @@ sub add_task_to_host {
     task_order  => $json->{task_order},
   });
 
-  $self->send_flush_cache();
   $self->render(json => {ok => Mojo::JSON->true});
 }
 
@@ -85,7 +83,7 @@ sub run_task_on_host {
 
   my $client = Gearman::Client->new;
   $client->job_servers(@{ $self->config->{gearman}->{job_servers} });
-   
+
   my $arg = {
     service => [{ service => $service->service_name, task => $task->task_name}],
     host   => $host->name,
@@ -169,7 +167,6 @@ sub remove_all_tasks_from_host {
 
   $host->remove_tasks;
 
-  $self->send_flush_cache();
   $self->render(json => {ok => Mojo::JSON->true});
 }
 
@@ -182,7 +179,7 @@ sub run_tasks {
 
   my $client = Gearman::Client->new;
   $client->job_servers(@{ $self->config->{gearman}->{job_servers} });
-   
+
 
   my $tasks_to_run = {};
 
@@ -281,13 +278,13 @@ sub get_random {
   my $self = shift;
 	my $count = shift;
 	my @chars = @_;
-	
+
 	srand();
 	my $ret = "";
 	for(1..$count) {
 		$ret .= $chars[int(rand(scalar(@chars)-1))];
 	}
-	
+
 	return $ret;
 }
 

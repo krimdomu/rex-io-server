@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 package Rex::IO::Server::Schema::Result::Hardware;
 
 use strict;
@@ -17,11 +17,10 @@ use JSON::XS;
 use base qw(DBIx::Class::Core);
 
 my $hooks = {};
-our $USE_CACHE = 1;
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
-__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id cache/);
+__PACKAGE__->add_columns(qw/id name state_id os_template_id os_id uuid server_group_id/);
 
 __PACKAGE__->set_primary_key("id");
 
@@ -62,18 +61,7 @@ sub update {
   my $self = shift;
   my $update_data = shift;
 
-  if(defined $update_data && exists $update_data->{cache}) {
-    $self->SUPER::update($update_data);
-  }
-  elsif(defined $update_data) {
-    $update_data->{cache} = "";
-    $self->SUPER::update($update_data);
-  }
-  else {
-    $self->cache("");
-
-    $self->SUPER::update();
-  }
+  $self->SUPER::update($update_data);
 
   # execute the hooks
   for my $key (keys %{ $hooks->{update} }) {
@@ -81,23 +69,8 @@ sub update {
   }
 }
 
-sub clear_cache {
-  my ($self) = @_;
-  $self->update({cache => ""});
-}
-
 sub to_hashRef {
-  my ($self, $raw) = @_;
-
-  # $self->update({cache => 'foo'});
-  my $cache = $self->cache;
-  if($cache && $USE_CACHE) {
-    if($raw) {
-      return $cache;
-    }
-    
-    return decode_json($cache);
-  }
+  my ($self) = @_;
 
   my $data = { $self->get_columns };
 
@@ -198,16 +171,6 @@ sub to_hashRef {
     if($got_data) {
       $data->{$key} = $got_data;
     }
-  }
-  
-  if($raw) {
-    my $_cache = encode_json($data);
-    $self->update({cache => $_cache}) if($USE_CACHE);
-    return $_cache;
-  }
-  elsif($USE_CACHE) {
-    my $_cache = encode_json($data);
-    $self->update({cache => $_cache});
   }
 
   return $data;

@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 package Rex::IO::Server::Host;
 use Mojo::Base 'Mojolicious::Controller';
 
@@ -48,7 +48,6 @@ sub add {
 
     $nw_a->update;
 
-    $self->send_flush_cache();
     return $self->render(json => {ok => Mojo::JSON->true});
   } or do {
     return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
@@ -66,7 +65,7 @@ sub list {
   # os.name=SLES
   # hardware.name=foo01
   #
-  
+
   #if($self->param("group_id")) {
   #  @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") }, {order_by => 'name'});
   #}
@@ -104,14 +103,10 @@ sub list {
   my @ret;
 
   for my $hw (@all_hw) {
-    push(@ret, $hw->to_hashRef(1));
+    push(@ret, $hw->to_hashRef);
   }
 
-  # faster...
-  my $text = '{"ok": true, "data": [' . join(",", @ret) . ']}';
-
-  #$self->render(json => {ok => Mojo::JSON->true, data => \@ret});
-  $self->render(text => $text);
+  $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
 }
 
 sub get {
