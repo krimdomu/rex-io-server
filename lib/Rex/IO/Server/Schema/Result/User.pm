@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-   
+
 package Rex::IO::Server::Schema::Result::User;
 
 use strict;
@@ -23,5 +23,10 @@ __PACKAGE__->has_many("assigned_incidents", "Rex::IO::Server::Schema::Result::In
 __PACKAGE__->has_many("created_incidents", "Rex::IO::Server::Schema::Result::Incident", "creator");
 __PACKAGE__->has_many("created_incident_messages", "Rex::IO::Server::Schema::Result::IncidentMessage", "creator");
 
+
+sub to_hashRef {
+  my ($self) = @_;
+  return { $self->get_columns };
+}
 
 1;

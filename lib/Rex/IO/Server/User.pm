@@ -1,9 +1,9 @@
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
-# 
+#
 # vim: set ts=2 sw=2 tw=0:
 # vim: set expandtab:
-  
+
 package Rex::IO::Server::User;
 
 use Mojo::Base 'Mojolicious::Controller';
@@ -14,18 +14,18 @@ use Digest::Bcrypt;
 sub get {
   my ($self) = @_;
 
-  my $user = $self->db->resultset("User")->find($self->param("id"));
+  my $user = $self->db->resultset("User")->find( $self->param("id") );
 
-  if($user) {
+  if ($user) {
     my $data = {
-      id  => $user->id,
+      id   => $user->id,
       name => $user->name,
     };
 
-    return $self->render(json => {ok => Mojo::JSON->true, data => $data});
+    return $self->render( json => { ok => Mojo::JSON->true, data => $data } );
   }
 
-  return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
+  return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
 }
 
 sub list {
@@ -41,7 +41,7 @@ sub list {
     push @ret, $data;
   }
 
-  $self->render(json => {ok => Mojo::JSON->true, data => \@ret});
+  $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
 }
 
 sub add {
@@ -56,21 +56,22 @@ sub add {
     my $bcrypt = Digest::Bcrypt->new;
     $bcrypt->salt($salt);
     $bcrypt->cost($cost);
-    $bcrypt->add($json->{password});
+    $bcrypt->add( $json->{password} );
 
     my $pw = $bcrypt->hexdigest;
 
     my $data = {
-      name    => $json->{name},
+      name     => $json->{name},
       password => $pw,
     };
 
     my $user = $self->db->resultset("User")->create($data);
-    if($user) {
-      return $self->render(json => {ok => Mojo::JSON->true, id => $user->id});
+    if ($user) {
+      return $self->render(
+        json => { ok => Mojo::JSON->true, id => $user->id } );
     }
   } or do {
-    return $self->render(json => {ok => Mojo::JSON->false}, status => 500);
+    return $self->render( json => { ok => Mojo::JSON->false }, status => 500 );
   };
 }
 
@@ -78,15 +79,28 @@ sub delete {
   my ($self) = @_;
 
   my $user_id = $self->param("user_id");
-  my $user = $self->db->resultset("User")->find($user_id);
-  
-  if($user) {
+  my $user    = $self->db->resultset("User")->find($user_id);
+
+  if ($user) {
     $user->delete;
-    return $self->render(json => {ok => Mojo::JSON->true});
+    return $self->render( json => { ok => Mojo::JSON->true } );
   }
 
-  return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
+  return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
 }
 
+sub login {
+  my ($self) = @_;
+  my $user = $self->db->resultset("User")->find($self->session("uid"));
+
+  $self->render( json => { ok => Mojo::JSON->true, data => $user->to_hashRef } );
+}
+
+sub __register__ {
+  my ( $self, $app ) = @_;
+  my $r = $app->routes;
+
+  $r->post("/1.0/user/login")->over( authenticated => 1 )->to("user#login");
+}
 
 1;
