@@ -37,24 +37,6 @@ __PACKAGE__->belongs_to(
   "os" => "Rex::IO::Server::Schema::Result::Os",
   "os_id"
 );
-__PACKAGE__->belongs_to(
-  "server_group" => "Rex::IO::Server::Schema::Result::ServerGroup",
-  "server_group_id"
-);
-
-__PACKAGE__->has_many(
-  "performance_counters" =>
-    "Rex::IO::Server::Schema::Result::PerformanceCounter",
-  "hardware_id"
-);
-__PACKAGE__->has_many(
-  "performance_counter_values" =>
-    "Rex::IO::Server::Schema::Result::PerformanceCounterValue",
-  "hardware_id"
-);
-__PACKAGE__->has_many( "alerts",
-  "Rex::IO::Server::Schema::Result::CurrentAlert",
-  "hardware_id" );
 
 sub mac {
   my ($self) = @_;

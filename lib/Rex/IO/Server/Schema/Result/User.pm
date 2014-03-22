@@ -19,10 +19,6 @@ __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to("group", "Rex::IO::Server::Schema::Result::Group", "group_id");
 
-__PACKAGE__->has_many("assigned_incidents", "Rex::IO::Server::Schema::Result::Incident", "assignee");
-__PACKAGE__->has_many("created_incidents", "Rex::IO::Server::Schema::Result::Incident", "creator");
-__PACKAGE__->has_many("created_incident_messages", "Rex::IO::Server::Schema::Result::IncidentMessage", "creator");
-
 
 sub to_hashRef {
   my ($self) = @_;
