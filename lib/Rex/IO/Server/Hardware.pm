@@ -9,11 +9,57 @@ package Rex::IO::Server::Hardware;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON "j";
 use Mojo::UserAgent;
+use Try::Tiny;
 
 use Rex::IO::Server::Helper::IP;
 
 use Data::Dumper;
 
+sub add {
+  my ($self) = @_;
+
+  my $json = $self->req->json;
+
+  $self->app->log->debug("Adding new hardware. ");
+  $self->app->log->debug( Dumper($json) );
+
+  $json->{state_id}       = 1;
+  $json->{os_template_id} = 1;
+
+  my $mac = $json->{mac};
+  delete $json->{mac};
+
+  try {
+    $self->app->log->debug("Creating new hardware...");
+    my $hw = $self->db->resultset("Hardware")->create($json);
+    $hw->discard_changes;
+
+    $self->app->log->debug( "New hardware created: " . $hw->id );
+    $self->app->log->debug("Creating hardware adapter for new hardware.");
+
+    my $nw_a = $self->db->resultset("NetworkAdapter")->create(
+      {
+        hardware_id => $hw->id,
+        proto       => "dhcp",
+        boot        => 1,
+        mac         => $mac,
+      }
+    );
+
+    $self->app->log->debug( "NetworkAdapter created. " . $nw_a->id );
+
+    $self->render(
+      json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
+    1;
+  }
+  catch {
+    $self->app->log->error("Error creating new hardware:\n\nERROR: $_\n\n");
+    $self->render(
+      json   => { ok => Mojo::JSON->false, error => $_ },
+      status => 500
+    );
+  };
+}
 
 sub list {
   my ($self) = @_;
@@ -23,92 +69,117 @@ sub list {
   my @ret;
 
   for my $hw (@all_hw) {
-    push(@ret, $hw->to_hashRef);
+    push( @ret, $hw->to_hashRef );
   }
 
-  $self->render(json => \@ret);
+  $self->render( json => \@ret );
 }
 
 sub search {
   my ($self) = @_;
 
-  #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
-  my @hw_r = $self->db->resultset("Hardware")->search({ name => { like => $self->param("name") . '%' } });
+#my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
+  my @hw_r = $self->db->resultset("Hardware")
+    ->search( { name => { like => $self->param("name") . '%' } } );
 
   my @ret = ();
 
   for my $hw (@hw_r) {
-    push(@ret, $hw->to_hashRef);
+    push( @ret, $hw->to_hashRef );
   }
 
-  $self->render(json => \@ret);
+  $self->render( json => \@ret );
 }
 
 sub get {
   my ($self) = @_;
 
-  #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
-  my $hw = $self->db->resultset("Hardware")->find($self->param("id"));
-  $self->render(json => $hw->to_hashRef);
+#my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
+  my $hw = $self->db->resultset("Hardware")->find( $self->param("id") );
+  $self->render( json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
 }
 
 sub update {
   my ($self) = @_;
 
-  #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
-  my $hw_r = $self->db->resultset("Hardware")->find($self->param("id"));
+  my $hw_id = $self->param("id");
+  my $json  = $self->req->json;
 
-  if(my $hw = $hw_r) {
-    return eval {
-      my $json = $self->req->json;
+#my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
+  $self->app->log->debug("Updating hardware: $hw_id");
+  $self->app->log->debug( Dumper($json) );
 
-      for my $k (keys %{ $json }) {
-        $hw->$k($json->{$k});
-      }
+  my $hw = $self->db->resultset("Hardware")->find( $self->param("id") );
 
-      $hw->update;
-
-      return $self->render(json => {ok => Mojo::JSON->true});
-    } or do {
-      return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
+  if ($hw) {
+    try {
+      $self->app->log->debug("Hardware found. going to update.");
+      $hw->update($json);
+      $self->render( json => { ok => Mojo::JSON->true } );
+      1;
+    }
+    catch {
+      $self->app->log->error("Error updating hardware.\n\nERROR: $_\n\n");
+      $self->render(
+        json   => { ok => Mojo::JSON->false, error => $_ },
+        status => 500
+      );
     };
   }
   else {
-    return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
+    $self->app->log->debug("Can't find hardware with id: $hw_id!");
+    $self->render(
+      json   => { ok => Mojo::JSON->false, error => "Hardware not found!" },
+      status => 404
+    );
   }
 }
 
 sub purge {
   my ($self) = @_;
 
-  my $hw_i = $self->db->resultset("Hardware")->find($self->param("id"));
+  my $hw_id = $self->param("id");
+
+  $self->app->log->debug("Deleting hardware: $hw_id");
+
+  my $hw_i = $self->db->resultset("Hardware")->find( $self->param("id") );
 
   # deregister hardware on dhcp
-  $self->dhcp->delete_entry($hw_i->name);
+  $self->app->log->debug("Deleting dhcp entry.");
+  $self->dhcp->delete_entry( $hw_i->name );
 
-  eval {
-    if(my $hw = $hw_i) {
+  try {
+    if ($hw_i) {
 
       # give plugins the possibility to clean up
-      for my $plug (@{ $self->config->{plugins} }) {
+      for my $plug ( @{ $self->config->{plugins} } ) {
         my $klass = "Rex::IO::Server::$plug";
         eval "require $klass";
-        eval { $klass->__delete_hardware__($self, $hw); };
+        eval { $klass->__delete_hardware__( $self, $hw_i ); };
       }
 
-      $hw->purge;
-      return $self->render(json => {ok => Mojo::JSON->true});
+      $hw_i->purge;
+      $self->render( json => { ok => Mojo::JSON->true } );
     }
     else {
-      return $self->render(json => {ok => Mojo::JSON->false}, status => 404);
+      $self->app->log->debug("Hardware not found ($hw_id).");
+      $self->render(
+        json   => { ok => Mojo::JSON->false, error => "Hardware not found." },
+        status => 404
+      );
     }
-  } or do {
-    return $self->render(json => {ok => Mojo::JSON->false, error => $@}, status => 500);
+
+    1;
+  }
+  catch {
+    $self->app->log->error("Error deleting hardware.\n\nERROR: $_\n\n");
+    $self->render(
+      json   => { ok => Mojo::JSON->false, error => $_ },
+      status => 500
+    );
   };
 
 }
-
-
 
 ################################################################################
 # internal functions
@@ -116,16 +187,29 @@ sub purge {
 sub _ua { return Mojo::UserAgent->new; }
 
 sub __register__ {
-  my ($self, $app) = @_;
+  my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->route("/hardware")->via("LIST")->over(authenticated => 1)->to("hardware#list");
-  $r->get("/hardware/search/:name")->over(authenticated => 1)->to("hardware#search");
-  $r->post("/hardware/:id")->over(authenticated => 1)->to("hardware#update");
-  $r->get("/hardware/:id")->over(authenticated => 1)->to("hardware#get");
-  $r->post("/hardware")->over(authenticated => 1)->to("hardware#add");
+ # $r->route("/hardware")->via("LIST")->over( authenticated => 1 )
+ #   ->to("hardware#list");
+ # $r->get("/hardware/search/:name")->over( authenticated => 1 )
+ #   ->to("hardware#search");
+ # $r->post("/hardware/:id")->over( authenticated => 1 )->to("hardware#update");
+ # $r->get("/hardware/:id")->over( authenticated => 1 )->to("hardware#get");
+ # $r->post("/hardware")->over( authenticated => 1 )->to("hardware#add");
 
+  # new routes
+  $r->get("/1.0/hardware/hardware/:id")->over( authenticated => 1 )
+    ->to("hardware#get");
+
+  $r->post("/1.0/hardware/hardware/:id")->over( authenticated => 1 )
+    ->to("hardware#update");
+
+  $r->delete("/1.0/hardware/hardware/:id")->over( authenticated => 1 )
+    ->to("hardware#purge");
+
+  $r->post("/1.0/hardware/hardware")->over( authenticated => 1 )
+    ->to("hardware#add");
 }
-
 
 1;

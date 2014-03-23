@@ -135,7 +135,7 @@ sub startup {
       ->to("message_broker#is_online");
   }
 
-  for my $ctrl (qw/hardware os os_template/) {
+  for my $ctrl (qw/os os_template/) {
     my $ctrl_route = $ctrl;
     $ctrl_route =~ s/_/-/gms;
     $r->route("/$ctrl_route")->via("LIST")->over( authenticated => 1 )
