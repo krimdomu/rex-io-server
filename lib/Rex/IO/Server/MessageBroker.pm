@@ -68,7 +68,7 @@ sub broker {
           );
         }
         else {
-          my $c = $klass->new(ctrl => $self);
+          my $c = $klass->new(ctrl => $self, app => $self->app);
           $c->messagebroker_process($json);
         }
       }

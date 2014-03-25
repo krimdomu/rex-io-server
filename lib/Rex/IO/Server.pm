@@ -79,6 +79,7 @@ sub startup {
   $self->plugin( "Config", file => $cfg );
   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::IP");
   $self->plugin("Rex::IO::Server::Mojolicious::Plugin::User");
+  $self->plugin("Rex::IO::Server::Mojolicious::Plugin::Redis");
   $self->plugin(
     "http_basic_auth",
     {
