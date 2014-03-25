@@ -114,27 +114,8 @@ sub startup {
   my $r = $self->routes;
 
   #######################################################################
-  # routes that don't need authentication
-  #######################################################################
-  $r->websocket("/messagebroker")->to("message_broker#broker");
-
-  #######################################################################
   # routes that need authentication
   #######################################################################
-  if ( $ENV{REXIO_TEST} ) {
-    $r->route("/messagebroker/clients")->via("LIST")
-      ->to("message_broker#clients");
-    $r->post("/messagebroker/:to")->to("message_broker#message_to_server");
-    $r->get("/messagebroker/online/#ip")->to("message_broker#is_online");
-  }
-  else {
-    $r->route("/messagebroker/clients")->via("LIST")
-      ->over( authenticated => 1 )->to("message_broker#clients");
-    $r->post("/messagebroker/:to")->over( authenticated => 1 )
-      ->to("message_broker#message_to_server");
-    $r->get("/messagebroker/online/#ip")->over( authenticated => 1 )
-      ->to("message_broker#is_online");
-  }
 
   for my $ctrl (qw/os os_template/) {
     my $ctrl_route = $ctrl;

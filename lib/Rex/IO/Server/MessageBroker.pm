@@ -11,7 +11,6 @@ use Data::Dumper;
 use Mojo::JSON "j";
 use Mojo::UserAgent;
 use Rex::IO::Server::Helper::IP;
-use Rex::IO::Server::Helper::Inventory;
 use Mojo::Redis;
 use Gearman::Client;
 use JSON::XS;
@@ -55,9 +54,10 @@ sub broker {
       if ( exists $json->{type} ) {
         my $klass = $json->{type};
         eval "use $klass";
-        if($@) {
+        if ($@) {
           my $e = $@;
-          $self->app->log->error("Error loading messagebroker class: $klass.\n\nERROR: $e\n\n");
+          $self->app->log->error(
+            "Error loading messagebroker class: $klass.\n\nERROR: $e\n\n");
           $self->send(
             Mojo::JSON->encode(
               {
@@ -68,7 +68,7 @@ sub broker {
           );
         }
         else {
-          my $c = $klass->new(ctrl => $self, app => $self->app);
+          my $c = $klass->new( ctrl => $self, app => $self->app );
           $c->messagebroker_process($json);
         }
       }
@@ -89,18 +89,11 @@ sub broker {
   );
 }
 
-
-
 sub clients {
   my ($self) = @_;
 
-  if ( $self->param("only_ip") ) {
-    my @ips = keys %{$clients};
-    return $self->render( json => { ok => Mojo::JSON->true, data => \@ips } );
-  }
-  else {
-    return $self->render( json => $clients );
-  }
+  my @ips = keys %{$clients};
+  $self->render( json => { ok => Mojo::JSON->true, data => \@ips } );
 }
 
 sub is_online {
@@ -110,10 +103,7 @@ sub is_online {
 
   $self->render_later;
 
-  my $redis =
-    Mojo::Redis->new( server => $self->config->{redis}->{jobs}->{server} . ":"
-      . $self->config->{redis}->{jobs}->{port} );
-  $redis->get(
+  $self->redis->get(
     "status:$ip:online",
     sub {
       my ( $redis, $res ) = @_;
@@ -166,6 +156,26 @@ sub get_random {
   }
 
   return $ret;
+}
+
+sub get_client_info {
+  my ($self) = @_;
+}
+
+sub __register__ {
+  my ( $self, $app ) = @_;
+  my $r = $app->routes;
+
+  $r->websocket("/messagebroker")->to("message_broker#broker");
+
+  $r->get("/1.0/messagebroker/client")->over( authenticated => 1 )
+    ->to("message_broker#clients");
+
+  $r->post("/1.0/messagebroker/client/:to")->over( authenticated => 1 )
+    ->to("message_broker#message_to_server");
+
+  $r->get("/1.0/messagebroker/client/*ip/online")->over( authenticated => 1 )
+    ->to("message_broker#is_online");
 }
 
 1;
