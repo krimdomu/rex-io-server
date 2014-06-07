@@ -14,8 +14,16 @@ use Data::Dumper;
 sub list {
   my ($self) = @_;
 
-  #my $os_r = Rex::IO::Server::Model::Os->all;
+  my $action = $self->param("action");
+
   my @os_r = $self->db->resultset("Os")->all;
+
+  if ( $action && $action eq "count" ) {
+    return $self->render(
+      json => { ok => Mojo::JSON->true, count => scalar @os_r } );
+  }
+
+  #my $os_r = Rex::IO::Server::Model::Os->all;
 
   my @ret = ();
 
@@ -23,7 +31,7 @@ sub list {
     push( @ret, { $os->get_columns } );
   }
 
-  $self->render( json => \@ret );
+  $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
 }
 
 # sub search {
@@ -48,7 +56,8 @@ sub get {
 
 #my $os = Rex::IO::Server::Model::Os->all( Rex::IO::Server::Model::Os->id == $self->param("id"))->next;
   my $os = $self->db->resultset("Os")->find( $self->param("id") );
-  $self->render( json => { $os->get_columns } );
+  $self->render(
+    json => { ok => Mojo::JSON->true, data => { $os->get_columns } } );
 }
 
 sub add {
@@ -59,7 +68,8 @@ sub add {
 
   eval {
     my $os = $self->db->resultset("Os")->create( $self->req->json );
-    $self->render( json => { $os->get_columns } );
+    $self->render(
+      json => { ok => Mojo::JSON->true, data => { $os->get_columns } } );
   } or do {
     return $self->render(
       json   => { ok => Mojo::JSON->false, error => $@ },
@@ -105,7 +115,8 @@ sub delete {
     # first we need to check if there are hardware registered to this OS
     my @hw = $os->hardwares;
     if ( scalar @hw != 0 ) {
-      $self->app->log->debug('There is hardware registered to this Os. Please remove them first.');
+      $self->app->log->debug(
+        'There is hardware registered to this Os. Please remove them first.');
       return $self->render(
         json => {
           ok => Mojo::JSON->false,

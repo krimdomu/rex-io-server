@@ -64,7 +64,54 @@ sub add {
 sub list {
   my ($self) = @_;
 
-  my @all_hw = $self->db->resultset('Hardware')->all;
+  my $action = $self->param("action");
+
+  if ( $action && $action eq "count" ) {
+    my @all_hw = $self->db->resultset('Hardware')->all;
+    return $self->render(
+      json => { ok => Mojo::JSON->true, count => scalar @all_hw } );
+  }
+
+  #
+  # table=os
+  # table=hardware
+  # os.name=SLES
+  # hardware.name=foo01
+  #
+
+#if($self->param("group_id")) {
+#  @all_hw = $self->db->resultset('Hardware')->search({ server_group_id => $self->param("group_id") }, {order_by => 'name'});
+#}
+#else {
+#  @all_hw = $self->db->resultset('Hardware')->search({}, {order_by => 'name'});
+#}
+
+  my @tables = $self->param("table");
+
+  my @all_params  = $self->param;
+  my $query_param = {};
+  for my $t (@tables) {
+    for my $p (@all_params) {
+      if ( $p =~ m/^$t\.(.*)$/ ) {
+        my $key = $p;
+        $key =~ s/^hardware\./me./;
+        $query_param->{$key} = $self->param($p);
+      }
+    }
+  }
+
+  print STDERR Dumper($query_param);
+
+  @tables = grep { $_ ne "hardware" } @tables;
+
+  print STDERR Dumper( \@tables );
+
+  my @all_hw = $self->db->resultset('Hardware')->search(
+    $query_param,
+    {
+      join => [@tables],
+    },
+  );
 
   my @ret;
 
@@ -72,7 +119,8 @@ sub list {
     push( @ret, $hw->to_hashRef );
   }
 
-  $self->render( json => \@ret );
+  $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
+
 }
 
 sub search {
@@ -145,8 +193,8 @@ sub purge {
   my $hw_i = $self->db->resultset("Hardware")->find( $self->param("id") );
 
   # deregister hardware on dhcp
-  $self->app->log->debug("Deleting dhcp entry.");
-  $self->dhcp->delete_entry( $hw_i->name );
+  # $self->app->log->debug("Deleting dhcp entry.");
+  # $self->dhcp->delete_entry( $hw_i->name );
 
   try {
     if ($hw_i) {
@@ -199,6 +247,9 @@ sub __register__ {
  # $r->post("/hardware")->over( authenticated => 1 )->to("hardware#add");
 
   # new routes
+  $r->get("/1.0/hardware/hardware")->over( authenticated => 1 )
+    ->to("hardware#list");
+
   $r->get("/1.0/hardware/hardware/:id")->over( authenticated => 1 )
     ->to("hardware#get");
 

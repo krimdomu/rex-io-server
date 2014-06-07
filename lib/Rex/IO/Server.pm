@@ -117,10 +117,10 @@ sub startup {
   # routes that need authentication
   #######################################################################
 
-  $r->delete("/hardware/:id")->over( authenticated => 1 )->to("hardware#purge");
+  #$r->delete("/hardware/:id")->over( authenticated => 1 )->to("hardware#purge");
 
-  $r->post("/network-adapter/:id")->over( authenticated => 1 )
-    ->to("hardware#update_network_adapter");
+  #$r->post("/network-adapter/:id")->over( authenticated => 1 )
+  #  ->to("hardware#update_network_adapter");
 
   $r->get("/user/:id")->over( authenticated => 1 )->to("user#get");
   $r->get("/group/:id")->over( authenticated => 1 )->to("group#get");
