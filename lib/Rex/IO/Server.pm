@@ -117,19 +117,6 @@ sub startup {
   # routes that need authentication
   #######################################################################
 
-  for my $ctrl (qw/os os_template/) {
-    my $ctrl_route = $ctrl;
-    $ctrl_route =~ s/_/-/gms;
-    $r->route("/$ctrl_route")->via("LIST")->over( authenticated => 1 )
-      ->to("$ctrl#list");
-    $r->get("/$ctrl_route/search/:name")->over( authenticated => 1 )
-      ->to("$ctrl#search");
-    $r->post("/$ctrl_route/:id")->over( authenticated => 1 )
-      ->to("$ctrl#update");
-    $r->get("/$ctrl_route/:id")->over( authenticated => 1 )->to("$ctrl#get");
-    $r->post("/$ctrl_route")->over( authenticated => 1 )->to("$ctrl#add");
-  }
-
   $r->delete("/hardware/:id")->over( authenticated => 1 )->to("hardware#purge");
 
   $r->post("/network-adapter/:id")->over( authenticated => 1 )
