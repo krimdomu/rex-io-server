@@ -159,6 +159,93 @@ curl -D- -XPOST \
   http://user:password@localhost:5000/1.0/group/group/$group_id/user/$user_id
 ```
 
+## Permissions
+
+Permissions are build of permission sets. These sets can contain multiple permissions. You'll find all available permissions in the *permission_type* table.
+
+List all permission sets
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/permission/set
+```
+
+Create a new permission set
+
+```javascript
+{
+  "name"        : "My Permission Set",
+  "description" : "My very own permission set."
+}
+```
+
+```
+curl -D- -XPOST -d@permission_set.json \
+  http://user:password@localhost:5000/1.0/permission/set
+```
+
+Update a permission set
+
+```javascript
+{
+  "description" : "My very own permission set."
+}
+```
+
+```
+curl -D- -XPOST -d@permission_set.json \
+  http://user:password@localhost:5000/1.0/permission/set/$permission_set_id
+```
+
+Delete a permission set
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/permission/set/$permission_set_id
+```
+
+List all permissions
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/permission/permission
+```
+
+Create a new permission
+
+```javascript
+{
+  "permission_set_id" : 1,
+  "group_id"          : 10,   // optional, if this permission is for a group
+  "user_id"           : 4,    // optional, if this permission is for a user
+  "perm_id"           : 17,   // permission id from permission_type table
+}
+```
+
+```
+curl -D- -XPOST -d@permission.json \
+  http://user:password@localhost:5000/1.0/permission/permission
+```
+
+Update a permission
+
+```javascript
+{
+  "user_id" : 14
+}
+```
+
+```
+curl -D- -XPOST -d@permission.json \
+  http://user:password@localhost:5000/1.0/permission/permission/$permission_id
+```
+
+Delete a permission
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/permission/permission/$permission_id
+```
 
 
 ## MessageBroker
