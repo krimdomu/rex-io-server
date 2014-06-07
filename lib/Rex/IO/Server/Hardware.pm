@@ -100,11 +100,13 @@ sub list {
     }
   }
 
-  print STDERR Dumper($query_param);
+  $self->app->log->debug("Dumping query parameter: ");
+  $self->app->log->debug(Dumper($query_param));
 
   @tables = grep { $_ ne "hardware" } @tables;
 
-  print STDERR Dumper( \@tables );
+  $self->app->log->debug("Dumping join tables: ");
+  $self->app->log->debug(Dumper( \@tables ));
 
   my @all_hw = $self->db->resultset('Hardware')->search(
     $query_param,

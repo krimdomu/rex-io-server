@@ -91,16 +91,24 @@ sub delete {
 
 sub login {
   my ($self) = @_;
-  my $user = $self->db->resultset("User")->find($self->session("uid"));
+  my $user = $self->db->resultset("User")->find( $self->session("uid") );
 
-  $self->render( json => { ok => Mojo::JSON->true, data => $user->to_hashRef } );
+  $self->render(
+    json => { ok => Mojo::JSON->true, data => $user->to_hashRef } );
 }
 
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
+  $r->get("/1.0/user/user")->over( authenticated => 1 )->to("user#list");
+  $r->get("/1.0/user/user/:id")->over( authenticated => 1 )->to("user#get");
+
+  $r->post("/1.0/user/user")->over( authenticated => 1 )->to("user#add");
   $r->post("/1.0/user/login")->over( authenticated => 1 )->to("user#login");
+
+  $r->delete("/1.0/user/user/:user_id")->over( authenticated => 1 )
+    ->to("user#delete");
 }
 
 1;
