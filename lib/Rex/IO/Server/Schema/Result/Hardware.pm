@@ -30,10 +30,6 @@ __PACKAGE__->belongs_to(
   "state_id"
 );
 __PACKAGE__->belongs_to(
-  "os_template" => "Rex::IO::Server::Schema::Result::OsTemplate",
-  "os_template_id"
-);
-__PACKAGE__->belongs_to(
   "os" => "Rex::IO::Server::Schema::Result::Os",
   "os_id"
 );
@@ -82,21 +78,21 @@ sub to_hashRef {
     $data->{state} = "UNKNOWN";
   }
 
-  my $os_template = $self->os_template;
-  delete $data->{os_template_id};
-
-  if ($os_template) {
-    $data->{os_template} = {
-      id   => $os_template->id,
-      name => $os_template->name,
-    };
-  }
-  else {
-    $data->{os_template} = {
-      id   => 0,
-      name => "UNKNWON",
-    };
-  }
+  # my $os_template = $self->os_template;
+  # delete $data->{os_template_id};
+  #
+  # if ($os_template) {
+  #   $data->{os_template} = {
+  #     id   => $os_template->id,
+  #     name => $os_template->name,
+  #   };
+  # }
+  # else {
+  #   $data->{os_template} = {
+  #     id   => 0,
+  #     name => "UNKNWON",
+  #   };
+  # }
 
   #### network adapters
   my @nw_r = $self->network_adapters;
