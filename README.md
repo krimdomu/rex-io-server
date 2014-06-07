@@ -178,6 +178,59 @@ curl -D- -XDELETE \
   http://user:password@localhost:5000/1.0/os/os/$os_id
 ```
 
+## Users and Groups
+
+Get all users:
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/user/user
+```
+
+Get a specific user
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/user/user/$user_id
+```
+
+Delete a user
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/user/user/$user_id
+```
+
+Get all groups:
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/group/group
+```
+
+Get a specific group
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/group/group/$group_id
+```
+
+Delete a group
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/group/group/$group_id
+```
+
+Assign a user to a group
+
+```
+curl -D- -XPOST \
+  http://user:password@localhost:5000/1.0/group/group/$group_id/user/$user_id
+```
+
+
+
 ## MessageBroker
 
 Get online clients:
