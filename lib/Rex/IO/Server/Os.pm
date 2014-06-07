@@ -63,6 +63,16 @@ sub get {
 sub add {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('CREATE_OS') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission CREATE_OS.'
+      },
+      status => 403
+    );
+  }
+
   $self->app->log->debug("Creating new OS entry:");
   $self->app->log->debug( Dumper( $self->req->json ) );
 
@@ -80,6 +90,16 @@ sub add {
 
 sub update {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('MODIFY_OS') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission MODIFY_OS.'
+      },
+      status => 403
+    );
+  }
 
   my $os_r = $self->db->resultset("Os")->find( $self->param("id") );
 
@@ -106,6 +126,16 @@ sub update {
 
 sub delete {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('DELETE_OS') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission DELETE_OS.'
+      },
+      status => 403
+    );
+  }
 
   $self->app->log->debug( "Deleting OS entry: " . $self->param("id") );
 

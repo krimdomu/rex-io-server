@@ -12,6 +12,16 @@ use Mojo::JSON "j";
 sub get {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('LIST_GROUP') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission LIST_GROUP.'
+      },
+      status => 403
+    );
+  }
+
   my $group = $self->db->resultset("Group")->find( $self->param("id") );
 
   if ($group) {
@@ -29,6 +39,16 @@ sub get {
 sub list {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('LIST_GROUP') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission LIST_GROUP.'
+      },
+      status => 403
+    );
+  }
+
   my @groups = $self->db->resultset("Group")->all;
   my @ret;
 
@@ -41,6 +61,16 @@ sub list {
 
 sub add {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('CREATE_GROUP') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission CREATE_GROUP.'
+      },
+      status => 403
+    );
+  }
 
   eval {
     my $group = $self->db->resultset("Group")->create( $self->req->json );
@@ -56,11 +86,21 @@ sub add {
 sub delete {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('DELETE_GROUP') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission DELETE_GROUP.'
+      },
+      status => 403
+    );
+  }
+
   my $group_id = $self->param("group_id");
 
   $self->app->log->debug("Deleting group: $group_id");
 
-  my $group    = $self->db->resultset("Group")->find($group_id);
+  my $group = $self->db->resultset("Group")->find($group_id);
 
   if ($group) {
     $group->delete;
@@ -72,6 +112,16 @@ sub delete {
 
 sub add_user_to_group {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('MODIFY_USER') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission MODIFY_USER.'
+      },
+      status => 403
+    );
+  }
 
   my $user_id  = $self->param("user_id");
   my $group_id = $self->param("group_id");

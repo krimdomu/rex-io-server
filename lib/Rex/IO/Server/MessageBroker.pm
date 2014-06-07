@@ -92,6 +92,16 @@ sub broker {
 sub clients {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('MB_GET_ONLINE_CLIENTS') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission MB_GET_ONLINE_CLIENTS.'
+      },
+      status => 403
+    );
+  }
+
   my @ips = keys %{$clients};
   $self->render( json => { ok => Mojo::JSON->true, data => \@ips } );
 }
@@ -119,6 +129,16 @@ sub is_online {
 
 sub message_to_server {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('MB_SEND_COMMAND') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission MB_SEND_COMMAND.'
+      },
+      status => 403
+    );
+  }
 
   my $json = $self->req->json;
   my ($to) = ( $self->req->url =~ m/^.*\/(.*?)$/ );

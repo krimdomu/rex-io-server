@@ -16,6 +16,18 @@ sub get {
 
   my $user = $self->db->resultset("User")->find( $self->param("id") );
 
+  if (!$self->current_user->has_perm('LIST_USER')
+    && $user->id != $self->current_user->id )
+  {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission LIST_USER.'
+      },
+      status => 403
+    );
+  }
+
   if ($user) {
     my $data = {
       id   => $user->id,
@@ -30,6 +42,16 @@ sub get {
 
 sub list {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('LIST_USER') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission LIST_USER.'
+      },
+      status => 403
+    );
+  }
 
   my @users = $self->db->resultset("User")->all;
   my @ret;
@@ -46,6 +68,16 @@ sub list {
 
 sub add {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('CREATE_USER') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission CREATE_USER.'
+      },
+      status => 403
+    );
+  }
 
   my $json = $self->req->json;
 
@@ -77,6 +109,16 @@ sub add {
 
 sub delete {
   my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('DELETE_USER') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission DELETE_USER.'
+      },
+      status => 403
+    );
+  }
 
   my $user_id = $self->param("user_id");
   my $user    = $self->db->resultset("User")->find($user_id);
