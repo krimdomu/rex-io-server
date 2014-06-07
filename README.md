@@ -79,6 +79,66 @@ zone "your-zone.com" IN {
 
 # API
 
+## Hardware
+
+Manage the hardware
+
+List all hardware
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/hardware/hardware
+```
+
+Count hardware
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/hardware/hardware?action=count
+```
+
+Get specific hardware
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/hardware/hardware/$hardware_id
+```
+
+Add new hardware
+
+```javascript
+{
+  "name": "myserver01.rexify.org",
+  "os_id": "1"
+}
+```
+
+```
+curl -D- -XPOST -d@hardware.json \
+  http://user:password@localhost:5000/1.0/hardware/hardware
+```
+
+Update hardware
+
+```javascript
+{
+  "name": "myserver01.rexify.org",
+  "os_id": "1"
+}
+```
+
+```
+curl -D- -XPOST -d@hardware.json \
+  http://user:password@localhost:5000/1.0/hardware/hardware/$hardware_id
+```
+
+Delete hardware
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/hardware/hardware/$hardware_id
+```
+
 ## Os
 
 Manage known operating systems
