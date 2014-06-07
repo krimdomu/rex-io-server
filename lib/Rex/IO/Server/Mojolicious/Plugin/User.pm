@@ -23,7 +23,15 @@ sub register {
 
       my $u = Rex::IO::Server::Auth::User->new( app => $app );
       return $u->load( $find_type, $data );
-    }
+    },
+  );
+
+  $app->helper(
+    current_user => sub {
+      my ($self) = @_;
+      my $u = Rex::IO::Server::Auth::User->new( app => $app );
+      return $u->load( 'by_id', $self->session('uid') );
+    },
   );
 
   $app->routes->add_condition(

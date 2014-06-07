@@ -65,4 +65,21 @@ sub check_password {
   }
 }
 
+sub has_perm {
+  my ( $self, $perm_type ) = @_;
+
+  my $user_db = $self->app->db->resultset("User")->find( $self->id );
+  $self->app->log->debug("Checking for user permission: $perm_type");
+  my $has_perm = $user_db->has_perm($perm_type);
+
+  if($has_perm) {
+    $self->app->log->debug("User has permission for: $perm_type");
+  }
+  else {
+    $self->app->log->debug("User has no permission for: $perm_type");
+  }
+
+  return $has_perm;
+}
+
 1;

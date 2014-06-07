@@ -18,13 +18,20 @@ use Data::Dumper;
 sub add {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('CREATE_HARDWARE') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to create new hardware.'
+      },
+      status => 403
+    );
+  }
+
   my $json = $self->req->json;
 
   $self->app->log->debug("Adding new hardware. ");
   $self->app->log->debug( Dumper($json) );
-
-  $json->{state_id}       = 1;
-  $json->{os_template_id} = 1;
 
   my $mac = $json->{mac};
   delete $json->{mac};
@@ -64,6 +71,16 @@ sub add {
 sub list {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('LIST_HARDWARE') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to list hardware.'
+      },
+      status => 403
+    );
+  }
+
   my $action = $self->param("action");
 
   if ( $action && $action eq "count" ) {
@@ -101,12 +118,12 @@ sub list {
   }
 
   $self->app->log->debug("Dumping query parameter: ");
-  $self->app->log->debug(Dumper($query_param));
+  $self->app->log->debug( Dumper($query_param) );
 
   @tables = grep { $_ ne "hardware" } @tables;
 
   $self->app->log->debug("Dumping join tables: ");
-  $self->app->log->debug(Dumper( \@tables ));
+  $self->app->log->debug( Dumper( \@tables ) );
 
   my @all_hw = $self->db->resultset('Hardware')->search(
     $query_param,
@@ -118,7 +135,9 @@ sub list {
   my @ret;
 
   for my $hw (@all_hw) {
-    push( @ret, $hw->to_hashRef );
+    if ( $hw->has_perm( 'READ', $self->current_user ) ) {
+      push( @ret, $hw->to_hashRef );
+    }
   }
 
   $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
@@ -128,6 +147,16 @@ sub list {
 sub search {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('LIST_HARDWARE') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to list hardware.'
+      },
+      status => 403
+    );
+  }
+
 #my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->name % ($self->param("name") . '%'));
   my @hw_r = $self->db->resultset("Hardware")
     ->search( { name => { like => $self->param("name") . '%' } } );
@@ -135,7 +164,9 @@ sub search {
   my @ret = ();
 
   for my $hw (@hw_r) {
-    push( @ret, $hw->to_hashRef );
+    if ( $hw->has_perm( 'READ', $self->current_user ) ) {
+      push( @ret, $hw->to_hashRef );
+    }
   }
 
   $self->render( json => \@ret );
@@ -144,9 +175,21 @@ sub search {
 sub get {
   my ($self) = @_;
 
+  # no special check for LIST_HARDWARE
+  # because it might be that the user can retrieve one special hardware
+
 #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
   my $hw = $self->db->resultset("Hardware")->find( $self->param("id") );
-  $self->render( json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
+  if ( $hw->has_perm( 'READ', $self->current_user ) ) {
+    return $self->render(
+      json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
+  }
+
+  return $self->render(
+    json =>
+      { ok => Mojo::JSON->false, error => 'No permission to get hardware' },
+    status => 403
+  );
 }
 
 sub update {
@@ -155,11 +198,20 @@ sub update {
   my $hw_id = $self->param("id");
   my $json  = $self->req->json;
 
-#my $hw_r = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id") );
   $self->app->log->debug("Updating hardware: $hw_id");
   $self->app->log->debug( Dumper($json) );
 
   my $hw = $self->db->resultset("Hardware")->find( $self->param("id") );
+
+  if ( !$hw->has_perm( 'MODIFY', $self->current_user ) ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to modify hardware.'
+      },
+      status => 403
+    );
+  }
 
   if ($hw) {
     try {
@@ -194,9 +246,15 @@ sub purge {
 
   my $hw_i = $self->db->resultset("Hardware")->find( $self->param("id") );
 
-  # deregister hardware on dhcp
-  # $self->app->log->debug("Deleting dhcp entry.");
-  # $self->dhcp->delete_entry( $hw_i->name );
+  if ( !$hw_i->has_perm( 'DELETE', $self->current_user ) ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to delete hardware.'
+      },
+      status => 403
+    );
+  }
 
   try {
     if ($hw_i) {

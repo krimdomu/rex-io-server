@@ -91,10 +91,22 @@ sub delete {
 
 sub login {
   my ($self) = @_;
-  my $user = $self->db->resultset("User")->find( $self->session("uid") );
+  $self->app->log->debug( "Authentication of: " . $self->req->json->{user} );
+  my $user = $self->get_user( 'by_name', $self->req->json->{user} );
+  if ( $user && $user->check_password( $self->req->json->{password} ) ) {
+    return $self->render(
+      json => {
+        ok   => Mojo::JSON->true,
+        data => { id => $user->id, name => $user->name }
+      }
+    );
 
-  $self->render(
-    json => { ok => Mojo::JSON->true, data => $user->to_hashRef } );
+  }
+
+  return $self->render(
+    json   => { ok => Mojo::JSON->false, error => 'No valid user' },
+    status => 401
+  );
 }
 
 sub __register__ {
@@ -105,7 +117,7 @@ sub __register__ {
   $r->get("/1.0/user/user/:id")->over( authenticated => 1 )->to("user#get");
 
   $r->post("/1.0/user/user")->over( authenticated => 1 )->to("user#add");
-  $r->post("/1.0/user/login")->over( authenticated => 1 )->to("user#login");
+  $r->post("/1.0/user/login")->to("user#login");
 
   $r->delete("/1.0/user/user/:user_id")->over( authenticated => 1 )
     ->to("user#delete");

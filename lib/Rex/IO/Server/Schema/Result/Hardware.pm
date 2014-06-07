@@ -21,18 +21,39 @@ my $hooks = {};
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
 __PACKAGE__->add_columns(
-  qw/id name state_id os_template_id os_id uuid server_group_id/);
+  qw/id name os_id uuid server_group_id permission_set_id/);
 
 __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->belongs_to(
-  "state" => "Rex::IO::Server::Schema::Result::HardwareState",
-  "state_id"
-);
-__PACKAGE__->belongs_to(
   "os" => "Rex::IO::Server::Schema::Result::Os",
   "os_id"
 );
+
+__PACKAGE__->belongs_to(
+  "permission_set" => "Rex::IO::Server::Schema::Result::PermissionSet",
+  "permission_set_id"
+);
+
+sub has_perm {
+  my ( $self, $perm_type, $user_o ) = @_;
+
+  my $perm_set = $self->permission_set;
+
+  for my $perm ( $perm_set->permissions ) {
+    if ( defined $perm->user_id ) {
+      next if ( $perm->user_id != $user_o->id );
+      return 1
+        if ( $perm->user_id == $user_o->id && $perm_type eq $perm->permission_type->name );
+    }
+    elsif ( defined $perm->group_id ) {
+
+      # not implemented yet
+    }
+  }
+
+  return 0;
+}
 
 sub mac {
   my ($self) = @_;
@@ -67,16 +88,6 @@ sub to_hashRef {
   my ($self) = @_;
 
   my $data = { $self->get_columns };
-
-  my $state = $self->state;
-  delete $data->{state_id};
-
-  if ($state) {
-    $data->{state} = $state->name;
-  }
-  else {
-    $data->{state} = "UNKNOWN";
-  }
 
   # my $os_template = $self->os_template;
   # delete $data->{os_template_id};
