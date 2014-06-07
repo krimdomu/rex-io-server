@@ -117,24 +117,6 @@ sub startup {
   # routes that need authentication
   #######################################################################
 
-  #$r->delete("/hardware/:id")->over( authenticated => 1 )->to("hardware#purge");
-
-  #$r->post("/network-adapter/:id")->over( authenticated => 1 )
-  #  ->to("hardware#update_network_adapter");
-
-  # $r->get("/user/:id")->over( authenticated => 1 )->to("user#get");
-  # $r->get("/group/:id")->over( authenticated => 1 )->to("group#get");
-  # $r->post("/user")->over( authenticated => 1 )->to("user#add");
-  # $r->post("/group")->over( authenticated => 1 )->to("group#add");
-  # $r->route("/user")->via("LIST")->over( authenticated => 1 )->to("user#list");
-  # $r->route("/group")->via("LIST")->over( authenticated => 1 )
-  #   ->to("group#list");
-  # $r->delete("/user/:user_id")->over( authenticated => 1 )->to("user#delete");
-  # $r->delete("/group/:group_id")->over( authenticated => 1 )
-  #   ->to("group#delete");
-  # $r->post("/group/:group_id/user/:user_id")->over( authenticated => 1 )
-  #   ->to("group#add_user_to_group");
-
   #
   # load server plugins
   #
