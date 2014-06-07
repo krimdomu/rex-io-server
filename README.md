@@ -79,6 +79,45 @@ zone "your-zone.com" IN {
 
 # API
 
+## Os
+
+Manage known operating systems
+
+List all operating systems
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/os/os
+```
+
+Get one operating system
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/os/os/$os_id
+```
+
+Add a new operating system.
+
+```javascript
+{
+  "name"    : "Os name",
+  "version" : "Os version"
+}
+```
+
+```
+curl -D- -XPOST -d@os.json \
+  http://user:password@localhost:5000/1.0/os/os
+```
+
+Delete an operating system.
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/os/os/$os_id
+```
+
 ## MessageBroker
 
 Get online clients:
