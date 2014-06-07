@@ -62,8 +62,6 @@ sub list_perm {
 sub get_set {
   my ($self) = @_;
 
-  my ($self) = @_;
-
   if ( !$self->current_user->has_perm('LIST_PERM_SET') ) {
     return $self->render(
       json => {
