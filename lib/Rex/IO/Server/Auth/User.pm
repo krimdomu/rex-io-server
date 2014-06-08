@@ -72,7 +72,7 @@ sub has_perm {
   $self->app->log->debug("Checking for user permission: $perm_type");
   my $has_perm = $user_db->has_perm($perm_type);
 
-  if($has_perm) {
+  if ($has_perm) {
     $self->app->log->debug("User has permission for: $perm_type");
   }
   else {
@@ -80,6 +80,12 @@ sub has_perm {
   }
 
   return $has_perm;
+}
+
+sub get_permissions {
+  my ($self) = @_;
+  my $user_db = $self->app->db->resultset("User")->find( $self->id );
+  return $user_db->get_permissions;
 }
 
 1;

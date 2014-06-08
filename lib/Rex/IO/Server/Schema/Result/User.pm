@@ -50,4 +50,20 @@ sub to_hashRef {
   return { $self->get_columns };
 }
 
+sub get_permissions {
+  my ($self) = @_;
+
+  my $set = $self->permission_set;
+
+  my @perms;
+
+  for my $perm ($set->permissions) {
+    if($perm->user_id && $perm->user_id == $self->id) {
+      push @perms, $perm->permission_type->name;
+    }
+  }
+
+  return @perms;
+}
+
 1;

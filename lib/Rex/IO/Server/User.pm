@@ -136,10 +136,19 @@ sub login {
   $self->app->log->debug( "Authentication of: " . $self->req->json->{user} );
   my $user = $self->get_user( 'by_name', $self->req->json->{user} );
   if ( $user && $user->check_password( $self->req->json->{password} ) ) {
+    my @perms = $user->get_permissions;
+
+    $self->app->log->debug("Permissions for user: ");
+    $self->app->log->debug(Dumper \@perms);
+    
     return $self->render(
       json => {
         ok   => Mojo::JSON->true,
-        data => { id => $user->id, name => $user->name }
+        data => {
+          id          => $user->id,
+          name        => $user->name,
+          permissions => [ @perms ]
+        }
       }
     );
 
