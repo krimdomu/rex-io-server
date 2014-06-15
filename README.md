@@ -48,6 +48,28 @@ curl -D- -XPOST -d@hardware.json \
   http://user:password@localhost:5000/1.0/hardware/hardware
 ```
 
+To add the network adapters during hardware creation:
+
+```javascript
+{
+  "name"  : "myserver01.rexify.org",
+  "os_id" : "1",
+  "network_adapter" : [
+    "dev"       : "eth0",
+    "broadcast" : "192.168.0.255",
+    "network"   : "192.168.0.0",
+    "ip"        : "192.168.0.55",
+    "gateway"   : "192.168.0.1",
+  ]
+}
+```
+
+```
+curl -D- -XPOST -d@hardware.json \
+  http://user:password@localhost:5000/1.0/hardware/hardware
+```
+
+
 Update hardware
 
 ```javascript

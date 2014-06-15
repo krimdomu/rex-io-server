@@ -36,6 +36,24 @@ sub add {
   my $mac = $json->{mac};
   delete $json->{mac};
 
+  my @nw_adapter;
+  if ( exists $json->{network_adapter}
+    && ref $json->{network_adapter} eq "ARRAY" )
+  {
+    @nw_adapter = @{ $json->{network_adapter} };
+    delete $json->{network_adapter};
+  }
+  else {
+    @nw_adapter = (
+      {
+        proto => "dhcp",
+        mac   => $mac,
+        boot  => 1,
+        dev   => "eth0",
+      }
+    );
+  }
+
   try {
     $self->app->log->debug("Creating new hardware...");
     my $hw = $self->db->resultset("Hardware")->create($json);
@@ -44,16 +62,19 @@ sub add {
     $self->app->log->debug( "New hardware created: " . $hw->id );
     $self->app->log->debug("Creating hardware adapter for new hardware.");
 
-    my $nw_a = $self->db->resultset("NetworkAdapter")->create(
-      {
-        hardware_id => $hw->id,
-        proto       => "dhcp",
-        boot        => 1,
-        mac         => $mac,
-      }
-    );
+    map {
+      $_->{hardware_id} = $hw->id;
+      $_->{ip}          = ip_to_int( $_->{ip} );
+      $_->{netmask}     = ip_to_int( $_->{netmask} );
+      $_->{network}     = ip_to_int( $_->{network} );
+      $_->{broadcast}   = ip_to_int( $_->{broadcast} );
+      $_->{gateway}     = ip_to_int( $_->{gateway} );
+    } @nw_adapter;
 
-    $self->app->log->debug( "NetworkAdapter created. " . $nw_a->id );
+    for my $nw (@nw_adapter) {
+      my $nw_a = $self->db->resultset("NetworkAdapter")->create($nw);
+      $self->app->log->debug( "NetworkAdapter created. " . $nw_a->id );
+    }
 
     $self->render(
       json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
@@ -179,7 +200,24 @@ sub get {
   # because it might be that the user can retrieve one special hardware
 
 #my $hw = Rex::IO::Server::Model::Hardware->all( Rex::IO::Server::Model::Hardware->id == $self->param("id"))->next;
-  my $hw = $self->db->resultset("Hardware")->find( $self->param("id") );
+
+  my $hw;
+  my $search_for = $self->param("id");
+
+  if ( $search_for =~ m/^(\d+)$/ ) {
+    $hw = $self->db->resultset("Hardware")->find($search_for);
+  }
+  elsif ( $search_for =~ m/[a-zA-Z0-9_\-\.:]+/ ) {
+
+    # seems to be a name
+    ($hw) =
+      $self->db->resultset("Hardware")->search( { name => $search_for } );
+  }
+
+  if ( !$hw ) {
+    return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
+  }
+
   if ( $hw->has_perm( 'READ', $self->current_user ) ) {
     return $self->render(
       json => { ok => Mojo::JSON->true, data => $hw->to_hashRef } );
@@ -310,7 +348,7 @@ sub __register__ {
   $r->get("/1.0/hardware/hardware")->over( authenticated => 1 )
     ->to("hardware#list");
 
-  $r->get("/1.0/hardware/hardware/:id")->over( authenticated => 1 )
+  $r->get("/1.0/hardware/hardware/*id")->over( authenticated => 1 )
     ->to("hardware#get");
 
   $r->post("/1.0/hardware/hardware/:id")->over( authenticated => 1 )

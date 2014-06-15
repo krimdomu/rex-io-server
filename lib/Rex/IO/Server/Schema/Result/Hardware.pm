@@ -21,7 +21,9 @@ my $hooks = {};
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("hardware");
 __PACKAGE__->add_columns(
-  qw/id name os_id uuid server_group_id permission_set_id/);
+  qw/id name os_id uuid server_group_id permission_set_id
+    kernelrelease kernelversion/
+);
 
 __PACKAGE__->set_primary_key("id");
 
@@ -44,7 +46,8 @@ sub has_perm {
     if ( defined $perm->user_id ) {
       next if ( $perm->user_id != $user_o->id );
       return 1
-        if ( $perm->user_id == $user_o->id && $perm_type eq $perm->permission_type->name );
+        if ( $perm->user_id == $user_o->id
+        && $perm_type eq $perm->permission_type->name );
     }
     elsif ( defined $perm->group_id ) {
 
