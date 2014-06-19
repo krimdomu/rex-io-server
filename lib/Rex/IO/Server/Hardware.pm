@@ -37,11 +37,11 @@ sub add {
   delete $json->{mac};
 
   my @nw_adapter;
-  if ( exists $json->{network_adapter}
-    && ref $json->{network_adapter} eq "ARRAY" )
+  if ( exists $json->{network_adapters}
+    && ref $json->{network_adapters} eq "ARRAY" )
   {
-    @nw_adapter = @{ $json->{network_adapter} };
-    delete $json->{network_adapter};
+    @nw_adapter = @{ $json->{network_adapters} };
+    delete $json->{network_adapters};
   }
   else {
     @nw_adapter = (
@@ -56,7 +56,17 @@ sub add {
 
   try {
     $self->app->log->debug("Creating new hardware...");
-    my $hw = $self->db->resultset("Hardware")->create($json);
+    my $hw = $self->db->resultset("Hardware")->create(
+      {
+        name              => $json->{name},
+        os_id             => $json->{os_id},
+        uuid              => $json->{uuid} || '',
+        server_group_id   => $json->{server_group_id} || 1,
+        permission_set_id => $json->{permission_set_id} || 1,
+        kernelrelease     => $json->{kernelrelease} || '',
+        kernelversion     => $json->{kernelversion} || '',
+      }
+    );
     $hw->discard_changes;
 
     $self->app->log->debug( "New hardware created: " . $hw->id );
@@ -74,6 +84,39 @@ sub add {
     for my $nw (@nw_adapter) {
       my $nw_a = $self->db->resultset("NetworkAdapter")->create($nw);
       $self->app->log->debug( "NetworkAdapter created. " . $nw_a->id );
+    }
+
+    # check for cpus
+    if ( exists $json->{cpus} ) {
+      for my $cpu ( @{ $json->{cpus} } ) {
+        $cpu->{hardware_id} = $hw->id;
+        my $cpu_a = $self->db->resultset("Processor")->create($cpu);
+        $self->app->log->debug( "Processor created. " . $cpu_a->id );
+      }
+    }
+
+    # check for harddrives
+    if ( exists $json->{harddrives} ) {
+      for my $hd ( @{ $json->{harddrives} } ) {
+        $hd->{hardware_id} = $hw->id;
+        my $hd_a = $self->db->resultset("Harddrive")->create($hd);
+        $self->app->log->debug( "Harddrive created. " . $hd_a->id );
+      }
+    }
+
+    # check for memories
+    if ( exists $json->{memories} ) {
+      for my $mem ( @{ $json->{memories} } ) {
+        $mem->{hardware_id} = $hw->id;
+        my $mem_a = $self->db->resultset("Memory")->create($mem);
+        $self->app->log->debug( "Memory created. " . $mem_a->id );
+      }
+    }
+
+    # check for bios information
+    if ( exists $json->{bios} ) {
+      my $bios_a = $self->db->resultset("Bios")->create( $json->{bios} );
+      $self->app->log->debug( "Bios created. " . $bios_a->id );
     }
 
     $self->render(
