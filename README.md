@@ -300,3 +300,29 @@ Check if a client is online:
 curl -D- -XGET \
   http://user:password@localhost:5000/1.0/messagebroker/client/192.168.1.5/online
 ```
+
+## Server Groups
+
+The server groups are stored as a tree in the database.
+
+Create root node:
+
+```
+curl -D- -XPOST \
+  http://user:password@localhost:5000/1.0/server_group_tree/root
+```
+
+Create node:
+
+```javascript
+{
+  "name"              : "The node name",
+  "parent_id"         : 12,
+  "permission_set_id" : 1
+}
+```
+
+```
+curl -D- -XPOST -d@server_group.json \
+  http://user:password@localhost:5000/1.0/server_group_tree/node
+```
