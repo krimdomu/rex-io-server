@@ -79,7 +79,7 @@ sub add {
         json => { ok => Mojo::JSON->true, id => $group->id } );
     }
   } or do {
-    return $self->render( json => { ok => Mojo::JSON->false }, status => 500 );
+    return $self->render( json => { ok => Mojo::JSON->false, error => $@ }, status => 500 );
   };
 }
 

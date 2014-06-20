@@ -103,7 +103,7 @@ sub add {
         json => { ok => Mojo::JSON->true, id => $user->id } );
     }
   } or do {
-    return $self->render( json => { ok => Mojo::JSON->false }, status => 500 );
+    return $self->render( json => { ok => Mojo::JSON->false, error => $@ }, status => 500 );
   };
 }
 
@@ -140,7 +140,7 @@ sub login {
 
     $self->app->log->debug("Permissions for user: ");
     $self->app->log->debug(Dumper \@perms);
-    
+
     return $self->render(
       json => {
         ok   => Mojo::JSON->true,
