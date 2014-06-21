@@ -326,3 +326,31 @@ Create node:
 curl -D- -XPOST -d@server_group.json \
   http://user:password@localhost:5000/1.0/server_group_tree/node
 ```
+
+Get the complete tree
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/server_group_tree/tree
+```
+
+Get the root node
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/server_group_tree/root
+```
+
+Get the children of a node
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/server_group_tree/children/$node_id
+```
+
+Delete a node
+
+```
+curl -D- -XDELETE \
+  http://user:password@localhost:5000/1.0/server_group_tree/node/$node_id
+```

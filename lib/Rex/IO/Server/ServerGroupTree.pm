@@ -136,6 +136,35 @@ sub get_children {
   };
 }
 
+sub delete_node {
+  my ($self) = @_;
+
+  my $node_id = $self->param("node_id");
+
+  try {
+    my @hw = $self->db->resultset("Hardware")
+      ->search( { server_group_id => $node_id } );
+    if (@hw) {
+      return $self->render(
+        json =>
+          { ok => Mojo::JSON->false, error => "This group is not empty." },
+        status => 500
+      );
+    }
+
+    my $node = $self->db->resultset("ServerGroupTree")->find($node_id);
+    $node->delete;
+
+    return $self->render( json => { ok => Mojo::JSON->true } );
+  }
+  catch {
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+}
+
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
@@ -154,6 +183,9 @@ sub __register__ {
 
   $r->post("/1.0/server_group_tree/node")->over( authenticated => 1 )
     ->to("server_group_tree#create_node");
+
+  $r->delete("/1.0/server_group_tree/node/:node_id")->over( authenticated => 1 )
+    ->to("server_group_tree#delete_node");
 
 }
 
