@@ -1,4 +1,4 @@
-CREATE  TABLE `rexio_server`.`server_group_tree` (
+CREATE  TABLE `server_group_tree` (
   `id` INT NOT NULL AUTO_INCREMENT ,
   `root_id` INT NULL ,
   `lft` INT NOT NULL ,
