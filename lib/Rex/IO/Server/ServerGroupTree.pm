@@ -96,12 +96,58 @@ sub get_tree {
   };
 }
 
+sub get_root {
+  my ($self) = @_;
+
+  try {
+    my $root_node = $self->db->resultset("ServerGroupTree")->find(1);
+    return $self->render(
+      json => { ok => Mojo::JSON->true, data => { $root_node->get_columns } } );
+  }
+  catch {
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+}
+
+sub get_children {
+  my ($self) = @_;
+
+  my $node_id = $self->param("node_id");
+
+  try {
+    my $node     = $self->db->resultset("ServerGroupTree")->find($node_id);
+    my @children = $node->children;
+    my @ret;
+    for my $c (@children) {
+      my $data = { $c->get_columns };
+      $data->{has_children} = $c->is_branch;
+      push @ret, $data;
+    }
+    return $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
+  }
+  catch {
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+}
+
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->get("/1.0/server_group_tree/root")->over( authenticated => 1 )
+  $r->get("/1.0/server_group_tree/tree")->over( authenticated => 1 )
     ->to("server_group_tree#get_tree");
+
+  $r->get("/1.0/server_group_tree/root")->over( authenticated => 1 )
+    ->to("server_group_tree#get_root");
+
+  $r->get("/1.0/server_group_tree/children/:node_id")
+    ->over( authenticated => 1 )->to("server_group_tree#get_children");
 
   $r->post("/1.0/server_group_tree/root")->over( authenticated => 1 )
     ->to("server_group_tree#create_root_node");
