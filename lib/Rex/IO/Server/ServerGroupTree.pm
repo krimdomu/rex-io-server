@@ -209,6 +209,43 @@ sub delete_node {
   };
 }
 
+sub update_node {
+  my ($self) = @_;
+
+  my $node_id = $self->param("node_id");
+
+  try {
+    my $node = $self->db->resultset("ServerGroupTree")->find($node_id);
+
+    if ( !$node->has_perm( 'MODIFY', $self->current_user ) ) {
+      return $self->render(
+        json =>
+          { ok => Mojo::JSON->false, error => "No permission to modify node." },
+        status => 403
+      );
+    }
+
+    my $json = $self->req->json;
+
+    $node->update(
+      {
+        name => $json->{name} || $node->name,
+        permission_set_id => $json->{permission_set_id}
+          || $node->permission_set_id,
+      }
+    );
+
+    return $self->render( json => { ok => Mojo::JSON->true } );
+
+  }
+  catch {
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+}
+
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
@@ -227,6 +264,9 @@ sub __register__ {
 
   $r->post("/1.0/server_group_tree/node")->over( authenticated => 1 )
     ->to("server_group_tree#create_node");
+
+  $r->post("/1.0/server_group_tree/node/:node_id")->over( authenticated => 1 )
+    ->to("server_group_tree#update_node");
 
   $r->delete("/1.0/server_group_tree/node/:node_id")
     ->over( authenticated => 1 )->to("server_group_tree#delete_node");

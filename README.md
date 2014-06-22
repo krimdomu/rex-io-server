@@ -353,6 +353,21 @@ curl -D- -XPOST -d@server_group.json \
   http://user:password@localhost:5000/1.0/server_group_tree/node
 ```
 
+Update a node:
+
+```javascript
+{
+  "name"              : "The node name",
+  "permission_set_id" : 1
+}
+```
+
+```
+curl -D- -XPOST -d@server_group.json \
+  http://user:password@localhost:5000/1.0/server_group_tree/node/$node_id
+```
+
+
 Get the complete tree
 
 ```
