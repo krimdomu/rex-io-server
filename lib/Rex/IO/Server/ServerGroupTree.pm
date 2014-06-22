@@ -14,6 +14,16 @@ use Try::Tiny;
 sub create_root_node {
   my ($self) = @_;
 
+  if ( !$self->current_user->has_perm('CREATE_ROOT_NODE') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission to create new root node.'
+      },
+      status => 403
+    );
+  }
+
   try {
     my $root_node = $self->db->resultset("ServerGroupTree")->create(
       {
@@ -52,6 +62,16 @@ sub create_node {
       );
     }
 
+    if ( !$parent_node->has_perm( 'MODIFY', $self->current_user ) ) {
+      return $self->render(
+        json => {
+          ok    => Mojo::JSON->false,
+          error => "No permission to create node here."
+        },
+        status => 403
+      );
+    }
+
     my $child_node = $parent_node->add_to_children(
       {
         permission_set_id => $json->{permission_set_id} || 1,
@@ -83,7 +103,9 @@ sub get_tree {
     my @ret       = ();
 
     for my $n (@all_nodes) {
-      push @ret, { $n->get_columns };
+      if ( $n->has_perm( 'READ', $self->current_user ) ) {
+        push @ret, { $n->get_columns };
+      }
     }
 
     return $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
@@ -101,8 +123,19 @@ sub get_root {
 
   try {
     my $root_node = $self->db->resultset("ServerGroupTree")->find(1);
-    return $self->render(
-      json => { ok => Mojo::JSON->true, data => { $root_node->get_columns } } );
+
+    if ( $root_node->has_perm( 'READ', $self->current_user ) ) {
+      return $self->render(
+        json => { ok => Mojo::JSON->true, data => { $root_node->get_columns } }
+      );
+    }
+    else {
+      return $self->render(
+        json   => { ok => Mojo::JSON->false, error => "No permissions." },
+        status => 403
+      );
+    }
+
   }
   catch {
     return $self->render(
@@ -122,9 +155,11 @@ sub get_children {
     my @children = $node->children;
     my @ret;
     for my $c (@children) {
-      my $data = { $c->get_columns };
-      $data->{has_children} = $c->is_branch;
-      push @ret, $data;
+      if ( $c->has_perm( 'READ', $self->current_user ) ) {
+        my $data = { $c->get_columns };
+        $data->{has_children} = $c->is_branch;
+        push @ret, $data;
+      }
     }
     return $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
   }
@@ -153,6 +188,15 @@ sub delete_node {
     }
 
     my $node = $self->db->resultset("ServerGroupTree")->find($node_id);
+
+    if ( !$node->has_perm( 'DELETE', $self->current_user ) ) {
+      return $self->render(
+        json =>
+          { ok => Mojo::JSON->false, error => "No permission to delete node." },
+        status => 403
+      );
+    }
+
     $node->delete;
 
     return $self->render( json => { ok => Mojo::JSON->true } );
@@ -184,8 +228,8 @@ sub __register__ {
   $r->post("/1.0/server_group_tree/node")->over( authenticated => 1 )
     ->to("server_group_tree#create_node");
 
-  $r->delete("/1.0/server_group_tree/node/:node_id")->over( authenticated => 1 )
-    ->to("server_group_tree#delete_node");
+  $r->delete("/1.0/server_group_tree/node/:node_id")
+    ->over( authenticated => 1 )->to("server_group_tree#delete_node");
 
 }
 

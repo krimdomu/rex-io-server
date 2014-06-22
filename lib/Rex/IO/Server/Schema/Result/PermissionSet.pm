@@ -16,6 +16,10 @@ __PACKAGE__->set_primary_key("id");
 __PACKAGE__->has_many( "hardwares", "Rex::IO::Server::Schema::Result::Hardware",
   "permission_set_id" );
 
+__PACKAGE__->has_many( "server_group_trees",
+  "Rex::IO::Server::Schema::Result::ServerGroupTree",
+  "permission_set_id" );
+
 __PACKAGE__->has_many( "users", "Rex::IO::Server::Schema::Result::User",
   "permission_set_id" );
 
