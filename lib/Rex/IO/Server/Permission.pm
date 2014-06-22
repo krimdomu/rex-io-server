@@ -10,6 +10,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON "j";
 use Data::Dumper;
 use Digest::Bcrypt;
+use Try::Tiny;
 
 sub list_set {
   my ($self) = @_;
@@ -29,7 +30,7 @@ sub list_set {
   my @ret;
 
   for my $set (@all_sets) {
-    push @ret, { $set->get_columns };
+    push @ret, $set->to_hashRef;
   }
 
   $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
@@ -79,8 +80,7 @@ sub get_set {
     return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
   }
 
-  $self->render(
-    json => { ok => Mojo::JSON->true, data => { $set->get_columns } } );
+  $self->render( json => { ok => Mojo::JSON->true, data => $set->to_hashRef } );
 }
 
 sub get_perm {
@@ -121,7 +121,32 @@ sub add_set {
   }
 
   eval {
-    my $set = $self->db->resultset('PermissionSet')->create( $self->req->json );
+    my $ref = $self->req->json;
+
+    my $set = $self->db->resultset('PermissionSet')->create(
+      {
+        name        => $ref->{name},
+        description => $ref->{description} || '',
+      }
+    );
+
+    if ( exists $ref->{permissions} && ref $ref->{permissions} eq "HASH" ) {
+      $self->app->log->debug("Creating permissions:");
+      $self->app->log->debug( Dumper( $ref->{permissions} ) );
+
+      my $users = $ref->{permissions}->{user};
+      for my $user_id ( keys %{$users} ) {
+        for my $perm_id ( @{ $users->{$user_id} } ) {
+          $self->db->resultset('Permission')->create(
+            {
+              permission_set_id => $set->id,
+              user_id           => $user_id,
+              perm_id           => $perm_id,
+            }
+          );
+        }
+      }
+    }
 
     $self->render(
       json => { ok => Mojo::JSON->true, data => { $set->get_columns } } );
@@ -181,7 +206,37 @@ sub update_set {
   }
 
   eval {
-    $set->update( $self->req->json );
+    my $ref = $self->req->json;
+    $self->app->log->debug(Dumper($ref));
+
+    $set->update(
+      {
+        name        => $ref->{name}        || $set->name,
+        description => $ref->{description} || $set->description,
+      }
+    );
+
+    if ( exists $ref->{permissions} && ref $ref->{permissions} eq "HASH" ) {
+      $self->app->log->debug("Removing all previous permissions:");
+      $set->permissions->delete;
+
+      $self->app->log->debug("Creating permissions:");
+      $self->app->log->debug( Dumper( $ref->{permissions} ) );
+
+      my $users = $ref->{permissions}->{user};
+      for my $user_id ( keys %{$users} ) {
+        for my $perm_id ( @{ $users->{$user_id} } ) {
+          $self->db->resultset('Permission')->create(
+            {
+              permission_set_id => $set->id,
+              user_id           => $user_id,
+              perm_id           => $perm_id,
+            }
+          );
+        }
+      }
+    }
+
     $self->render( json => { ok => Mojo::JSON->true } );
   } or do {
     return $self->render(
@@ -285,6 +340,27 @@ sub delete_perm {
 
 }
 
+sub list_permission_types {
+  my ($self) = @_;
+
+  try {
+    my @all_types = $self->db->resultset('PermissionType')->all;
+    my @ret;
+
+    for my $t (@all_types) {
+      push @ret, { $t->get_columns };
+    }
+
+    return $self->render( json => { ok => Mojo::JSON->true, data => \@ret } );
+  }
+  catch {
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+}
+
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
@@ -293,6 +369,8 @@ sub __register__ {
     ->to("permission#list_set");
   $r->get("/1.0/permission/permission")->over( authenticated => 1 )
     ->to("permission#list_perm");
+  $r->get("/1.0/permission/type")->over( authenticated => 1 )
+    ->to("permission#list_permission_types");
 
   $r->get("/1.0/permission/set/:set_id")->over( authenticated => 1 )
     ->to("permission#get_set");

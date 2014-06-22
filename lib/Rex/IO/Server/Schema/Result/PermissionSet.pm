@@ -23,4 +23,24 @@ __PACKAGE__->has_many( "permissions",
   "Rex::IO::Server::Schema::Result::Permission",
   "permission_set_id" );
 
+sub to_hashRef {
+  my ($self) = @_;
+
+  my $data = { $self->get_columns };
+  my $perms = { user => {}, group => {} };
+
+  for my $perm ( $self->permissions ) {
+    if ( $perm->user_id ) {
+      push @{ $perms->{user}->{ $perm->user_id } }, $perm->perm_id;
+    }
+    elsif ( $perm->group_id ) {
+      push @{ $perms->{group}->{ $perm->group_id } }, $perm->perm_id;
+    }
+  }
+
+  $data->{permissions} = $perms;
+
+  return $data;
+}
+
 1;

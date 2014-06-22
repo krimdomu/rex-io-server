@@ -185,6 +185,13 @@ curl -D- -XPOST \
 
 Permissions are build of permission sets. These sets can contain multiple permissions. You'll find all available permissions in the *permission_type* table.
 
+List permission types
+
+```
+curl -D- -XGET \
+  http://user:password@localhost:5000/1.0/permission/type
+```
+
 List all permission sets
 
 ```
@@ -197,7 +204,16 @@ Create a new permission set
 ```javascript
 {
   "name"        : "My Permission Set",
-  "description" : "My very own permission set."
+  "description" : "My very own permission set.",
+  "permissions" : {      // optional
+    "user"  : {
+      15 : [1,2,3,4],
+      19 : [19,1,2,3,4]
+    },
+    "group" : {
+      4 : [1,2,3,4]
+    }
+  }
 }
 ```
 
@@ -210,7 +226,17 @@ Update a permission set
 
 ```javascript
 {
-  "description" : "My very own permission set."
+  "name"        : "New name",
+  "description" : "My very own permission set.",
+  "permissions" : {
+    "user"  : {
+      15 : [1,2,3,4],
+      19 : [19,1,2,3,4]
+    },
+    "group" : {
+      4 : [1,2,3,4]
+    }
+  }
 }
 ```
 
