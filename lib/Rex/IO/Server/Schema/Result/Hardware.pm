@@ -12,6 +12,8 @@ use warnings;
 use Data::Dumper;
 
 use Rex::IO::Server::Helper::IP;
+use Rex::IO::Server::Schema::Helper::has_perm;
+
 use JSON::XS;
 
 use base qw(DBIx::Class::Core);
@@ -37,26 +39,6 @@ __PACKAGE__->belongs_to(
   "permission_set_id"
 );
 
-sub has_perm {
-  my ( $self, $perm_type, $user_o ) = @_;
-
-  my $perm_set = $self->permission_set;
-
-  for my $perm ( $perm_set->permissions ) {
-    if ( defined $perm->user_id ) {
-      next if ( $perm->user_id != $user_o->id );
-      return 1
-        if ( $perm->user_id == $user_o->id
-        && $perm_type eq $perm->permission_type->name );
-    }
-    elsif ( defined $perm->group_id ) {
-
-      # not implemented yet
-    }
-  }
-
-  return 0;
-}
 
 sub mac {
   my ($self) = @_;

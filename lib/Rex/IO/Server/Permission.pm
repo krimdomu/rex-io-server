@@ -146,6 +146,19 @@ sub add_set {
           );
         }
       }
+
+      my $groups = $ref->{permissions}->{group};
+      for my $group_id ( keys %{$groups} ) {
+        for my $perm_id ( @{ $groups->{$group_id} } ) {
+          $self->db->resultset('Permission')->create(
+            {
+              permission_set_id => $set->id,
+              group_id          => $group_id,
+              perm_id           => $perm_id,
+            }
+          );
+        }
+      }
     }
 
     $self->render(
@@ -207,7 +220,7 @@ sub update_set {
 
   eval {
     my $ref = $self->req->json;
-    $self->app->log->debug(Dumper($ref));
+    $self->app->log->debug( Dumper($ref) );
 
     $set->update(
       {
@@ -230,6 +243,19 @@ sub update_set {
             {
               permission_set_id => $set->id,
               user_id           => $user_id,
+              perm_id           => $perm_id,
+            }
+          );
+        }
+      }
+
+      my $groups = $ref->{permissions}->{group};
+      for my $group_id ( keys %{$groups} ) {
+        for my $perm_id ( @{ $groups->{$group_id} } ) {
+          $self->db->resultset('Permission')->create(
+            {
+              permission_set_id => $set->id,
+              group_id          => $group_id,
               perm_id           => $perm_id,
             }
           );

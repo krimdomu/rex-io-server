@@ -96,7 +96,8 @@ sub clients {
     return $self->render(
       json => {
         ok    => Mojo::JSON->false,
-        error => 'No permission MB_GET_ONLINE_CLIENTS.'
+        error => 'No permission MB_GET_ONLINE_CLIENTS.',
+        data  => [],
       },
       status => 403
     );

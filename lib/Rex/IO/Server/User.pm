@@ -10,6 +10,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON "j";
 use Data::Dumper;
 use Digest::Bcrypt;
+use Try::Tiny;
 
 sub get {
   my ($self) = @_;
@@ -58,7 +59,8 @@ sub list {
 
   for my $user (@users) {
     my $data = { $user->get_columns };
-    $data->{group} = { $user->group->get_columns };
+    $data->{group}          = { $user->group->get_columns };
+    $data->{permission_set} = { $user->permission_set->get_columns };
 
     push @ret, $data;
   }
@@ -93,8 +95,10 @@ sub add {
     my $pw = $bcrypt->hexdigest;
 
     my $data = {
-      name     => $json->{name},
-      password => $pw,
+      name              => $json->{name},
+      password          => $pw,
+      group_id          => $json->{group_id} || 2,
+      permission_set_id => $json->{permission_set_id} || 2,
     };
 
     my $user = $self->db->resultset("User")->create($data);
@@ -103,7 +107,10 @@ sub add {
         json => { ok => Mojo::JSON->true, id => $user->id } );
     }
   } or do {
-    return $self->render( json => { ok => Mojo::JSON->false, error => $@ }, status => 500 );
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => $@ },
+      status => 500
+    );
   };
 }
 
@@ -139,7 +146,7 @@ sub login {
     my @perms = $user->get_permissions;
 
     $self->app->log->debug("Permissions for user: ");
-    $self->app->log->debug(Dumper \@perms);
+    $self->app->log->debug( Dumper \@perms );
 
     return $self->render(
       json => {
@@ -147,7 +154,7 @@ sub login {
         data => {
           id          => $user->id,
           name        => $user->name,
-          permissions => [ @perms ]
+          permissions => [@perms]
         }
       }
     );
@@ -160,6 +167,69 @@ sub login {
   );
 }
 
+sub update {
+  my ($self) = @_;
+
+  if ( !$self->current_user->has_perm('MODIFY_USER') ) {
+    return $self->render(
+      json => {
+        ok    => Mojo::JSON->false,
+        error => 'No permission MODIFY_USER.'
+      },
+      status => 403
+    );
+  }
+
+  try {
+
+    my $user_id = $self->param("user_id");
+    my $user    = $self->db->resultset("User")->find($user_id);
+
+    if ($user) {
+      $self->app->log->debug("Updating user: $user_id");
+
+      my $json = $self->req->json;
+      $self->app->log->debug( Dumper($json) );
+
+      my $salt = $self->config->{auth}->{salt};
+      my $cost = $self->config->{auth}->{cost};
+
+      my $bcrypt = Digest::Bcrypt->new;
+      $bcrypt->salt($salt);
+      $bcrypt->cost($cost);
+      $bcrypt->add( $json->{password} );
+
+      my $pw = $bcrypt->hexdigest;
+
+      $user->update(
+        {
+          name => $json->{user} || $user->name,
+          password => ( $json->{password} ? $pw : $user->password ),
+          group_id => $json->{group_id} || $user->group_id,
+          permission_set_id => $json->{permission_set_id}
+            || $user->permission_set_id,
+        }
+      );
+
+      $self->app->log->debug("User $user_id updated.");
+
+      return $self->render( json => { ok => Mojo::JSON->true } );
+    }
+    else {
+      $self->app->log->error("User $user_id not found.");
+      return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
+    }
+  }
+  catch {
+    $self->app->log->error("Error: @_");
+    return $self->render(
+      json   => { ok => Mojo::JSON->false, error => "@_" },
+      status => 500
+    );
+  };
+
+}
+
 sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
@@ -168,6 +238,8 @@ sub __register__ {
   $r->get("/1.0/user/user/:id")->over( authenticated => 1 )->to("user#get");
 
   $r->post("/1.0/user/user")->over( authenticated => 1 )->to("user#add");
+  $r->post("/1.0/user/user/:user_id")->over( authenticated => 1 )
+    ->to("user#update");
   $r->post("/1.0/user/login")->to("user#login");
 
   $r->delete("/1.0/user/user/:user_id")->over( authenticated => 1 )

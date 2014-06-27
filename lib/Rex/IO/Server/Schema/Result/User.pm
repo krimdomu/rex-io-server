@@ -8,6 +8,7 @@ package Rex::IO::Server::Schema::Result::User;
 
 use strict;
 use warnings;
+use Rex::IO::Server::Schema::Helper::has_perm;
 
 use base qw(DBIx::Class::Core);
 
@@ -24,26 +25,6 @@ __PACKAGE__->belongs_to( "permission_set",
   "Rex::IO::Server::Schema::Result::PermissionSet",
   "permission_set_id" );
 
-sub has_perm {
-  my ( $self, $perm_type ) = @_;
-
-  my $perm_set = $self->permission_set;
-
-  for my $perm ( $perm_set->permissions ) {
-    if ( defined $perm->user_id ) {
-      next if ( $perm->user_id != $self->id );
-      return 1
-        if ( $perm->user_id == $self->id && $perm_type eq $perm->permission_type->name );
-    }
-    elsif ( defined $perm->group_id ) {
-
-      # not implemented yet
-    }
-  }
-
-  return 0;
-}
-
 
 sub to_hashRef {
   my ($self) = @_;
@@ -59,6 +40,10 @@ sub get_permissions {
 
   for my $perm ($set->permissions) {
     if($perm->user_id && $perm->user_id == $self->id) {
+      push @perms, $perm->permission_type->name;
+    }
+
+    if($perm->group_id && $perm->group_id == $self->group_id) {
       push @perms, $perm->permission_type->name;
     }
   }

@@ -132,6 +132,39 @@ curl -D- -XDELETE \
 
 ## Users and Groups
 
+Create a user:
+
+```javascript
+{
+  "name"              : "username",
+  "password"          : "the-password",
+  "group_id"          : 1,
+  "permission_set_id" : 1
+}
+```
+
+```
+curl -D- -XPOST -d@user.json \
+  http://user:password@localhost:5000/1.0/user/user
+```
+
+Modify a user:
+
+```javascript
+{
+  "name"              : "username",
+  "password"          : "the-password",
+  "group_id"          : 1,
+  "permission_set_id" : 1
+}
+```
+
+```
+curl -D- -XPOST -d@user.json \
+  http://user:password@localhost:5000/1.0/user/user/$user_id
+```
+
+
 Get all users:
 
 ```

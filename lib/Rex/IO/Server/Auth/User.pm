@@ -22,6 +22,7 @@ sub new {
 }
 
 sub id       { shift->{data}->{id} }
+sub group_id { shift->{data}->{group_id} }
 sub name     { shift->{data}->{name} }
 sub password { shift->{data}->{password} }
 
