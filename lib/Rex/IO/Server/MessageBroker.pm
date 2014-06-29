@@ -187,7 +187,8 @@ sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->websocket("/messagebroker")->to("message_broker#broker");
+  $r->websocket("/messagebroker")->over( authenticated => 1 )
+    ->to("message_broker#broker");
 
   $r->get("/1.0/messagebroker/client")->over( authenticated => 1 )
     ->to("message_broker#clients");
