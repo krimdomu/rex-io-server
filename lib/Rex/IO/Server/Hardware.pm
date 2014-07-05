@@ -391,7 +391,7 @@ sub update {
 
       my $os_id = $json->{os_id};
 
-      if ( !$os_id ) {
+      if ( !$os_id && exists $json->{os_id} ) {
 
         # no os exists, create or find one
         my @kernels = $self->db->resultset("Os")->search(
@@ -426,10 +426,10 @@ sub update {
 
       $hw->update(
         {
-          name              => $json->{name},
-          os_id             => $os_id,
-          uuid              => $json->{uuid} || $hw->uuid,
-          server_group_id   => $json->{server_group_id} || $hw->server_group_id,
+          name            => $json->{name}            || $hw->name,
+          os_id           => $os_id                   || $hw->os_id,
+          uuid            => $json->{uuid}            || $hw->uuid,
+          server_group_id => $json->{server_group_id} || $hw->server_group_id,
           permission_set_id => $json->{permission_set_id}
             || $hw->permission_set_id,
           kernelrelease => $json->{kernelrelease} || $hw->kernelrelease,
