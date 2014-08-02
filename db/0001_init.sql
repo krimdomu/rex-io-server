@@ -109,7 +109,7 @@ CREATE TABLE `os` (
 
 LOCK TABLES `os` WRITE;
 /*!40000 ALTER TABLE `os` DISABLE KEYS */;
-INSERT INTO `os` VALUES (1,'12.04','Ubuntu'),(5,'15','Fedora'),(4,'16','Fedora'),(3,'11.04','Ubuntu'),(2,'11.10','Ubuntu'),(6,'10.7.5','Mac OS X'),(7,'6.0.3','Debian');
+-- INSERT INTO `os` VALUES (1,'12.04','Ubuntu'),(5,'15','Fedora'),(4,'16','Fedora'),(3,'11.04','Ubuntu'),(2,'11.10','Ubuntu'),(6,'10.7.5','Mac OS X'),(7,'6.0.3','Debian');
 /*!40000 ALTER TABLE `os` ENABLE KEYS */;
 UNLOCK TABLES;
 

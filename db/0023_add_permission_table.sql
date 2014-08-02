@@ -54,6 +54,13 @@ INSERT INTO `permission_type` (`id`, `name`) VALUES (24, 'LIST_USER');
 INSERT INTO `permission_type` (`id`, `name`) VALUES (25, 'CREATE_USER');
 INSERT INTO `permission_type` (`id`, `name`) VALUES (26, 'DELETE_USER');
 INSERT INTO `permission_type` (`id`, `name`) VALUES (27, 'MODIFY_USER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (28, 'UI_SERVER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (29, 'UI_USER_AND_GROUP');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (30, 'UI_VIEW_SERVER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (31, 'UI_LIST_SERVER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (32, 'UI_ADD_SERVER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (33, 'UI_DELETE_SERVER');
+INSERT INTO `permission_type` (`id`, `name`) VALUES (34, 'UI_UPDATE_SERVER');
 
 INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 1, 1);
 INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 2, 1);
@@ -82,7 +89,13 @@ INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 2
 INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 25, 1);
 INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 26, 1);
 INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 27, 1);
-
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 28, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 29, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 30, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 31, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 32, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 33, 1);
+INSERT INTO `permission` (`permission_set_id`, `perm_id`, `user_id`) VALUES(1, 34, 1);
 
 ALTER TABLE `hardware` ADD COLUMN (`permission_set_id` INT NOT NULL DEFAULT 1);
 ALTER TABLE `users` ADD COLUMN `permission_set_id` INT NULL  AFTER `group_id` ;
