@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `server_group_tree`;
 CREATE  TABLE `server_group_tree` (
   `id` INT NOT NULL AUTO_INCREMENT ,
   `root_id` INT NULL ,

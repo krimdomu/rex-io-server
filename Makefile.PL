@@ -1,15 +1,16 @@
 use ExtUtils::MakeMaker;
 
 my %deps = (
-                  'Mojolicious' => '3.90',
-                  'Mojolicious::Plugin::Authentication' => '1.24',
+                  'Mojolicious',
+                  #'Mojolicious::Plugin::Authentication',
+                  'Mojolicious::Plugin::HttpBasicAuth',
                   'Compress::Zlib' => 0,
                   'XML::Simple' => 0,
                   'DBIx::Class' => 0,
                   'DBD::mysql' => 0,
                   'Digest::Bcrypt' => 0,
                   'Mojo::Redis' => 0,
-                  'DBIx::Class::Tree::AdjacencyList' => 0,
+                  'DBIx::Class::Tree::NestedSet' => 0,
                   'Net::DNS' => 0,
                   'JSON::XS' => 0,
                   'Gearman::Client' => 0,

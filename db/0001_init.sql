@@ -146,7 +146,7 @@ UNLOCK TABLES;
 --
 -- -- INSERT INTO `os_template` VALUES (2,'Inventory','http://{{REXIO_SERVER}}/boot/rexio/vmlinuz','http://{{REXIO_SERVER}}/boot/rexio/initrd.img','REXIO_SERVER={{REXIO_SERVER}}:{{REXIO_SERVER_PORT}} boot=live fetch=http://{{REXIO_SERVER}}/boot/rexio/rexio.squashfs noeject ssh=test lang=de vga=791','','');
 
-/*!40000 ALTER TABLE `os_template` ENABLE KEYS */;
+-- /*!40000 ALTER TABLE `os_template` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
