@@ -127,6 +127,8 @@ sub startup {
   }
 
   $r->get("/plugins")->over( authenticated => 1 )->to("plugin#list");
+  #$r->post("/1.0/plugin/plugin")->over( authenticated => 1 )->to("plugin#register");
+  $r->post("/1.0/plugin/plugin")->to("plugin#register");
 
 }
 
