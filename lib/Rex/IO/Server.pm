@@ -27,6 +27,7 @@ use Mojo::Base 'Mojolicious';
 use Mojo::UserAgent;
 use Mojo::IOLoop;
 use Data::Dumper;
+use IPC::Shareable;
 
 use Rex::IO::Server::Schema;
 
@@ -49,6 +50,9 @@ has schema => sub {
 
 our $VERSION = "0.5.0";
 
+my %shared_data;
+my $shared_data_handler;
+
 # This method will run once at server start
 sub startup {
   my $self = shift;
@@ -57,6 +61,33 @@ sub startup {
   # Define some custom helpers
   #######################################################################
   $self->helper( db => sub { $self->app->schema } );
+
+  $shared_data_handler = tie %shared_data, "IPC::Shareable", undef,
+    { destroy => 1 };
+  $self->helper(
+    shared_data_tx => sub {
+      my ($self, $code) = @_;
+      $shared_data_handler->shlock();
+      $code->();
+      $shared_data_handler->shunlock();
+    }
+  );
+  $self->helper(
+    shared_data => sub {
+      my ( $self, $key, $value ) = @_;
+      if ($value) {
+        $shared_data{$key} = $value;
+      }
+      else {
+        if($key) {
+          return $shared_data{$key};
+        }
+        else {
+          return %shared_data;
+        }
+      }
+    }
+  );
 
   #######################################################################
   # Load configuration

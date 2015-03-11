@@ -23,7 +23,7 @@ sub register {
   $self->app->log->debug("Registering a new plugin...");
 
   my $ref = $self->req->json;
-  $self->app->log->debug(Dumper($ref));
+  $self->app->log->debug( Dumper($ref) );
 
   my $plugin_name = $ref->{name};
 
@@ -36,6 +36,7 @@ sub register {
   my $plugin_methods = $ref->{methods};
 
   my $r = $self->app->routes;
+
   for my $meth ( @{$plugin_methods} ) {
     if ( "\L$meth->{meth}" eq "get" ) {
       if ( $meth->{auth} ) {
@@ -49,6 +50,32 @@ sub register {
     }
   }
 
+  my %plugin_hooks = ();
+  for my $hook ( keys %{ $ref->{hooks} } ) {    # z.b. base
+    for my $plugin_type ( keys %{ $ref->{hooks}->{$hook} } ) { # z.b. navigation
+      for my $plugin ( @{ $ref->{hooks}->{$hook}->{$plugin_type} } ) {
+        $plugin_hooks{$plugin_name} = {
+          module => $hook,
+          type   => $plugin_type,
+          data   => $plugin,
+        };
+      }
+    }
+  }
+
+  $self->shared_data_tx(
+    sub {
+      my $current_hooks = $self->shared_data("plugin_hooks");
+      my %merged_hooks = ( %{ $current_hooks || {} }, %plugin_hooks );
+      $self->shared_data( "plugin_hooks", \%merged_hooks );
+
+      my $loaded_plugins = $self->shared_data("loaded_plugins");
+      my %merged_loaded_plugins =
+        ( %{ $loaded_plugins || {} }, $plugin_name => $ref );
+      $self->shared_data( "loaded_plugins", \%merged_loaded_plugins );
+    }
+  );
+
   $self->render( json => { ok => Mojo::JSON->true } );
 }
 
@@ -60,6 +87,9 @@ sub call_plugin {
 
   my $config = $self->param("config");
   $self->app->log->debug( Dumper($config) );
+
+  my %shared_data = $self->shared_data();
+  $self->app->log->debug( Dumper( \%shared_data ) );
 
   my $ua          = Mojo::UserAgent->new;
   my $backend_url = $config->{location};
