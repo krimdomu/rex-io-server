@@ -217,7 +217,10 @@ sub update {
     }
     else {
       $self->app->log->error("User $user_id not found.");
-      return $self->render( json => { ok => Mojo::JSON->false }, status => 404 );
+      return $self->render(
+        json   => { ok => Mojo::JSON->false },
+        status => 404
+      );
     }
   }
   catch {
@@ -234,16 +237,65 @@ sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->get("/1.0/user/user")->over( authenticated => 1 )->to("user#list");
-  $r->get("/1.0/user/user/:id")->over( authenticated => 1 )->to("user#get");
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/user",
+      func   => \&Rex::IO::Server::User::list,
+    }
+  );
 
-  $r->post("/1.0/user/user")->over( authenticated => 1 )->to("user#add");
-  $r->post("/1.0/user/user/:user_id")->over( authenticated => 1 )
-    ->to("user#update");
-  $r->post("/1.0/user/login")->to("user#login");
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/user/:id",
+      func   => \&Rex::IO::Server::User::get,
+    }
+  );
 
-  $r->delete("/1.0/user/user/:user_id")->over( authenticated => 1 )
-    ->to("user#delete");
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/user",
+      func   => \&Rex::IO::Server::User::add,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/user/:user_id",
+      func   => \&Rex::IO::Server::User::update,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "POST",
+      auth   => Mojo::JSON->false,
+      url    => "/login",
+      func   => \&Rex::IO::Server::User::login,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "user",
+      meth   => "DELETE",
+      auth   => Mojo::JSON->true,
+      url    => "/user/:user_id",
+      func   => \&Rex::IO::Server::User::delete,
+    }
+  );
 }
 
 1;

@@ -89,6 +89,32 @@ sub startup {
     }
   );
 
+  $self->helper(
+    register_url => sub {
+      my ($self, $config) = @_;
+
+      my $plugin_name = $config->{plugin};
+      my $r = $self->app->routes;
+
+      my $meth_case = "\L$config->{meth}";
+      if ( $meth_case eq "get"
+        || $meth_case eq "post"
+        || $meth_case eq "put"
+        || $meth_case eq "delete" )
+      {
+        if ( $config->{auth} ) {
+          $r->$meth_case("/1.0/$plugin_name$config->{url}")
+            ->over( authenticated => 1 )
+            ->to( "plugin#call_plugin", plugin => $plugin_name, config => $config );
+        }
+        else {
+          $r->$meth_case("/1.0/$plugin_name$config->{url}")
+            ->to( "plugin#call_plugin", plugin => $plugin_name, config => $config );
+        }
+      }
+    }
+  );
+
   #######################################################################
   # Load configuration
   #######################################################################
