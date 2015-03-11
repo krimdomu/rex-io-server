@@ -17,6 +17,20 @@
 
 
 --
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `password` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8
+
+--
 -- Table structure for table `groups`
 --
 
@@ -39,30 +53,6 @@ LOCK TABLES `groups` WRITE;
 /*!40000 ALTER TABLE `groups` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `hardware`
---
-
-DROP TABLE IF EXISTS `hardware`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `hardware` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
-  `os_id` int(11) DEFAULT NULL,
-  `uuid` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB CHARACTER SET utf8 ;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `hardware`
---
-
-LOCK TABLES `hardware` WRITE;
-/*!40000 ALTER TABLE `hardware` DISABLE KEYS */;
-/*!40000 ALTER TABLE `hardware` ENABLE KEYS */;
-UNLOCK TABLES;
 
 -- --
 -- -- Table structure for table `hardware_state`
@@ -88,30 +78,6 @@ UNLOCK TABLES;
 -- /*!40000 ALTER TABLE `hardware_state` ENABLE KEYS */;
 -- UNLOCK TABLES;
 
---
--- Table structure for table `os`
---
-
-DROP TABLE IF EXISTS `os`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `os` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `version` varchar(20) DEFAULT NULL,
-  `name` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB CHARACTER SET utf8 AUTO_INCREMENT=8 ;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `os`
---
-
-LOCK TABLES `os` WRITE;
-/*!40000 ALTER TABLE `os` DISABLE KEYS */;
--- INSERT INTO `os` VALUES (1,'12.04','Ubuntu'),(5,'15','Fedora'),(4,'16','Fedora'),(3,'11.04','Ubuntu'),(2,'11.10','Ubuntu'),(6,'10.7.5','Mac OS X'),(7,'6.0.3','Debian');
-/*!40000 ALTER TABLE `os` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `os_template`
