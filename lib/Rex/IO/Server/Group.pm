@@ -156,15 +156,55 @@ sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->get("/1.0/group/group")->over( authenticated => 1 )->to("group#list");
-  $r->get("/1.0/group/group/:id")->over( authenticated => 1 )->to("group#get");
+  $app->register_url(
+    {
+      plugin => "group",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/group",
+      func   => \&Rex::IO::Server::Group::list,
+    }
+  );
 
-  $r->post("/1.0/group/group")->over( authenticated => 1 )->to("group#add");
-  $r->post("/1.0/group/group/:group_id/user/:user_id")
-    ->over( authenticated => 1 )->to("group#add_user_to_group");
+  $app->register_url(
+    {
+      plugin => "group",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/group/:id",
+      func   => \&Rex::IO::Server::group::get,
+    }
+  );
 
-  $r->delete("/1.0/group/group/:group_id")->over( authenticated => 1 )
-    ->to("group#delete");
+  $app->register_url(
+    {
+      plugin => "group",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/group",
+      func   => \&Rex::IO::Server::User::add,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "group",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/group/:group_id/user/:user_id",
+      func   => \&Rex::IO::Server::Group::add_user_to_group,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "group",
+      meth   => "DELETE",
+      auth   => Mojo::JSON->true,
+      url    => "/group/:group_id",
+      func   => \&Rex::IO::Server::Group::delete,
+    }
+  );
 }
 
 1;

@@ -391,32 +391,115 @@ sub __register__ {
   my ( $self, $app ) = @_;
   my $r = $app->routes;
 
-  $r->get("/1.0/permission/set")->over( authenticated => 1 )
-    ->to("permission#list_set");
-  $r->get("/1.0/permission/permission")->over( authenticated => 1 )
-    ->to("permission#list_perm");
-  $r->get("/1.0/permission/type")->over( authenticated => 1 )
-    ->to("permission#list_permission_types");
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/set",
+      func   => \&Rex::IO::Server::Permission::list_set,
+    }
+  );
 
-  $r->get("/1.0/permission/set/:set_id")->over( authenticated => 1 )
-    ->to("permission#get_set");
-  $r->get("/1.0/permission/permission/:perm_id")->over( authenticated => 1 )
-    ->to("permission#get_perm");
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/permission",
+      func   => \&Rex::IO::Server::Permission::list_perm,
+    }
+  );
 
-  $r->post("/1.0/permission/set")->over( authenticated => 1 )
-    ->to("permission#add_set");
-  $r->post("/1.0/permission/permission")->over( authenticated => 1 )
-    ->to("permission#add_perm");
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/type",
+      func   => \&Rex::IO::Server::Permission::list_permission_types,
+    }
+  );
 
-  $r->post("/1.0/permission/set/:set_id")->over( authenticated => 1 )
-    ->to("permission#update_set");
-  $r->post("/1.0/permission/permission/:perm_id")->over( authenticated => 1 )
-    ->to("permission#update_perm");
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/set/:set_id",
+      func   => \&Rex::IO::Server::Permission::get_set,
+    }
+  );
 
-  $r->delete("/1.0/permission/set/:set_id")->over( authenticated => 1 )
-    ->to("permission#delete_set");
-  $r->delete("/1.0/permission/permission/:perm_id")->over( authenticated => 1 )
-    ->to("permission#delete_perm");
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "GET",
+      auth   => Mojo::JSON->true,
+      url    => "/permission/:perm_id",
+      func   => \&Rex::IO::Server::Permission::get_perm,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/set",
+      func   => \&Rex::IO::Server::Permission::add_set,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/permission",
+      func   => \&Rex::IO::Server::Permission::add_perm,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/set/:set_id",
+      func   => \&Rex::IO::Server::Permission::update_set,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "POST",
+      auth   => Mojo::JSON->true,
+      url    => "/permission/:perm_id",
+      func   => \&Rex::IO::Server::Permission::update_perm,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "DELETE",
+      auth   => Mojo::JSON->true,
+      url    => "/set/:set_id",
+      func   => \&Rex::IO::Server::Permission::delete_set,
+    }
+  );
+
+  $app->register_url(
+    {
+      plugin => "permission",
+      meth   => "DELETE",
+      auth   => Mojo::JSON->true,
+      url    => "/permission/:perm_id",
+      func   => \&Rex::IO::Server::Permission::delete_perm,
+    }
+  );
 
 }
 
