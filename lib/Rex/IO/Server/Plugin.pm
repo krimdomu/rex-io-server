@@ -39,27 +39,28 @@ sub register {
 
   for my $meth ( @{$plugin_methods} ) {
     $meth->{plugin} = $plugin_name;
-    $self->register_url( $meth);
+    $self->register_url($meth);
   }
 
   my %plugin_hooks = ();
-  for my $hook ( keys %{ $ref->{hooks} } ) {    # z.b. base
-    for my $plugin_type ( keys %{ $ref->{hooks}->{$hook} } ) { # z.b. navigation
-      for my $plugin ( @{ $ref->{hooks}->{$hook}->{$plugin_type} } ) {
-        $plugin_hooks{$plugin_name} = {
-          module => $hook,
-          type   => $plugin_type,
-          data   => $plugin,
-        };
-      }
-    }
+  for my $hook ( @{ $ref->{hooks} } ) {
+    push @{ $plugin_hooks{ $hook->{plugin} }->{ $hook->{action} } },
+      {
+      plugin_name => $plugin_name,
+      location    => $hook->{location},
+      };
   }
 
   $self->shared_data_tx(
     sub {
       my $current_hooks = $self->shared_data("plugin_hooks");
-      my %merged_hooks = ( %{ $current_hooks || {} }, %plugin_hooks );
-      $self->shared_data( "plugin_hooks", \%merged_hooks );
+      for my $plugin_name ( keys %plugin_hooks ) {
+        for my $plugin_action ( keys %{ $plugin_hooks{$plugin_name} } ) {
+          push @{ $current_hooks->{$plugin_name}->{$plugin_action} },
+            @{ $plugin_hooks{$plugin_name}->{$plugin_action} };
+        }
+      }
+      $self->shared_data( "plugin_hooks", $current_hooks );
 
       my $loaded_plugins = $self->shared_data("loaded_plugins");
       my %merged_loaded_plugins =
