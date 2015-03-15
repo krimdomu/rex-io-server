@@ -172,7 +172,7 @@ sub __register__ {
       meth   => "GET",
       auth   => Mojo::JSON->true,
       url    => "/group/:id",
-      func   => \&Rex::IO::Server::group::get,
+      func   => \&Rex::IO::Server::Group::get,
     }
   );
 
@@ -182,7 +182,7 @@ sub __register__ {
       meth   => "POST",
       auth   => Mojo::JSON->true,
       url    => "/group",
-      func   => \&Rex::IO::Server::User::add,
+      func   => \&Rex::IO::Server::Group::add,
     }
   );
 
