@@ -28,14 +28,13 @@ use Mojo::UserAgent;
 use Mojo::IOLoop;
 use Data::Dumper;
 use IPC::Shareable;
-
 use Rex::IO::Server::Schema;
 
 has schema => sub {
   my ($self) = @_;
 
   my $dsn =
-      "DBI:mysql:"
+      "dbi:Pg:"
     . "database="
     . $self->config->{database}->{schema} . ";" . "host="
     . $self->config->{database}->{host};
