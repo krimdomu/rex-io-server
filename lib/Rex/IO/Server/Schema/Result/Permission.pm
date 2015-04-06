@@ -9,7 +9,31 @@ use base qw(DBIx::Class::Core);
 
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->table("permission");
-__PACKAGE__->add_columns(qw/id permission_set_id perm_id group_id user_id/);
+__PACKAGE__->add_columns(
+  id => {
+    data_type         => 'serial',
+    is_auto_increment => 1,
+    is_numeric        => 1,
+  },
+  permission_set_id => {
+    data_type   => 'integer',
+    is_nullable => 0,
+  },
+  perm_id => {
+    data_type   => 'integer',
+    is_nullable => 0,
+  },
+  group_id => {
+    data_type   => 'integer',
+    is_nullable => 1,
+    default     => undef,
+  },
+  user_id => {
+    data_type   => 'integer',
+    is_nullable => 0,
+    default     => undef,
+  },
+);
 
 __PACKAGE__->set_primary_key("id");
 
