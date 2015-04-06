@@ -1,0 +1,50 @@
+#!perl -w
+
+use strict;
+use warnings;
+
+use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
+
+$|++;
+
+if ( @ARGV < 2 ) {
+  print "Usage: rex_io_get_user <conf-file> <user-name> [<user-name> ...]\n";
+  exit 1;
+}
+
+my $conf_file  = shift @ARGV;
+my @user_names = @ARGV;
+
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
+}
+
+for my $user_name (@user_names) {
+  my $user_rs = $server->schema->resultset('User')->search(
+    {
+      name => $user_name,
+    }
+  );
+  my $user_o = $user_rs->next;
+  if ( !$user_o ) {
+    print "No user with name $user_name found.\n";
+    exit 1;
+  }
+
+  printf "\%-25s %s\n", "Name:",           $user_o->name;
+  printf "\%-25s %s\n", "Id:",             $user_o->id;
+  printf "\%-25s %s\n", "Group:",          $user_o->group->name;
+  printf "\%-25s %s\n", "Permission-Set:", $user_o->permission_set->name;
+  print "Permissions:\n";
+
+  for my $perm ( $user_o->get_permissions ) {
+    print "\t- " . $perm->name . "\n";
+  }
+
+}

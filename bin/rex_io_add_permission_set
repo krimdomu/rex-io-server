@@ -1,0 +1,37 @@
+#!perl -w
+
+use strict;
+use warnings;
+
+use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
+
+$|++;
+
+if ( @ARGV < 2 ) {
+  print
+    "Usage: rex_io_add_permission_set <conf-file> <set-name> <description>\n";
+  exit 1;
+}
+
+my $conf_file = shift @ARGV;
+my $set_name  = shift @ARGV;
+my $set_desc  = shift @ARGV;
+
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
+}
+
+my $set_o = $server->schema->resultset('PermissionSet')->create(
+  {
+    name        => $set_name,
+    description => ( $set_desc || '' ),
+  }
+);
+
+print "Type-ID: " . $set_o->id . "\n";

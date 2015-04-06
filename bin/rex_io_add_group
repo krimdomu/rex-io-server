@@ -1,0 +1,35 @@
+#!perl -w
+
+use strict;
+use warnings;
+
+use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
+
+$|++;
+
+if ( @ARGV < 2 ) {
+  print "Usage: rex_io_add_group.pl <conf-file> <group>\n";
+  exit 1;
+}
+
+my $conf_file = $ARGV[0];
+my $group     = $ARGV[1];
+
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
+}
+
+my $group_o = $server->schema->resultset('Group')->create(
+  {
+    name => $group,
+  }
+);
+
+print "Group-ID: " . $group_o->id . "\n";
+

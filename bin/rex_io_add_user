@@ -4,32 +4,41 @@ use strict;
 use warnings;
 
 use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
 
 $|++;
 
-if(@ARGV < 2) {
-   print "Usage: generate_user.pl <conf-file> <username>\n";
-   exit 1;
+if ( @ARGV < 3 ) {
+  print
+    "Usage: rex_io_add_user.pl <conf-file> <username> <group-name> [<permset-name>]\n";
+  exit 1;
 }
 
-my $conf_file = $ARGV[0];
-my $user      = $ARGV[1];
+my $conf_file     = $ARGV[0];
+my $user          = $ARGV[1];
+my $group_name    = $ARGV[2];
+my $perm_set_name = $ARGV[3];
 
 print "Enter password: ";
-my $pass      = <STDIN>;
+my $pass = <STDIN>;
 chomp $pass;
 
-unless(-f $conf_file) {
-   print "$conf_file is not a file\n";
-   exit 2;
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
 }
 
-my $content = eval { local(@ARGV, $/) = ($conf_file); <>; };
-my $config  = eval 'package Rex::IO::Server::Config::Loader;'
-                     . "no warnings; $content";
+my $content = eval { local ( @ARGV, $/ ) = ($conf_file); <>; };
+my $config =
+  eval 'package Rex::IO::Server::Config::Loader;' . "no warnings; $content";
 
-die "Couldn't load configuration file: $@" if(!$config && $@);
-die "Config file invalid. Did not return HASH reference." if( ref($config) ne "HASH" );
+die "Couldn't load configuration file: $@" if ( !$config && $@ );
+die "Config file invalid. Did not return HASH reference."
+  if ( ref($config) ne "HASH" );
 
 my $salt = $config->{auth}->{salt};
 my $cost = $config->{auth}->{cost};
@@ -41,5 +50,38 @@ $bcrypt->add($pass);
 
 my $pw = $bcrypt->hexdigest;
 
-print "INSERT INTO users (name, password) VALUES('$user', '$pw')\n";
+my $group_rs = $server->schema->resultset('Group')->search(
+  {
+    name => $group_name,
+  }
+);
+
+my $group_o = $group_rs->next;
+if ( !$group_o ) {
+  print "No group with name $group_name found.\n";
+  exit 3;
+}
+
+my $perm_set_rs = $server->schema->resultset('PermissionSet')->search(
+  {
+    name => $perm_set_name,
+  }
+);
+
+my $perm_set_o = $perm_set_rs->next;
+if ( !$perm_set_o ) {
+  print "No permission set with name $perm_set_name found.\n";
+  exit 4;
+}
+
+my $user_o = $server->schema->resultset('User')->create(
+  {
+    name              => $user,
+    password          => $pw,
+    group_id          => $group_o->id,
+    permission_set_id => $perm_set_o->id,
+  }
+);
+
+print "User-ID: " . $user_o->id . "\n";
 

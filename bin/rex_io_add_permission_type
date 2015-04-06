@@ -1,0 +1,46 @@
+#!perl -w
+
+use strict;
+use warnings;
+
+use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
+
+$|++;
+
+if ( @ARGV < 2 ) {
+  print
+    "Usage: rex_io_add_permission_type <conf-file> <type-name> [<type-name> <type-name> ...]\n";
+  exit 1;
+}
+
+my $conf_file  = shift @ARGV;
+my @type_names = @ARGV;
+
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
+}
+
+if($type_names[0] eq "root") {
+  @type_names = qw(READ MODIFY DELETE
+    LIST_USER CREATE_USER DELETE_USER MODIFY_USER 
+    LIST_GROUP CREATE_GROUP DELETE_GROUP 
+    LIST_PERM_SET CREATE_PERM_SET MODIFY_PERM_SET DELETE_PERM_SET
+    LIST_PERM CREATE_PERM MODIFY_PERM DELETE_PERM
+    UI_USER_AND_GROUP);
+}
+
+for my $type_name (@type_names) {
+  my $type_o = $server->schema->resultset('PermissionType')->create(
+    {
+      name => $type_name,
+    }
+  );
+
+  print "Type-ID: " . $type_o->id . "\n";
+}

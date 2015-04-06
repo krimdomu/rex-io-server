@@ -25,6 +25,11 @@ __PACKAGE__->add_columns(
     size        => 150,
     is_nullable => 0,
   },
+  password => {
+    data_type   => 'varchar',
+    size        => 255,
+    is_nullable => 0,
+  },
   group_id => {
     data_type   => 'integer',
     is_nullable => 0,
@@ -58,11 +63,11 @@ sub get_permissions {
 
   for my $perm ( $set->permissions ) {
     if ( $perm->user_id && $perm->user_id == $self->id ) {
-      push @perms, $perm->permission_type->name;
+      push @perms, $perm->permission_type;
     }
 
     if ( $perm->group_id && $perm->group_id == $self->group_id ) {
-      push @perms, $perm->permission_type->name;
+      push @perms, $perm->permission_type;
     }
   }
 

@@ -1,0 +1,86 @@
+#!perl -w
+
+use strict;
+use warnings;
+
+use Digest::Bcrypt;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Rex::IO::Server;
+
+my $server = Rex::IO::Server->new;
+
+$|++;
+
+if ( @ARGV < 4 ) {
+  print
+    "Usage: rex_io_add_permission <conf-file> <user-name> <permission-set-name> <permission-type-name> [<permission-type-name> ...]\n";
+  exit 1;
+}
+
+my $conf_file     = shift @ARGV;
+my $user_name     = shift @ARGV;
+my $perm_set_name = shift @ARGV;
+my @type_names    = @ARGV;
+
+unless ( -f $conf_file ) {
+  print "$conf_file is not a file\n";
+  exit 2;
+}
+
+if ( $type_names[0] eq "root" ) {
+  @type_names = qw(READ MODIFY DELETE
+    LIST_USER CREATE_USER DELETE_USER MODIFY_USER
+    LIST_GROUP CREATE_GROUP DELETE_GROUP
+    LIST_PERM_SET CREATE_PERM_SET MODIFY_PERM_SET DELETE_PERM_SET
+    LIST_PERM CREATE_PERM MODIFY_PERM DELETE_PERM
+    UI_USER_AND_GROUP);
+}
+
+my $perm_set_rs = $server->schema->resultset('PermissionSet')->search(
+  {
+    name => $perm_set_name,
+  }
+);
+my $perm_set_o = $perm_set_rs->next;
+
+if ( !$perm_set_o ) {
+  print "No permission set found with name: $perm_set_name\n";
+  exit 3;
+}
+
+my $user_rs = $server->schema->resultset('User')->search(
+  {
+    name => $user_name,
+  }
+);
+
+my $user_o = $user_rs->next;
+
+if ( !$user_o ) {
+  print "No user found with name: $user_name\n";
+  exit 4;
+}
+
+for my $type_name (@type_names) {
+  my $perm_type_rs = $server->schema->resultset('PermissionType')->search(
+    {
+      name => $type_name,
+    }
+  );
+  my $perm_type_o = $perm_type_rs->next;
+  if ( !$perm_type_o ) {
+    print "No permission type found with name: $type_name\n";
+    exit 4;
+  }
+
+  my $perm_o = $server->schema->resultset('Permission')->create(
+    {
+      permission_set_id => $perm_set_o->id,
+      perm_id           => $perm_type_o->id,
+      user_id           => $user_o->id,
+    }
+  );
+
+  print "Permission-ID: " . $perm_o->id . "\n";
+}

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Mon Apr  6 17:34:25 2015
+-- Created on Mon Apr  6 19:42:16 2015
 -- 
 ;
 --
@@ -42,7 +42,7 @@ CREATE TABLE "permission" (
   "permission_set_id" integer NOT NULL,
   "perm_id" integer NOT NULL,
   "group_id" integer,
-  "user_id" integer NOT NULL,
+  "user_id" integer,
   PRIMARY KEY ("id")
 );
 CREATE INDEX "permission_idx_permission_set_id" on "permission" ("permission_set_id");
@@ -55,6 +55,7 @@ CREATE INDEX "permission_idx_perm_id" on "permission" ("perm_id");
 CREATE TABLE "users" (
   "id" serial NOT NULL,
   "name" character varying(150) NOT NULL,
+  "password" character varying(255) NOT NULL,
   "group_id" integer NOT NULL,
   "permission_set_id" integer NOT NULL,
   PRIMARY KEY ("id")
