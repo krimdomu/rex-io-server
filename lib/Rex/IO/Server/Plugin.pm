@@ -93,6 +93,22 @@ sub call_plugin {
     my $backend_url = $config->{location};
     $self->app->log->debug("Backend-URL: $backend_url");
 
+    my @params = ( $config->{url} =~ m/:(\w+)/g );
+    $self->app->log->debug( "Found Backend-Params: " . join( ", ", @params ) );
+
+    for my $p (@params) {
+      my $param_data = $self->param($p);
+      if ( !$param_data ) {
+        return $self->render(
+          json => { ok => Mojo::JSON->false, message => "Invalid parameters." },
+          status => 500
+        );
+      }
+      $backend_url =~ s/:\Q$p\E/$param_data/;
+    }
+    $backend_url .= "?" . $self->req->url->query;
+    $self->app->log->debug("Parsed-Backend-URL: $backend_url");
+
     my $meth = $self->req->method;
     my $tx =
       $ua->build_tx(
