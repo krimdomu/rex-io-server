@@ -123,16 +123,25 @@ sub call_plugin {
           sub {
             my ( $ua, $tx ) = @_;
             if ( $tx->success ) {
-              $self->render( json => $tx->res->json );
+              my $ref = $tx->res->json;
+              $self->_filter_acl($ref);
+              if ( exists $ref->{data} ) {
+                $ref->{data} = [ grep { $_ } @{ $ref->{data} } ];
+              }
+              $self->render( json => $ref );
             }
             else {
               my $ref = $tx->res->json;
               if ($ref) {
-                $self->render( json => $ref );
+                $self->_filter_acl($ref);
+                if ( exists $ref->{data} ) {
+                  $ref->{data} = [ grep { $_ } @{ $ref->{data} } ];
+                }
+                $self->render( json => $ref, status => $tx->res->code );
               }
               else {
                 $self->render( json =>
-                    { ok => Mojo::JSON->false, error => "Unknown error." } );
+                    { ok => Mojo::JSON->false, error => "Unknown error." }, status => $tx->res->code );
               }
             }
           }
@@ -141,6 +150,23 @@ sub call_plugin {
     );
 
     $self->render_later();
+  }
+}
+
+sub _filter_acl {
+  my $self = shift;
+  my $ref  = shift;
+
+  if ( !exists $ref->{data} ) {
+    return;
+  }
+
+  for my $data ( @{ $ref->{data} } ) {
+    if ( exists $data->{permission_set_id} ) {
+      if($data->{permission_set_id}) {
+        #$data = undef;
+      }
+    }
   }
 }
 
