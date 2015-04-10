@@ -161,10 +161,13 @@ sub _filter_acl {
     return;
   }
 
-  for my $data ( @{ $ref->{data} } ) {
-    if ( exists $data->{permission_set_id} ) {
-      if($data->{permission_set_id}) {
-        #$data = undef;
+  if(ref $ref->{data} eq "ARRAY") {
+    for my $data ( @{ $ref->{data} } ) {
+      if ( exists $data->{permission_set_id} ) {
+        if($data->{permission_set_id}) {
+          # TODO: check for permissions
+          #$data = undef;
+        }
       }
     }
   }
