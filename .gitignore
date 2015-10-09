@@ -27,3 +27,4 @@ vars.db
 vars.db.lock
 .carton/
 local
+*~

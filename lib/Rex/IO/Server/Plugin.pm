@@ -43,7 +43,7 @@ sub register {
   }
 
   my %plugin_hooks = ();
-  for my $hook ( @{ $ref->{hooks} } ) {
+  for my $hook ( @{ $ref->{hooks}->{consume} } ) {
     push @{ $plugin_hooks{ $hook->{plugin} }->{ $hook->{action} } },
       {
       plugin_name => $plugin_name,
