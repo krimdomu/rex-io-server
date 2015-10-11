@@ -21,6 +21,10 @@ sub render {
   my %shared_data = $self->shared_data();
   $self->app->log->debug( "shared data from BaseController:\n" . Dumper( \%shared_data ) );
 
+  my @permissions = map { $_->name } $self->current_user()->get_permissions();
+  $self->app->log->debug("User permissions from BaseController:");
+  $self->app->log->debug(Dumper(\@permissions));
+
   if($config && exists $shared_data{plugin_hooks}->{$config->{plugin}}
     && exists $shared_data{plugin_hooks}->{$config->{plugin}}->{$config->{url}}) {
     # we need to call a hook
@@ -54,7 +58,13 @@ sub render {
         my $meth = $self->req->method;
         my $tx =
           $ua->build_tx(
-          $meth => $backend_url => { "Accept" => "application/json" } => json =>
+          $meth => $backend_url => 
+            {
+              "Accept" => "application/json",
+              "X-RexIO-Permissions" => join(",", @permissions),
+              "X-RexIO-User" => $self->current_user()->name,
+              "X-RexIO-Password" => $self->current_user()->password,
+            } => json =>
             $self->req->json );
             
         my $resp = $ua->post($backend_url => { "Accept" => "application/json" } => json => \@rest);

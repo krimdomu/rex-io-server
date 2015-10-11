@@ -84,6 +84,10 @@ sub call_plugin {
   my %shared_data = $self->shared_data();
   $self->app->log->debug( Dumper( \%shared_data ) );
 
+  my @permissions = map { $_->name } $self->current_user()->get_permissions();
+  $self->app->log->debug("User permissions:");
+  $self->app->log->debug(Dumper(\@permissions));
+
   if ( exists $config->{func} ) {
     $config->{func}->($self);
   }
@@ -112,7 +116,13 @@ sub call_plugin {
     my $meth = $self->req->method;
     my $tx =
       $ua->build_tx(
-      $meth => $backend_url => { "Accept" => "application/json" } => json =>
+      $meth => $backend_url => 
+        {
+          "Accept" => "application/json",
+          "X-RexIO-Permissions" => join(",", @permissions),
+          "X-RexIO-User" => $self->current_user()->name,
+          "X-RexIO-Password" => $self->current_user()->password,
+        } => json =>
         $self->req->json );
 
     # do an async call

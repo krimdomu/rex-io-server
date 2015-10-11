@@ -6,7 +6,7 @@
 
 package Rex::IO::Server::Group;
 
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Rex::IO::Server::PluginController';
 use Mojo::JSON "j";
 
 sub get {
