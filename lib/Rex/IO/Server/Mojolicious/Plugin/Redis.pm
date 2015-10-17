@@ -15,21 +15,22 @@ use base 'Mojolicious::Plugin';
 use Mojo::Redis;
 
 sub register {
-  my ( $plugin, $app ) = @_;
+    my ( $plugin, $app ) = @_;
 
-  my $redis;
+    my $redis;
 
-  $app->helper(
-    redis => sub {
-      if ($redis) { return $redis; }
+    $app->helper(
+        redis => sub {
+            if ($redis) { return $redis; }
 
-      $redis =
-        Mojo::Redis->new( server => $app->config->{redis}{default}{server} . ":"
-          . $app->config->{redis}{default}{port} );
+            $redis =
+              Mojo::Redis->new(
+                server => $app->config->{redis}{default}{server} . ":"
+                  . $app->config->{redis}{default}{port} );
 
-      return $redis;
-    },
-  );
+            return $redis;
+        },
+    );
 }
 
 1;
