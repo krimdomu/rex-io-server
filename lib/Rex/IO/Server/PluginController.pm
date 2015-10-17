@@ -79,6 +79,7 @@ sub render {
                         "X-RexIO-Permissions" => join( ",", @permissions ),
                         "X-RexIO-User"        => $self->current_user()->name,
                         "X-RexIO-Password" => $self->current_user()->password,
+                        "X-RexIO-Group"    => $self->current_user()->group_id,
                     } => json => $self->req->json
                 );
 
