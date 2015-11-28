@@ -7,6 +7,7 @@ use strict;
 use warnings;
 use 5.010;
 use feature qw/ switch /;
+no warnings 'experimental::smartmatch';
 
 BEGIN {
   $ENV{PERL5LIB} = "";
@@ -48,7 +49,7 @@ my $dh = DBIx::Class::DeploymentHandler->new(
   {
     schema           => $schema,
     script_directory => $deployment_handler_dir,
-    databases        => 'PostgreSQL',
+    databases        => $mojo->config->{database}->{type},
     force_overwrite  => 1,
   }
 );

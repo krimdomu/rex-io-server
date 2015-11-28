@@ -27,30 +27,35 @@ use Mojo::Base 'Mojolicious';
 use Mojo::UserAgent;
 use Mojo::IOLoop;
 use Data::Dumper;
-use IPC::Shareable;
 use Rex::IO::Server::Schema;
 
 has schema => sub {
     my ($self) = @_;
 
-    my $dsn =
-        "dbi:Pg:"
-      . "database="
-      . $self->config->{database}->{schema} . ";" . "host="
-      . $self->config->{database}->{host};
+    my $dsn;
+    
+    if(exists $self->config->{database}->{dsn}) {
+      $dsn = $self->config->{database}->{dsn};
+    }
+    else {
+      $dsn =
+          "dbi:" . $self->config->{database}->{type} . ":"
+        . "database="
+        . $self->config->{database}->{schema} . ";" . "host="
+        . $self->config->{database}->{host};
+    }
 
     return Rex::IO::Server::Schema->connect(
         $dsn,
-        $self->config->{database}->{username},
-        $self->config->{database}->{password},
-        { mysql_enable_utf8 => 1 }
+        ($self->config->{database}->{username} || ""),
+        ($self->config->{database}->{password} || ""),
+        ($self->config->{database}->{options} || {}),
     );
 };
 
 our $VERSION = "0.6.0";
 
-my %shared_data;
-my $shared_data_handler;
+use IPC::Lite qw(%shared_data);
 
 # This method will run once at server start
 sub startup {
@@ -61,14 +66,10 @@ sub startup {
     #######################################################################
     $self->helper( db => sub { $self->app->schema } );
 
-    $shared_data_handler = tie %shared_data, "IPC::Shareable", undef,
-      { destroy => 1 };
     $self->helper(
         shared_data_tx => sub {
             my ( $self, $code ) = @_;
-            $shared_data_handler->shlock();
             $code->();
-            $shared_data_handler->shunlock();
         }
     );
     $self->helper(
@@ -141,7 +142,7 @@ sub startup {
     $self->plugin( "Config", file => $cfg );
     $self->plugin("Rex::IO::Server::Mojolicious::Plugin::IP");
     $self->plugin("Rex::IO::Server::Mojolicious::Plugin::User");
-    $self->plugin("Rex::IO::Server::Mojolicious::Plugin::Redis");
+    #$self->plugin("Rex::IO::Server::Mojolicious::Plugin::Redis");
     $self->plugin(
         "http_basic_auth",
         {

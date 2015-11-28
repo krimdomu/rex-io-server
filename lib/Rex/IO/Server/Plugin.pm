@@ -103,7 +103,7 @@ sub call_plugin {
         my $backend_url = $config->{location};
         $self->app->log->debug("Backend-URL: $backend_url");
 
-        my @params = ( $config->{url} =~ m/:(\w+)/g );
+        my @params = ( $config->{url} =~ m/[:\*\.](\w+)/g );
         $self->app->log->debug(
             "Found Backend-Params: " . join( ", ", @params ) );
 
@@ -118,7 +118,7 @@ sub call_plugin {
                     status => 500
                 );
             }
-            $backend_url =~ s/:\Q$p\E/$param_data/;
+            $backend_url =~ s/[:\*\.]\Q$p\E/$param_data/;
         }
         $backend_url .= "?" . $self->req->url->query;
         $self->app->log->debug("Parsed-Backend-URL: $backend_url");
@@ -126,59 +126,48 @@ sub call_plugin {
         my $meth = $self->req->method;
         my $tx   = $ua->build_tx(
             $meth => $backend_url => {
-                "Accept"              => "application/json",
+#                "Accept"              => "application/json",
                 "X-RexIO-Permissions" => join( ",", @permissions ),
                 "X-RexIO-User"        => $self->current_user()->name,
                 "X-RexIO-Password"    => $self->current_user()->password,
                 "X-RexIO-Group"    => $self->current_user()->group_id,
             } => json => $self->req->json
         );
+        
+        $tx = $ua->start($tx);
+        
+        if($tx->success) {
+          $self->res->headers->content_type($tx->res->headers->content_type);
+          $self->render( data => $tx->res->body );
+        }
+        else {
+          $self->app->log->error("Error requesting service plugin.");
 
-        # do an async call
-        Mojo::IOLoop->delay(
-            sub {
-                $ua->start(
-                    $tx,
-                    sub {
-                        my ( $ua, $tx ) = @_;
-                        if ( $tx->success ) {
-                            my $ref = $tx->res->json;
-                            $self->_filter_acl($ref);
-                            if ( exists $ref->{data} ) {
-                                $ref->{data} =
-                                  [ grep { $_ } @{ $ref->{data} } ];
-                            }
-                            $self->render( json => $ref );
-                        }
-                        else {
-                            my $ref = $tx->res->json;
-                            if ($ref) {
-                                $self->_filter_acl($ref);
-                                if ( exists $ref->{data} ) {
-                                    $ref->{data} =
-                                      [ grep { $_ } @{ $ref->{data} } ];
-                                }
-                                $self->render(
-                                    json   => $ref,
-                                    status => $tx->res->code
-                                );
-                            }
-                            else {
-                                $self->render(
-                                    json => {
-                                        ok    => Mojo::JSON->false,
-                                        error => "Unknown error."
-                                    },
-                                    status => $tx->res->code
-                                );
-                            }
-                        }
-                    }
-                );
-            }
-        );
+          my $ref = $tx->res->json;
 
-        $self->render_later();
+          if ($ref) {
+              $self->_filter_acl($ref);
+              if ( exists $ref->{data} ) {
+                  $ref->{data} =
+                    [ grep { $_ } @{ $ref->{data} } ];
+              }
+              $self->render(
+                  json   => $ref,
+                  status => $tx->res->code
+              );
+          }
+          else {
+              $self->render(
+                  json => {
+                      ok    => Mojo::JSON->false,
+                      error => "Unknown error."
+                  },
+                  status => $tx->res->code
+              );
+          }
+
+          $self->app->log->debug(Dumper($tx));
+        }
     }
 }
 
