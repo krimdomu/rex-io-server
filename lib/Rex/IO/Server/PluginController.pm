@@ -18,9 +18,9 @@ sub render {
     my $config = $self->param("config");
     $self->app->log->debug( "config from BaseController:\n" . Dumper($config) );
 
-    my %shared_data = $self->shared_data();
+    my $current_hooks = $self->shared_data("plugin_hooks");
     $self->app->log->debug(
-        "shared data from BaseController:\n" . Dumper( \%shared_data ) );
+        "shared data plugin_hooks from BaseController:\n" . Dumper( $current_hooks ) );
 
     my @permissions;
 
@@ -34,13 +34,13 @@ sub render {
     }
 
     if (   $config
-        && exists $shared_data{plugin_hooks}->{ $config->{plugin} }
-        && exists $shared_data{plugin_hooks}->{ $config->{plugin} }
+        && exists $current_hooks->{ $config->{plugin} }
+        && exists $current_hooks->{ $config->{plugin} }
         ->{ $config->{url} } )
     {
         # we need to call a hook
         my $plugins =
-          $shared_data{plugin_hooks}->{ $config->{plugin} }->{ $config->{url} };
+          $current_hooks->{ $config->{plugin} }->{ $config->{url} };
 
         for my $plugin ( @{$plugins} ) {
 

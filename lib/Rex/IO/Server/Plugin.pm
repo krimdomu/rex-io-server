@@ -14,7 +14,8 @@ use Data::Dumper;
 
 sub list {
     my ($self) = @_;
-    $self->render( json => $self->config->{"plugins"} );
+    my $ref = $self->shared_data("loaded_plugins");
+    $self->render( json => [ @{ $self->config->{"plugins"} }, keys %{ $ref } ] );
 }
 
 sub register {
@@ -24,51 +25,16 @@ sub register {
 
     my $ref = $self->req->json;
     $self->app->log->debug( Dumper($ref) );
-
+    
     my $plugin_name = $ref->{name};
-
+  
     if ( !$plugin_name ) {
         return $self->render( json =>
               { ok => Mojo::JSON->false, error => "No plugin name specified." }
         );
     }
 
-    my $plugin_methods = $ref->{methods};
-
-    my $r = $self->app->routes;
-
-    for my $meth ( @{$plugin_methods} ) {
-        $meth->{plugin} = $plugin_name;
-        $self->register_url($meth);
-    }
-
-    my %plugin_hooks = ();
-    for my $hook ( @{ $ref->{hooks}->{consume} } ) {
-        push @{ $plugin_hooks{ $hook->{plugin} }->{ $hook->{action} } },
-          {
-            plugin_name => $plugin_name,
-            location    => $hook->{location},
-          };
-    }
-
-    $self->shared_data_tx(
-        sub {
-            my $current_hooks = $self->shared_data("plugin_hooks");
-            for my $plugin_name ( keys %plugin_hooks ) {
-                for my $plugin_action ( keys %{ $plugin_hooks{$plugin_name} } )
-                {
-                    push @{ $current_hooks->{$plugin_name}->{$plugin_action} },
-                      @{ $plugin_hooks{$plugin_name}->{$plugin_action} };
-                }
-            }
-            $self->shared_data( "plugin_hooks", $current_hooks );
-
-            my $loaded_plugins = $self->shared_data("loaded_plugins");
-            my %merged_loaded_plugins =
-              ( %{ $loaded_plugins || {} }, $plugin_name => $ref );
-            $self->shared_data( "loaded_plugins", \%merged_loaded_plugins );
-        }
-    );
+    $self->register_plugin($ref);
 
     $self->render( json => { ok => Mojo::JSON->true } );
 }
@@ -81,9 +47,6 @@ sub call_plugin {
 
     my $config = $self->param("config");
     $self->app->log->debug( Dumper($config) );
-
-    my %shared_data = $self->shared_data();
-    $self->app->log->debug( Dumper( \%shared_data ) );
 
     my @permissions;
     if ( $self->authenticated ) {
