@@ -85,7 +85,7 @@ sub startup {
   $self->helper(
     shared_data_tx => sub {
       my ( $self, $code ) = @_;
-      my $mutex = $self->shared_config->lock("rexio_shared_config", $self->config->{redis}->{lock_ttl} || 10);
+      my $mutex = $self->shared_config->lock("rexio_server_shared_config", $self->config->{redis}->{lock_ttl} || 10);
       $code->();
       $self->shared_config->release($mutex);
     }
@@ -94,14 +94,14 @@ sub startup {
     shared_data => sub {
       my ( $self, $key, $value ) = @_;
       if ($value) {
-        $self->redis->set( "/$key" => JSON::XS::encode_json($value) );
+        $self->redis->set( "/rexio/server/$key" => JSON::XS::encode_json($value) );
       }
       else {
         if ($key) {
           my $ret;
           eval {
             $ret =
-              JSON::XS::decode_json( $self->redis->get("/$key") );
+              JSON::XS::decode_json( $self->redis->get("/rexio/server/$key") );
             1;
           } or do {
             $ret = {};
