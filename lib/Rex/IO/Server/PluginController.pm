@@ -20,7 +20,8 @@ sub render {
 
     my $current_hooks = $self->shared_data("plugin_hooks");
     $self->app->log->debug(
-        "shared data plugin_hooks from BaseController:\n" . Dumper( $current_hooks ) );
+        "shared data plugin_hooks from BaseController:\n"
+          . Dumper($current_hooks) );
 
     my @permissions;
 
@@ -35,8 +36,7 @@ sub render {
 
     if (   $config
         && exists $current_hooks->{ $config->{plugin} }
-        && exists $current_hooks->{ $config->{plugin} }
-        ->{ $config->{url} } )
+        && exists $current_hooks->{ $config->{plugin} }->{ $config->{url} } )
     {
         # we need to call a hook
         my $plugins =
@@ -73,7 +73,11 @@ sub render {
                 $self->app->log->debug("Parsed-Backend-URL: $backend_url");
 
                 my $meth = $self->req->method;
-                my $tx   = $ua->build_tx(
+                $self->app->log->debug(
+                    "Got Post-Data\n" . Dumper( $self->req->json ) )
+                  if ( $meth eq "POST" );
+
+                my $tx = $ua->build_tx(
                     $meth => $backend_url => {
                         "Accept"              => "application/json",
                         "X-RexIO-Permissions" => join( ",", @permissions ),

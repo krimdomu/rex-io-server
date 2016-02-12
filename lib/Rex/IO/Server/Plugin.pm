@@ -15,7 +15,7 @@ use Data::Dumper;
 sub list {
     my ($self) = @_;
     my $ref = $self->shared_data("loaded_plugins");
-    $self->render( json => [ @{ $self->config->{"plugins"} }, keys %{ $ref } ] );
+    $self->render( json => [ @{ $self->config->{"plugins"} }, keys %{$ref} ] );
 }
 
 sub register {
@@ -25,9 +25,9 @@ sub register {
 
     my $ref = $self->req->json;
     $self->app->log->debug( Dumper($ref) );
-    
+
     my $plugin_name = $ref->{name};
-  
+
     if ( !$plugin_name ) {
         return $self->render( json =>
               { ok => Mojo::JSON->false, error => "No plugin name specified." }
@@ -87,49 +87,61 @@ sub call_plugin {
         $self->app->log->debug("Parsed-Backend-URL: $backend_url");
 
         my $meth = $self->req->method;
-        my $tx   = $ua->build_tx(
+        $self->app->log->debug( "Got Post-Data\n" . Dumper( $self->req->json ) )
+          if ( $meth eq "POST" );
+
+        my $tx = $ua->build_tx(
             $meth => $backend_url => {
-#                "Accept"              => "application/json",
+
+                #                "Accept"              => "application/json",
                 "X-RexIO-Permissions" => join( ",", @permissions ),
-                "X-RexIO-User"        => $self->current_user()->name,
-                "X-RexIO-Password"    => $self->current_user()->password,
-                "X-RexIO-Group"    => $self->current_user()->group_id,
+                "X-RexIO-User" =>
+                  ( $self->current_user() ? $self->current_user()->name : "" ),
+                "X-RexIO-Password" => (
+                    $self->current_user() ? $self->current_user()->password
+                    : ""
+                ),
+                "X-RexIO-Group" => (
+                    $self->current_user() ? $self->current_user()->group_id
+                    : ""
+                ),
             } => json => $self->req->json
         );
-        
+
         $tx = $ua->start($tx);
-        
-        if($tx->success) {
-          $self->res->headers->content_type($tx->res->headers->content_type);
-          $self->render( data => $tx->res->body );
+
+        if ( $tx->success ) {
+            $self->res->headers->content_type(
+                $tx->res->headers->content_type );
+            $self->render( data => $tx->res->body );
         }
         else {
-          $self->app->log->error("Error requesting service plugin.");
+            $self->app->log->error("Error requesting service plugin.");
 
-          my $ref = $tx->res->json;
+            my $ref = $tx->res->json;
 
-          if ($ref) {
-              $self->_filter_acl($ref);
-              if ( exists $ref->{data} ) {
-                  $ref->{data} =
-                    [ grep { $_ } @{ $ref->{data} } ];
-              }
-              $self->render(
-                  json   => $ref,
-                  status => $tx->res->code
-              );
-          }
-          else {
-              $self->render(
-                  json => {
-                      ok    => Mojo::JSON->false,
-                      error => "Unknown error."
-                  },
-                  status => $tx->res->code
-              );
-          }
+            if ($ref) {
+                $self->_filter_acl($ref);
+                if ( exists $ref->{data} ) {
+                    $ref->{data} =
+                      [ grep { $_ } @{ $ref->{data} } ];
+                }
+                $self->render(
+                    json   => $ref,
+                    status => $tx->res->code
+                );
+            }
+            else {
+                $self->render(
+                    json => {
+                        ok    => Mojo::JSON->false,
+                        error => "Unknown error."
+                    },
+                    status => $tx->res->code
+                );
+            }
 
-          $self->app->log->debug(Dumper($tx));
+            $self->app->log->debug( Dumper($tx) );
         }
     }
 }
