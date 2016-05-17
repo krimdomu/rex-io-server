@@ -134,6 +134,7 @@ sub startup {
                 || $meth_case eq "put"
                 || $meth_case eq "delete" )
             {
+                $self->app->log->debug("Registering url: " . "/1.0/$plugin_name$config->{url}");
                 if ( $config->{auth} ) {
                     $r->$meth_case("/1.0/$plugin_name$config->{url}")
                       ->over( authenticated => 1 )->to(
